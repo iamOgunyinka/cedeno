@@ -148,11 +148,13 @@
     <ClCompile Include="candlestick_futures_stream.cpp" />
     <ClCompile Include="candlestick_spot_stream.cpp" />
     <ClCompile Include="price_gatherer.cpp" />
+    <ClCompile Include="trade_stream.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="candlestick_base.hpp" />
     <ClInclude Include="candlestick_futures_stream.hpp" />
     <ClInclude Include="candlestick_spot_stream.hpp" />
+    <ClInclude Include="trade_stream.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

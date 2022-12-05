@@ -1,3 +1,4 @@
+#include "candlestick_futures_stream.hpp"
 #include "candlestick_spot_stream.hpp"
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl/context.hpp>
@@ -15,10 +16,14 @@ int main(int const argc, char const **argv) {
   sslContext->set_default_verify_paths();
   sslContext->set_verify_mode(boost::asio::ssl::verify_none);
 
-  binance::candlestick_spot_stream_t cs(ioContext, *sslContext);
-  cs.makeSubscriptionsFor({"BTCUSDT", "RUNEUSDT", "ETHUSDT"});
-  cs.makeSubscriptionFor("BNBUSDT");
+  std::vector<std::string> const tokens{ "BNBUSDT", "BTCUSDT", "RUNEUSDT", "ETHUSDT" };
+  binance::candlestick_futures_stream_t cs(ioContext, *sslContext);
+  cs.makeSubscriptionsFor(tokens);
   cs.start();
+
+  binance::candlestick_spot_stream_t spStream(ioContext, *sslContext);
+  spStream.makeSubscriptionsFor(tokens);
+  spStream.start();
 
   ioContext.run();
   return 0;

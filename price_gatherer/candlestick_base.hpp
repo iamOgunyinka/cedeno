@@ -17,7 +17,26 @@ namespace ip = net::ip;
 
 namespace binance {
 
+struct candlestick_data_t {
+  std::string tokenName;
+  std::string interval;
+  time_t startTime;
+  time_t endTime;
+  std::string openPrice;
+  std::string closePrice;
+  std::string highPrice;
+  std::string lowPrice;
+  std::string baseAssetVolume;
+  std::string quoteAssetVolume;   // Quote asset volume
+  std::string tbBaseAssetVolume;  // Taker buy base asset volume
+  std::string tbQuoteAssetVolume; // Taker buy quote asset volume
+  size_t numberOfTrades;
+  bool klineIsClosed;
+};
+
 std::string toLowerString(std::string const &s);
+std::optional<candlestick_data_t> parseCandleStickData(char const *str,
+                                                       size_t const size);
 
 template <typename Derived> class candlestick_base_t {
   struct internal_token_data_t {
@@ -191,9 +210,11 @@ candlestick_base_t<T>::getNonSubcribedForToken() {
 
 template <typename T> void candlestick_base_t<T>::performWebsocketHandshake() {
   auto token = getNonSubcribedForToken();
-  if (!token)
+  if (!token) {
+    std::cerr << __func__ << ": no token to returned in getNonSubcribedForToken"
+              << std::endl;
     return;
-  auto const urlPath = "/stream?streams=" + token->tokenName + "@kline_1s";
+  }
   token->subscribedFor = true;
   auto opt = beast::websocket::stream_base::timeout();
   opt.idle_timeout = std::chrono::seconds(50);
@@ -204,14 +225,18 @@ template <typename T> void candlestick_base_t<T>::performWebsocketHandshake() {
   m_sslWebStream->control_callback(
       [self = shared_from_this()](auto const frame_type, auto const &) {
         if (frame_type == beast::websocket::frame_type::close) {
+          std::cerr << "Stream closed" << std::endl;
           self->m_sslWebStream.reset();
           return self->restart();
         }
       });
 
   auto const host = static_cast<T *>(this)->getWsHost();
+  auto const handshakePath =
+      static_cast<T *>(this)->klineHandshakePath(token->tokenName);
   m_sslWebStream->async_handshake(
-      host, urlPath, [self = shared_from_this()](beast::error_code const ec) {
+      host, handshakePath,
+      [self = shared_from_this()](beast::error_code const ec) {
         if (ec) {
           std::cerr << ec.message() << std::endl;
           return;
@@ -243,8 +268,10 @@ template <typename T> void candlestick_base_t<T>::interpretGenericMessages() {
 
   char const *bufferCstr =
       static_cast<char const *>(m_readBuffer->cdata().data());
+
   // do something with the message
-  static_cast<T *>(this)->processResult(bufferCstr, m_readBuffer->size());
+  if (auto data = parseCandleStickData(bufferCstr, m_readBuffer->size()); data)
+    static_cast<T *>(this)->onResultAvailable(*data);
 
   if (!m_allTokensSubscribedFor) {
     if (auto t = getNonSubcribedForToken(); t != nullptr)
@@ -257,10 +284,9 @@ template <typename T> void candlestick_base_t<T>::interpretGenericMessages() {
 
 template <typename T>
 void candlestick_base_t<T>::makeSubscription(internal_token_data_t *token) {
-  m_writeBuffer = "{\"method\": \"SUBSCRIBE\", \"params\":["
-                  "\"" +
-                  token->tokenName + "@kline_1s\"],\"id\": 10}";
-  // std::cout << "WriteBuffer:" << m_writeBuffer << std::endl;
+  m_writeBuffer = static_cast<T *>(this)->subscriptionMessage(token->tokenName);
+  std::cout << "WriteBuffer:" << m_writeBuffer << std::endl;
+
   m_sslWebStream->async_write(
       net::buffer(m_writeBuffer),
       [self = shared_from_this(), token](auto const errCode, size_t const) {

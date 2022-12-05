@@ -27,6 +27,9 @@
     <ClCompile Include="candlestick_futures_stream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="trade_stream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="candlestick_spot_stream.hpp">
@@ -36,6 +39,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="candlestick_futures_stream.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="trade_stream.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

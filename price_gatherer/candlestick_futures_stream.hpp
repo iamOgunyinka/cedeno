@@ -19,10 +19,20 @@ public:
       : candlestick_base_t(ioContext, sslContext) {}
   ~candlestick_futures_stream_t() {}
   void start() { candlestick_base_t::start(); }
-  std::string getWsHost() const { return ws_host; }
-  std::string getWsPortNumber() const { return ws_port_number; }
-  std::string getHttpHost() const { return api_host; }
-  void processResult(char const *const buffer, size_t const size);
+  void onResultAvailable(candlestick_data_t);
+
+  inline std::string getWsHost() const { return ws_host; }
+  inline std::string getWsPortNumber() const { return ws_port_number; }
+  inline std::string getHttpHost() const { return api_host; }
+  inline std::string klineHandshakePath(std::string const &tokenName) const {
+    return "/stream?streams=" + tokenName + "@kline_1m";
+  }
+
+  inline std::string subscriptionMessage(std::string const &tokenName) const {
+    return "{\"method\": \"SUBSCRIBE\", \"params\":["
+           "\"" +
+           tokenName + "@kline_1m\"],\"id\": 20}";
+  }
 };
 
 } // namespace binance
