@@ -1,4 +1,4 @@
-#include "trade_stream.hpp"
+#include "ticker_stream.hpp"
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ssl/context.hpp>
 #include <iostream>
@@ -17,10 +17,10 @@ int main(int const argc, char const **argv) {
 
   std::vector<std::string> const tokens{"BNBUSDT", "BTCUSDT", "RUNEUSDT",
                                         "ETHUSDT"};
-  binance::trade_stream_t tradeStream(ioContext, *sslContext,
-                                      binance::trade_type_e::spot);
-  tradeStream.makeSubscriptionsFor(tokens);
-  tradeStream.start();
+  binance::book_ticker_stream_t tickerStream(ioContext, *sslContext,
+                                             binance::trade_type_e::futures);
+  tickerStream.makeSubscriptionsFor(tokens);
+  tickerStream.start();
 
   ioContext.run();
   return 0;

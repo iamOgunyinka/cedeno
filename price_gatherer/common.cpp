@@ -1,7 +1,12 @@
-#include "candlestick_base.hpp"
+#include "common.hpp"
 #include <rapidjson/document.h>
 
 namespace binance {
+char const *const url_t::spotHostName = "stream.binance.com";
+char const *const url_t::futuresHostName = "fstream.binance.com";
+char const *const url_t::spotPortNumber = "9443";
+char const *const url_t::futuresPortNumber = "443";
+
 std::string toLowerString(std::string const &s) {
   std::string temp;
   temp.reserve(s.size());

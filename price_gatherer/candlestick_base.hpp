@@ -7,7 +7,8 @@
 #include <boost/beast/ssl/ssl_stream.hpp>
 #include <boost/beast/websocket/stream.hpp>
 #include <iostream>
-#include <optional>
+
+#include "common.hpp"
 
 namespace net = boost::asio;
 namespace beast = boost::beast;
@@ -17,33 +18,7 @@ namespace ip = net::ip;
 
 namespace binance {
 
-struct candlestick_data_t {
-  std::string tokenName;
-  std::string interval;
-  time_t startTime;
-  time_t endTime;
-  std::string openPrice;
-  std::string closePrice;
-  std::string highPrice;
-  std::string lowPrice;
-  std::string baseAssetVolume;
-  std::string quoteAssetVolume;   // Quote asset volume
-  std::string tbBaseAssetVolume;  // Taker buy base asset volume
-  std::string tbQuoteAssetVolume; // Taker buy quote asset volume
-  size_t numberOfTrades;
-  bool klineIsClosed;
-};
-
-std::string toLowerString(std::string const &s);
-std::optional<candlestick_data_t> parseCandleStickData(char const *str,
-                                                       size_t const size);
-
 template <typename Derived> class candlestick_base_t {
-  struct internal_token_data_t {
-    std::string tokenName;
-    bool subscribedFor = false;
-  };
-
   using resolver_result_type = net::ip::tcp::resolver::results_type;
 
 public:
@@ -200,8 +175,7 @@ void candlestick_base_t<T>::negotiateWebsocketConnection() {
 }
 
 template <typename T>
-typename candlestick_base_t<T>::internal_token_data_t *
-candlestick_base_t<T>::getNonSubcribedForToken() {
+internal_token_data_t *candlestick_base_t<T>::getNonSubcribedForToken() {
   for (size_t i = 0; i < m_tokens.size(); ++i)
     if (m_tokens[i].subscribedFor == false)
       return &m_tokens[i];
