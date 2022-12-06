@@ -1,7 +1,11 @@
 #include "trade_stream.hpp"
+#include <iostream>
 
 namespace binance {
-static char const *const host = "stream.binance.com";
+char const *const trade_stream_t::spotHostName = "stream.binance.com";
+char const *const trade_stream_t::futuresHostName = "fstream.binance.com";
+char const *const trade_stream_t::spotPortNumber = "9443";
+char const *const trade_stream_t::futuresPortNumber = "443";
 
 trade_stream_t::~trade_stream_t() {
   m_resolver.reset();
@@ -10,11 +14,10 @@ trade_stream_t::~trade_stream_t() {
 }
 
 void trade_stream_t::start() {
-  static char const *const portNumber = "9443";
 
   m_resolver.emplace(m_ioContext);
   m_resolver->async_resolve(
-      host, portNumber,
+      m_hostName, m_portNumber,
       [this](auto const error_code, results_type const &results) {
         if (error_code || results.empty()) {
           std::cerr << error_code.message() << std::endl;
@@ -45,7 +48,8 @@ void trade_stream_t::websockConnectToResolvedNames(
 
 void trade_stream_t::websockPerformSslHandshake(
     results_type::endpoint_type const &name) {
-  auto const fullHost = host + std::string(":") + std::to_string(name.port());
+  auto const fullHost =
+      m_hostName + std::string(":") + std::to_string(name.port());
 
   // Set a timeout on the operation
   beast::get_lowest_layer(*m_sslWebStream)
@@ -62,6 +66,43 @@ void trade_stream_t::websockPerformSslHandshake(
   negotiateWebsocketConnection();
 }
 
+void trade_stream_t::insertIfNotExists(std::string const &tokenName) {
+  auto const t = toLowerString(tokenName);
+  auto const iter =
+      std::find_if(m_tokens.cbegin(), m_tokens.cend(),
+                   [&t](internal_token_data_t const &internalToken) {
+                     return internalToken.tokenName == t;
+                   });
+  if (iter == m_tokens.cend())
+    m_tokens.push_back({t, false});
+}
+
+typename trade_stream_t::internal_token_data_t *
+trade_stream_t::getNonSubcribedForToken() {
+  for (size_t i = 0; i < m_tokens.size(); ++i)
+    if (m_tokens[i].subscribedFor == false)
+      return &m_tokens[i];
+  return nullptr;
+}
+
+void trade_stream_t::makeSubscription(internal_token_data_t *token) {
+  m_writeBuffer = "{\"method\": \"SUBSCRIBE\", \"params\":["
+                  "\"" +
+                  token->tokenName + "@aggTrade\"],\"id\": 30}";
+  std::cout << "WriteBuffer:" << m_writeBuffer << std::endl;
+
+  m_sslWebStream->async_write(net::buffer(m_writeBuffer),
+                              [this, token](auto const errCode, size_t const) {
+                                if (errCode) {
+                                  std::cerr << errCode.message() << std::endl;
+                                  return;
+                                }
+                                m_writeBuffer.clear();
+                                token->subscribedFor = true;
+                                waitForMessages();
+                              });
+}
+
 void trade_stream_t::negotiateWebsocketConnection() {
   m_sslWebStream->next_layer().async_handshake(
       net::ssl::stream_base::client, [this](beast::error_code const ec) {
@@ -75,6 +116,14 @@ void trade_stream_t::negotiateWebsocketConnection() {
 }
 
 void trade_stream_t::performWebsocketHandshake() {
+  auto token = getNonSubcribedForToken();
+  if (!token) {
+    std::cerr << __func__ << ": no token to return in getNonSubcribedForToken"
+              << std::endl;
+    return;
+  }
+  token->subscribedFor = true;
+
   auto opt = beast::websocket::stream_base::timeout();
   opt.idle_timeout = std::chrono::seconds(50);
   opt.handshake_timeout = std::chrono::seconds(20);
@@ -88,10 +137,9 @@ void trade_stream_t::performWebsocketHandshake() {
       return restart();
     }
   });
-
   auto const handshakePath =
-      static_cast<T *>(this)->klineHandshakePath(token->tokenName);
-  m_sslWebStream->async_handshake(host, handshakePath,
+      "/stream?streams=" + token->tokenName + "@aggTrade";
+  m_sslWebStream->async_handshake(m_hostName, handshakePath,
                                   [this](beast::error_code const ec) {
                                     if (ec) {
                                       std::cerr << ec.message() << std::endl;
@@ -125,6 +173,13 @@ void trade_stream_t::interpretGenericMessages() {
       static_cast<char const *>(m_readBuffer->cdata().data());
 
   // do something with the message
+  std::cout << bufferCstr << std::endl;
+
+  if (!m_allTokensSubscribedFor) {
+    if (auto t = getNonSubcribedForToken(); t != nullptr)
+      return makeSubscription(t);
+    m_allTokensSubscribedFor = true;
+  }
 
   waitForMessages();
 }
