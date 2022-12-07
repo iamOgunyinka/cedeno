@@ -15,6 +15,8 @@ void ticker_stream_t::processResponse(char const *const str,
   std::cout << "Ticker:" << str << std::endl;
 }
 
+// ========================================================
+
 std::string book_ticker_stream_t::getSubscriptionMessage(
     std::string const &tokenName) const {
   return "{\"method\": \"SUBSCRIBE\", \"params\":["

@@ -10,8 +10,12 @@ class candlestick_futures_stream_t
 
 public:
   candlestick_futures_stream_t(net::io_context &ioContext,
-                               net::ssl::context &sslContext)
-      : candlestick_base_t(ioContext, sslContext) {}
+                               net::ssl::context &sslContext,
+                               token_filename_map_t &tradeMap)
+      : candlestick_base_t(ioContext, sslContext), m_tradeMap(tradeMap) {
+    for (auto const &[key, _] : tradeMap.dataMap)
+      makeSubscriptionFor(key);
+  }
   ~candlestick_futures_stream_t() {}
   void start() { candlestick_base_t::start(); }
   void onResultAvailable(candlestick_data_t);
@@ -29,6 +33,9 @@ public:
            "\"" +
            tokenName + "@kline_1m\"],\"id\": 20}";
   }
+
+private:
+  token_filename_map_t &m_tradeMap;
 };
 
 } // namespace binance

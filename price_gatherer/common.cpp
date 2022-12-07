@@ -15,6 +15,14 @@ std::string toLowerString(std::string const &s) {
   return temp;
 }
 
+std::string toUpperString(std::string const &s) {
+  std::string temp;
+  temp.reserve(s.size());
+  for (auto c : s)
+    temp.push_back(std::toupper(c));
+  return temp;
+}
+
 std::optional<candlestick_data_t> parseCandleStickData(char const *str,
                                                        size_t const size) {
 #ifdef _MSC_VER
@@ -60,6 +68,30 @@ std::optional<candlestick_data_t> parseCandleStickData(char const *str,
   data.tbBaseAssetVolume = dataStreamObject.FindMember("V")->value.GetString();
   data.tbQuoteAssetVolume = dataStreamObject.FindMember("Q")->value.GetString();
   return data;
+}
+
+std::optional<std::string> currentTimeToString(time_type_e const t) {
+#if _MSC_VER && !__INTEL_COMPILER
+#pragma warning(disable : 4996)
+#endif
+
+  try {
+    std::time_t current_time = std::time(nullptr);
+    auto const tm_t = std::localtime(&current_time);
+    if (!tm_t) {
+      return std::nullopt;
+    }
+    std::string output((std::size_t)32, (char)'\0');
+    auto const format = (t == time_type_e::date ? "%Y_%m_%d" : "%H_%M_%S");
+    auto const string_length =
+        std::strftime(output.data(), output.size(), format, tm_t);
+    if (string_length) {
+      output.resize(string_length);
+      return output;
+    }
+  } catch (std::exception const &) {
+  }
+  return std::nullopt;
 }
 
 } // namespace binance
