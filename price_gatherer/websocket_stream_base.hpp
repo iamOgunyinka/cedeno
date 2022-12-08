@@ -46,8 +46,7 @@ protected:
   virtual std::string
   getSubscriptionMessage(std::string const &tokenName) const = 0;
   virtual std::string getStreamType() const = 0;
-  virtual void processResponse(char const *const str,
-                               size_t const length) const = 0;
+  virtual void processResponse(char const *const str, size_t const length) = 0;
 
 protected:
 private:

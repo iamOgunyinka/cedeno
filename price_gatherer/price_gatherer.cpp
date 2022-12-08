@@ -59,8 +59,10 @@ void fetchBookTicker(net::io_context &ioContext, net::ssl::context &sslContext,
                      trade_map_td &tradeMap) {
   binance::book_ticker_stream_t fTickerStream(
       ioContext, sslContext, trade_type_e::futures, tradeMap[FUTURES]);
+
   binance::book_ticker_stream_t sTickerStream(
       ioContext, sslContext, trade_type_e::spot, tradeMap[SPOT]);
+
   sTickerStream.start();
   fTickerStream.start();
   ioContext.run();
@@ -115,15 +117,14 @@ int main(int const argc, char const **argv) {
     return -1;
 
   std::thread([&] {
-    fetchBookTicker(ioContext, *sslContext, filenameMap[BTICKER]);
+    fetchTradeStream(ioContext, *sslContext, filenameMap[TRADE]);
   }).detach();
 
   std::thread([&] {
     fetchTicker(ioContext, *sslContext, filenameMap[TICKER]);
   }).detach();
-
   std::thread([&] {
-    fetchTradeStream(ioContext, *sslContext, filenameMap[TRADE]);
+    fetchBookTicker(ioContext, *sslContext, filenameMap[BTICKER]);
   }).detach();
 
   std::thread([&] {

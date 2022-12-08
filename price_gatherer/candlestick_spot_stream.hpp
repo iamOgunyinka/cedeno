@@ -22,7 +22,7 @@ public:
     }
   }
   void start() { candlestick_base_t::start(); }
-  void onResultAvailable(candlestick_data_t);
+  void onResultAvailable(candlestick_data_t const &);
 
   inline std::string getWsHost() const { return url_t::spotHostName; }
   inline std::string getWsPortNumber() const { return url_t::spotPortNumber; }

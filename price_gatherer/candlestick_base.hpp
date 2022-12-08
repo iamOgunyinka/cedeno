@@ -259,7 +259,7 @@ template <typename T> void candlestick_base_t<T>::interpretGenericMessages() {
 template <typename T>
 void candlestick_base_t<T>::makeSubscription(internal_token_data_t *token) {
   m_writeBuffer = static_cast<T *>(this)->subscriptionMessage(token->tokenName);
-  std::cout << "WriteBuffer:" << m_writeBuffer << std::endl;
+  // std::cout << "WriteBuffer:" << m_writeBuffer << std::endl;
 
   m_sslWebStream->async_write(
       net::buffer(m_writeBuffer),

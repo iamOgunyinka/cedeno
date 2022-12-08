@@ -80,7 +80,7 @@ internal_token_data_t *websocket_stream_base_t::getNonSubcribedForToken() {
 
 void websocket_stream_base_t::makeSubscription(internal_token_data_t *token) {
   m_writeBuffer = getSubscriptionMessage(token->tokenName);
-  std::cout << "WriteBuffer:" << m_writeBuffer << std::endl;
+  // std::cout << "WriteBuffer:" << m_writeBuffer << std::endl;
 
   m_sslWebStream->async_write(net::buffer(m_writeBuffer),
                               [this, token](auto const errCode, size_t const) {
@@ -164,7 +164,7 @@ void websocket_stream_base_t::interpretGenericMessages() {
       static_cast<char const *>(m_readBuffer->cdata().data());
 
   // do something with the message
-  std::cout << bufferCstr << std::endl;
+  processResponse(bufferCstr, m_readBuffer->size());
 
   if (!m_allTokensSubscribedFor) {
     if (auto t = getNonSubcribedForToken(); t != nullptr)

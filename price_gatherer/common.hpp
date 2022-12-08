@@ -97,16 +97,38 @@ public:
     return true;
   }
 
-  template <typename T>
-  friend std::ostream &operator<<(locked_file_t &f, T const &value) {
-    std::lock_guard<std::mutex> lock_g(f.m_mutex);
-    return ((*f.m_file) << value);
+  template <typename... Args> void write(Args &&...args) {
+    std::lock_guard<std::mutex> lock_g(m_mutex);
+    writeImpl(std::forward<Args>(args)...);
   }
 
   ~locked_file_t() {
     if (m_file)
       m_file->close();
     m_file.reset();
+  }
+
+private:
+  template <class T, class... Args>
+  void writeImpl2(T const &value, Args &&...args) {
+    ((*m_file << args << ", "), ...);
+    *m_file << value << "\n";
+  }
+
+  template <size_t... I0s, size_t... I1s, class... Ts>
+  void writeImpl1(std::index_sequence<I0s...>, // first args
+                  std::index_sequence<I1s...>, // last args
+                  std::tuple<Ts...> args       // all args
+  ) {
+    writeImpl2(std::get<I0s>(std::move(args))..., // get first args
+               std::get<I1s>(std::move(args))...  // and last args
+    );
+  }
+
+  template <class... Ts> inline void writeImpl(Ts &&...ts) {
+    writeImpl1(std::index_sequence<sizeof...(ts) - 1>{}, // last shall be first
+               std::make_index_sequence<sizeof...(ts) - 1>{}, // first be last
+               std::forward_as_tuple(std::forward<Ts>(ts)...));
   }
 };
 
