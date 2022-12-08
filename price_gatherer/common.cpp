@@ -53,10 +53,13 @@ std::optional<candlestick_data_t> parseCandleStickData(char const *str,
 
   auto const dataStreamObject = dataStreamIter->value.GetObject();
   candlestick_data_t data;
+  data.eventTime = dataObject.FindMember("E")->value.GetInt64();
   data.tokenName = dataStreamObject.FindMember("s")->value.GetString();
   data.interval = dataStreamObject.FindMember("i")->value.GetString();
   data.startTime = dataStreamObject.FindMember("t")->value.GetInt64();
-  data.endTime = dataStreamObject.FindMember("T")->value.GetInt64();
+  data.closeTime = dataStreamObject.FindMember("T")->value.GetInt64();
+  data.firstTradeID = dataStreamObject.FindMember("f")->value.GetInt64();
+  data.lastTradeID = dataStreamObject.FindMember("L")->value.GetInt64();
   data.openPrice = dataStreamObject.FindMember("o")->value.GetString();
   data.closePrice = dataStreamObject.FindMember("c")->value.GetString();
   data.highPrice = dataStreamObject.FindMember("h")->value.GetString();

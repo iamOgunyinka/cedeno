@@ -14,8 +14,13 @@ public:
       : candlestick_base_t(ioContext, sslContext), m_tradeMap(tradeMap) {
     for (auto const &[key, _] : tradeMap.dataMap)
       makeSubscriptionFor(key);
+    writeCSVHeader();
   }
-  ~candlestick_spot_stream_t() {}
+  ~candlestick_spot_stream_t() {
+    for (auto &[_, file] : m_tradeMap.dataMap) {
+      file.close();
+    }
+  }
   void start() { candlestick_base_t::start(); }
   void onResultAvailable(candlestick_data_t);
 
@@ -31,6 +36,9 @@ public:
   }
 
 private:
+  void writeCSVHeader();
+
   token_filename_map_t &m_tradeMap;
+  int m_flushInterval = 0;
 };
 } // namespace binance

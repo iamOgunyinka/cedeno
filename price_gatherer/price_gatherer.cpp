@@ -37,7 +37,7 @@ bool createAllFiles(filename_map_td &filenameMap,
 
   std::filesystem::path const rootPath = std::filesystem::current_path();
   for (auto const &tokenName_ : tokens) {
-    auto const tokenName = binance::toLowerString(tokenName_);
+    auto const tokenName = binance::toUpperString(tokenName_);
     for (auto const &streamType :
          {CANDLESTICK, BTICKER, TICKER, TRADE, ORDERBOOK}) {
       for (auto const &tradeType : {SPOT, FUTURES}) {

@@ -32,8 +32,11 @@ struct internal_token_data_t {
 struct candlestick_data_t {
   std::string tokenName;
   std::string interval;
-  time_t startTime;
-  time_t endTime;
+  uint64_t eventTime;
+  uint64_t startTime;
+  uint64_t closeTime;
+  uint64_t firstTradeID;
+  uint64_t lastTradeID;
   std::string openPrice;
   std::string closePrice;
   std::string highPrice;
@@ -67,6 +70,20 @@ public:
     return *this;
   }
 
+  bool isOpen() const { return m_file && m_file->is_open(); }
+  void close() {
+    std::lock_guard<std::mutex> lock_g(m_mutex);
+    if (m_file)
+      m_file->close();
+    m_file.reset();
+  }
+
+  void flush() {
+    std::lock_guard<std::mutex> lock_g(m_mutex);
+    if (m_file)
+      (*m_file) << std::flush;
+  }
+
   bool changeFilename(std::string const &filename) {
     std::lock_guard<std::mutex> lock_g(m_mutex);
     if (m_file)
@@ -81,9 +98,9 @@ public:
   }
 
   template <typename T>
-  friend std::ofstream &operator<<(locked_file_t &f, T const &value) {
+  friend std::ostream &operator<<(locked_file_t &f, T const &value) {
     std::lock_guard<std::mutex> lock_g(f.m_mutex);
-    return f.m_file << value;
+    return ((*f.m_file) << value);
   }
 
   ~locked_file_t() {

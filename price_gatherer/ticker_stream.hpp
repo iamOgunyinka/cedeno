@@ -12,10 +12,12 @@ public:
         m_tradeMap(tradeMap) {
     for (auto const &[key, _] : tradeMap.dataMap)
       makeSubscriptionFor(key);
+    writeCSVHeader();
   }
   ~ticker_stream_t() {}
 
 private:
+  void writeCSVHeader();
   std::string getSubscriptionMessage(std::string const &token) const override;
   std::string getStreamType() const override { return "ticker"; }
   void processResponse(char const *const str,
@@ -35,10 +37,12 @@ public:
         m_tradeMap(tradeMap) {
     for (auto const &[key, _] : tradeMap.dataMap)
       makeSubscriptionFor(key);
+    writeCSVHeader();
   }
   ~book_ticker_stream_t() {}
 
 private:
+  void writeCSVHeader();
   std::string getSubscriptionMessage(std::string const &token) const override;
   std::string getStreamType() const override { return "bookTicker"; }
   void processResponse(char const *const str,

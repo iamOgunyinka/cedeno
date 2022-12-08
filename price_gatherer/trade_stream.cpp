@@ -14,4 +14,10 @@ void trade_stream_t::processResponse(char const *const str,
   (void)length;
   std::cout << "AggTrade:" << str << std::endl;
 }
+
+void trade_stream_t::writeCSVHeader() {
+  for (auto &[_, file] : m_tradeMap.dataMap) {
+    file << "name" << std::endl;
+  }
+}
 } // namespace binance
