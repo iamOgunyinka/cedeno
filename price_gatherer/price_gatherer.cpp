@@ -47,8 +47,11 @@ bool createAllFiles(filename_map_td &filenameMap,
           std::filesystem::create_directories(fullPath);
         }
         auto const filePath = (fullPath / (*currentTime + ".csv")).string();
-        filenameMap[streamType][tradeType].dataMap[tokenName] =
-            binance::locked_file_t(filePath);
+        auto &dataMap = filenameMap[streamType][tradeType].dataMap;
+        if (dataMap.find(filePath) == dataMap.end())
+          dataMap[tokenName] = binance::locked_file_t(filePath);
+        else
+          dataMap[tokenName].changeFilename(filePath);
       }
     }
   }
@@ -102,6 +105,33 @@ void fetchCandlestick(net::io_context &ioContext, net::ssl::context &sslContext,
   ioContext.run();
 }
 
+tm getCurrentDate() {
+  time_t const t = std::time(nullptr);
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)
+#endif // _MSC_VER
+
+  return *std::localtime(&t);
+}
+
+void timeWatcher(filename_map_td &filenameMap,
+                 std::vector<std::string> const &tokens) {
+  tm initialDate = getCurrentDate();
+  while (true) {
+    auto const currentDate = getCurrentDate();
+    if (currentDate.tm_wday != initialDate.tm_wday) {
+      createAllFiles(filenameMap, tokens);
+      initialDate = currentDate;
+      // sleep for 23 hours, 56 minutes
+      auto const timeToSleep =
+          std::chrono::minutes(60 * 23) + std::chrono::minutes(56);
+      std::this_thread::sleep_for(timeToSleep);
+      continue;
+    }
+    std::this_thread::sleep_for(std::chrono::seconds(60));
+  }
+}
+
 int main(int const argc, char const **argv) {
   // auto const maxThreadSize = std::thread::hardware_concurrency();
   net::io_context ioContext;
@@ -123,6 +153,7 @@ int main(int const argc, char const **argv) {
   std::thread([&] {
     fetchTicker(ioContext, *sslContext, filenameMap[TICKER]);
   }).detach();
+
   std::thread([&] {
     fetchBookTicker(ioContext, *sslContext, filenameMap[BTICKER]);
   }).detach();
@@ -130,6 +161,8 @@ int main(int const argc, char const **argv) {
   std::thread([&] {
     fetchCandlestick(ioContext, *sslContext, filenameMap[CANDLESTICK]);
   }).detach();
+
+  std::thread([&] { timeWatcher(filenameMap, tokens); }).detach();
 
   std::this_thread::sleep_for(std::chrono::seconds(1));
   ioContext.run();
