@@ -41,6 +41,7 @@ private:
   inline auto shared_from_this() { return this; }
   inline void restart() {
     resetTokensToDefault();
+    std::this_thread::sleep_for(std::chrono::seconds(5));
     start();
   }
   inline void resetTokensToDefault() {
@@ -112,7 +113,7 @@ template <typename T> void candlestick_base_t<T>::start() {
                                   results_type const &results) {
         if (error_code || results.empty()) {
           std::cerr << error_code.message() << std::endl;
-          return;
+          return self->restart();
         }
         self->websockConnectToResolvedNames(results);
       });
@@ -133,7 +134,7 @@ void candlestick_base_t<T>::websockConnectToResolvedNames(
               resolver_result_type::endpoint_type const &connectedName) {
             if (errorCode) {
               std::cerr << errorCode.message() << std::endl;
-              return;
+              return self->restart();
             }
             self->websockPerformSslHandshake(connectedName);
           });
@@ -167,7 +168,7 @@ void candlestick_base_t<T>::negotiateWebsocketConnection() {
       [self = shared_from_this()](beast::error_code const ec) {
         if (ec) {
           std::cerr << ec.message() << std::endl;
-          return;
+          return self->restart();
         }
         beast::get_lowest_layer(*self->m_sslWebStream).expires_never();
         self->performWebsocketHandshake();
@@ -200,7 +201,6 @@ template <typename T> void candlestick_base_t<T>::performWebsocketHandshake() {
       [self = shared_from_this()](auto const frame_type, auto const &) {
         if (frame_type == beast::websocket::frame_type::close) {
           std::cerr << "Stream closed" << std::endl;
-          self->m_sslWebStream.reset();
           return self->restart();
         }
       });
@@ -213,7 +213,7 @@ template <typename T> void candlestick_base_t<T>::performWebsocketHandshake() {
       [self = shared_from_this()](beast::error_code const ec) {
         if (ec) {
           std::cerr << ec.message() << std::endl;
-          return;
+          return self->restart();
         }
 
         self->waitForMessages();
@@ -259,14 +259,13 @@ template <typename T> void candlestick_base_t<T>::interpretGenericMessages() {
 template <typename T>
 void candlestick_base_t<T>::makeSubscription(internal_token_data_t *token) {
   m_writeBuffer = static_cast<T *>(this)->subscriptionMessage(token->tokenName);
-  // std::cout << "WriteBuffer:" << m_writeBuffer << std::endl;
 
   m_sslWebStream->async_write(
       net::buffer(m_writeBuffer),
       [self = shared_from_this(), token](auto const errCode, size_t const) {
         if (errCode) {
           std::cerr << errCode.message() << std::endl;
-          return;
+          return self->restart();
         }
         self->m_writeBuffer.clear();
         token->subscribedFor = true;

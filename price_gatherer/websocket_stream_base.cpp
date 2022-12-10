@@ -15,7 +15,7 @@ void websocket_stream_base_t::start() {
       [this](auto const error_code, results_type const &results) {
         if (error_code || results.empty()) {
           std::cerr << error_code.message() << std::endl;
-          return;
+          return restart();
         }
         websockConnectToResolvedNames(results);
       });
@@ -34,7 +34,7 @@ void websocket_stream_base_t::websockConnectToResolvedNames(
                  resolver_result_type::endpoint_type const &connectedName) {
             if (errorCode) {
               std::cerr << errorCode.message() << std::endl;
-              return;
+              return restart();
             }
             websockPerformSslHandshake(connectedName);
           });
@@ -86,7 +86,7 @@ void websocket_stream_base_t::makeSubscription(internal_token_data_t *token) {
                               [this, token](auto const errCode, size_t const) {
                                 if (errCode) {
                                   std::cerr << errCode.message() << std::endl;
-                                  return;
+                                  return restart();
                                 }
                                 m_writeBuffer.clear();
                                 token->subscribedFor = true;
@@ -99,7 +99,7 @@ void websocket_stream_base_t::negotiateWebsocketConnection() {
       net::ssl::stream_base::client, [this](beast::error_code const ec) {
         if (ec) {
           std::cerr << ec.message() << std::endl;
-          return;
+          return restart();
         }
         beast::get_lowest_layer(*m_sslWebStream).expires_never();
         performWebsocketHandshake();
@@ -124,7 +124,6 @@ void websocket_stream_base_t::performWebsocketHandshake() {
   m_sslWebStream->control_callback([this](auto const frame_type, auto const &) {
     if (frame_type == beast::websocket::frame_type::close) {
       std::cerr << "Stream closed" << std::endl;
-      m_sslWebStream.reset();
       return restart();
     }
   });
@@ -134,7 +133,7 @@ void websocket_stream_base_t::performWebsocketHandshake() {
                                   [this](beast::error_code const ec) {
                                     if (ec) {
                                       std::cerr << ec.message() << std::endl;
-                                      return;
+                                      return restart();
                                     }
 
                                     waitForMessages();

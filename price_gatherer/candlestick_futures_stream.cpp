@@ -10,14 +10,6 @@ void candlestick_futures_stream_t::onResultAvailable(candlestick_data_t data) {
            data.highPrice, data.lowPrice, data.baseAssetVolume,
            data.numberOfTrades, data.klineIsClosed, data.quoteAssetVolume,
            data.tbBaseAssetVolume, data.tbQuoteAssetVolume);
-  /*
-  os << data.eventTime << "," << data.startTime << "," << data.closeTime << ","
-     << data.interval << "," << data.firstTradeID << "," << data.lastTradeID
-     << "," << data.openPrice << "," << data.closePrice << "," << data.highPrice
-     << "," << data.lowPrice << "," << data.baseAssetVolume << ","
-     << data.numberOfTrades << "," << data.klineIsClosed << ","
-     << data.quoteAssetVolume << "," << data.tbBaseAssetVolume << ","
-     << data.tbQuoteAssetVolume << "\n";*/
   if (++m_flushInterval == 10'000) {
     m_flushInterval = 0;
     os.flush();

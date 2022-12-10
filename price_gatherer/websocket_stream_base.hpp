@@ -56,7 +56,14 @@ private:
   void performWebsocketHandshake();
   void waitForMessages();
   void interpretGenericMessages();
-  inline void restart() { start(); }
+
+  inline void restart() {
+    for (auto &d : m_tokens)
+      d.subscribedFor = false;
+    m_allTokensSubscribedFor = false;
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    start();
+  }
 
   void insertIfNotExists(std::string const &token);
   void makeSubscription(internal_token_data_t *);

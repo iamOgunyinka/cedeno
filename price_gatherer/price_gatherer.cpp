@@ -119,13 +119,15 @@ void timeWatcher(filename_map_td &filenameMap,
   tm initialDate = getCurrentDate();
   while (true) {
     auto const currentDate = getCurrentDate();
-    if (currentDate.tm_wday != initialDate.tm_wday) {
+    if (currentDate.tm_hour != initialDate.tm_hour) {
       createAllFiles(filenameMap, tokens);
+      std::cout << "The time has changed from " << initialDate.tm_hour << ":"
+                << initialDate.tm_min << " to " << currentDate.tm_hour << ":"
+                << currentDate.tm_min << std::endl;
+
       initialDate = currentDate;
-      // sleep for 23 hours, 56 minutes
-      auto const timeToSleep =
-          std::chrono::minutes(60 * 23) + std::chrono::minutes(56);
-      std::this_thread::sleep_for(timeToSleep);
+      // sleep for 58 minutes
+      std::this_thread::sleep_for(std::chrono::minutes(58));
       continue;
     }
     std::this_thread::sleep_for(std::chrono::seconds(60));
@@ -146,24 +148,30 @@ int main(int const argc, char const **argv) {
   if (!createAllFiles(filenameMap, tokens))
     return -1;
 
+  std::cout << "Starting the trade stream..." << std::endl;
   std::thread([&] {
     fetchTradeStream(ioContext, *sslContext, filenameMap[TRADE]);
   }).detach();
 
+  std::cout << "Starting the ticker stream..." << std::endl;
   std::thread([&] {
     fetchTicker(ioContext, *sslContext, filenameMap[TICKER]);
   }).detach();
 
+  std::cout << "Starting the bookTicker stream..." << std::endl;
   std::thread([&] {
     fetchBookTicker(ioContext, *sslContext, filenameMap[BTICKER]);
   }).detach();
 
+  std::cout << "Starting the candleStick stream..." << std::endl;
   std::thread([&] {
     fetchCandlestick(ioContext, *sslContext, filenameMap[CANDLESTICK]);
   }).detach();
 
+  std::cout << "Starting the periodic time watcher..." << std::endl;
   std::thread([&] { timeWatcher(filenameMap, tokens); }).detach();
 
+  std::cout << "Program started successfully!" << std::endl;
   std::this_thread::sleep_for(std::chrono::seconds(1));
   ioContext.run();
   return 0;
