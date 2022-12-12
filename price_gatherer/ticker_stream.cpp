@@ -98,6 +98,11 @@ void ticker_stream_t::processResponse(char const *const str,
       optTicker.has_value()) {
     auto const &ticker = *optTicker;
     auto &os = m_tradeMap.dataMap[ticker.tokenName];
+    if (os.rewriteHeader()) {
+      os.rewriteHeader(false);
+      writeCSVHeader();
+    }
+
     os.write(ticker.eventTime, ticker.statisticsOpenTime,
              ticker.statisticsCloseTime, ticker.firstTradeID,
              ticker.lastTradeID, ticker.numberOfTrades, ticker.priceChange,
@@ -107,7 +112,7 @@ void ticker_stream_t::processResponse(char const *const str,
              ticker.totalTradedBaseAssetVolume,
              ticker.totalTradedQuoteAssetVolume, ticker.bestBidPrice,
              ticker.bestBidQty, ticker.bestAskPrice, ticker.bestAskQty);
-    if (++m_flushInterval == 20'000) {
+    if (++m_flushInterval == 2'000) {
       m_flushInterval = 0;
       os.flush();
     }
@@ -193,11 +198,16 @@ void book_ticker_stream_t::processResponse(char const *const str,
   if (auto const bookTicker = parseBookTicker(str, length);
       bookTicker.has_value()) {
     auto &os = m_tradeMap.dataMap[bookTicker->tokenName];
+    if (os.rewriteHeader()) {
+      os.rewriteHeader(false);
+      writeCSVHeader();
+    }
+
     os.write(bookTicker->orderBookUpdateID, bookTicker->bestBidPrice,
              bookTicker->bestBidQty, bookTicker->bestAskPrice,
              bookTicker->bestAskQty, bookTicker->eventTime,
              bookTicker->transactionTime);
-    if (++m_flushInterval == 20'000) {
+    if (++m_flushInterval == 2'000) {
       m_flushInterval = 0;
       os.flush();
     }

@@ -5,12 +5,18 @@ namespace binance {
 
 void candlestick_futures_stream_t::onResultAvailable(candlestick_data_t data) {
   auto &os = m_tradeMap.dataMap[data.tokenName];
+
+  if (os.rewriteHeader()) {
+    os.rewriteHeader(false);
+    writeCSVHeader();
+  }
+
   os.write(data.eventTime, data.startTime, data.closeTime, data.interval,
            data.firstTradeID, data.lastTradeID, data.openPrice, data.closePrice,
            data.highPrice, data.lowPrice, data.baseAssetVolume,
            data.numberOfTrades, data.klineIsClosed, data.quoteAssetVolume,
            data.tbBaseAssetVolume, data.tbQuoteAssetVolume);
-  if (++m_flushInterval == 10'000) {
+  if (++m_flushInterval == 2'000) {
     m_flushInterval = 0;
     os.flush();
   }

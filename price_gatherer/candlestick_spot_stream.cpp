@@ -6,6 +6,11 @@ namespace binance {
 void candlestick_spot_stream_t::onResultAvailable(
     candlestick_data_t const &data) {
   auto &os = m_tradeMap.dataMap[data.tokenName];
+  if (os.rewriteHeader()) {
+    os.rewriteHeader(false);
+    writeCSVHeader();
+  }
+
   os.write(data.eventTime, data.startTime, data.closeTime, data.interval,
            data.firstTradeID, data.lastTradeID, data.openPrice, data.closePrice,
            data.highPrice, data.lowPrice, data.baseAssetVolume,

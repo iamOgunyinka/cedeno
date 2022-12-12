@@ -52,6 +52,7 @@ struct candlestick_data_t {
 class locked_file_t {
   std::mutex m_mutex;
   std::unique_ptr<std::ofstream> m_file = nullptr;
+  bool m_isWritingHeader = false;
 
 public:
   locked_file_t() = default;
@@ -71,6 +72,8 @@ public:
   }
 
   bool isOpen() const { return m_file && m_file->is_open(); }
+  bool rewriteHeader() const { return m_isWritingHeader; }
+  void rewriteHeader(bool const v) { m_isWritingHeader = v; }
   void close() {
     std::lock_guard<std::mutex> lock_g(m_mutex);
     if (m_file)

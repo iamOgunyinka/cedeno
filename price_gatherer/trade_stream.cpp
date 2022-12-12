@@ -65,9 +65,14 @@ void trade_stream_t::processResponse(char const *const str,
       optTradeStream.has_value()) {
     auto const &t = *optTradeStream;
     auto &os = m_tradeMap.dataMap[t.tokenName];
+    if (os.rewriteHeader()) {
+      os.rewriteHeader(false);
+      writeCSVHeader();
+    }
+
     os.write(t.eventTime, t.aggregateTradeID, t.firstTradeID, t.lastTradeID,
              t.tradeTime, t.price, t.quantity, t.isBuyerMarketMaker);
-    if (++m_flushInterval == 20'000) {
+    if (++m_flushInterval == 2'000) {
       m_flushInterval = 0;
       os.flush();
     }

@@ -48,10 +48,12 @@ bool createAllFiles(filename_map_td &filenameMap,
         }
         auto const filePath = (fullPath / (*currentTime + ".csv")).string();
         auto &dataMap = filenameMap[streamType][tradeType].dataMap;
-        if (dataMap.find(filePath) == dataMap.end())
+        if (dataMap.find(filePath) == dataMap.end()) {
           dataMap[tokenName] = binance::locked_file_t(filePath);
-        else
+        } else {
           dataMap[tokenName].changeFilename(filePath);
+        }
+        dataMap[tokenName].rewriteHeader(true);
       }
     }
   }
