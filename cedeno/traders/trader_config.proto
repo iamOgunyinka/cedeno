@@ -1,0 +1,30 @@
+// Copyright © 2021 Peter Cerno. All rights reserved.
+
+syntax = "proto2";
+
+package trader;
+
+// Rebalancing trader configuration.
+message RebalancingTraderConfig {
+  // Desired alpha-allocation.
+  // For example, alpha = 0.7 means that we would like to keep 70%
+  // of the total portfolio value in the base (crypto)currency,
+  // and 30% in the quote currency.
+  optional float alpha = 1;
+  // Maximum allowed deviation from the desired alpha-allocation.
+  // We allow the actual base (crypto)currency allocation to be within
+  // the interval: (alpha * (1 - epsilon); alpha * (1 + epsilon).
+  optional float epsilon = 2;
+}
+
+// Stop trader configuration.
+message StopTraderConfig {
+  // Margin for setting the stop order price w.r.t. the current price.
+  optional float stop_order_margin = 1;
+  // Margin for moving the stop order price w.r.t. the current price.
+  optional float stop_order_move_margin = 2;
+  // Maximum relative stop order price increase per day.
+  optional float stop_order_increase_per_day = 3;
+  // Maximum relative stop order price decrease per day.
+  optional float stop_order_decrease_per_day = 4;
+}
