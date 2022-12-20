@@ -147,6 +147,7 @@
     <ClCompile Include="candlestick_futures_stream.cpp" />
     <ClCompile Include="candlestick_spot_stream.cpp" />
     <ClCompile Include="common.cpp" />
+    <ClCompile Include="depth_stream.cpp" />
     <ClCompile Include="price_gatherer.cpp" />
     <ClCompile Include="ticker_stream.cpp" />
     <ClCompile Include="trade_stream.cpp" />
@@ -157,6 +158,8 @@
     <ClInclude Include="candlestick_futures_stream.hpp" />
     <ClInclude Include="candlestick_spot_stream.hpp" />
     <ClInclude Include="common.hpp" />
+    <ClInclude Include="container.hpp" />
+    <ClInclude Include="depth_stream.hpp" />
     <ClInclude Include="ticker_stream.hpp" />
     <ClInclude Include="trade_stream.hpp" />
     <ClInclude Include="websocket_stream_base.hpp" />

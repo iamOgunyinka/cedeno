@@ -12,18 +12,16 @@ public:
         m_tradeMap(tradeMap) {
     for (auto const &[key, _] : m_tradeMap.dataMap)
       makeSubscriptionFor(key);
-    writeCSVHeader();
   }
   ~trade_stream_t() {}
 
 private:
-  void writeCSVHeader();
+  void writeCSVHeader(binance::locked_file_t&);
   std::string getSubscriptionMessage(std::string const &token) const override;
   std::string getStreamType() const override { return "aggTrade"; }
   void processResponse(char const *const str, size_t const length) override;
 
 private:
   token_filename_map_t &m_tradeMap;
-  int m_flushInterval = 0;
 };
 } // namespace binance

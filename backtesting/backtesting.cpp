@@ -12,12 +12,17 @@
 #define BTICKER "bookTicker"
 #define TICKER "ticker"
 #define TRADE "trade"
-#define ORDERBOOK "orderBook"
+#define DEPTH "depth"
+
 #define SPOT "spot"
 #define FUTURES "futures"
 
 using stringlist_t = std::vector<std::string>;
-using fs_pathlist_t = std::vector<std::filesystem::path>;
+using stream_type_td = std::string;
+using trade_type_td = std::string;
+using fs_list_t = std::vector<std::filesystem::path>;
+using trade_map_td = std::map<trade_type_td, fs_list_t>;
+using filename_map_td = std::map<stream_type_td, trade_map_td>;
 
 bool isCaseInsensitiveStringCompare(std::string const &s,
                                     std::string const &t) {
@@ -102,7 +107,7 @@ std::vector<std::time_t> intervalsBetweenDates(std::time_t start,
   return timeList;
 }
 
-fs_pathlist_t
+filename_map_td
 getListOfCSVFiles(stringlist_t const &tradeTypes, stringlist_t const &streams,
                   std::time_t const startTime, std::time_t const endTime,
                   std::string const &rootDir, std::string const &token) {
@@ -110,7 +115,7 @@ getListOfCSVFiles(stringlist_t const &tradeTypes, stringlist_t const &streams,
   auto const intervals = intervalsBetweenDates(startTime, endTime);
   auto const tokenName = toUpperString(token);
 
-  fs_pathlist_t paths;
+  filename_map_td paths;
   for (auto const &interval : intervals) {
     auto const date = currentTimeToString(interval, "_").value();
     for (auto const &streamType : streams) {
@@ -122,12 +127,165 @@ getListOfCSVFiles(stringlist_t const &tradeTypes, stringlist_t const &streams,
         for (auto const &file :
              std::filesystem::recursive_directory_iterator(fullPath)) {
           if (std::filesystem::is_regular_file(file))
-            paths.push_back(file);
+            paths[streamType][tradeType].push_back(file);
         }
       }
     }
   }
   return paths;
+}
+
+std::vector<std::string> split_string(std::string const &str,
+                                      char const *delim) {
+  std::size_t const delimLength = std::strlen(delim);
+  std::size_t fromPos{};
+  std::size_t index{str.find(delim, fromPos)};
+  if (index == std::string::npos) {
+    return {str};
+  }
+  std::vector<std::string> result{};
+  while (index != std::string::npos) {
+    result.emplace_back(str.data() + fromPos, index - fromPos);
+    fromPos = index + delimLength;
+    index = str.find(delim, fromPos);
+  }
+
+  if (fromPos < str.length()) {
+    result.emplace_back(str.data() + fromPos, str.size() - fromPos);
+  }
+  return result;
+}
+
+std::chrono::seconds stringToStdInterval(std::string &str) {
+  char const ch = str.back();
+  str.pop_back();
+
+  std::size_t const value = std::stoul(str);
+  switch (ch) {
+  case 's': // seconds
+    return std::chrono::seconds(value);
+  case 'm': // minutes
+    return std::chrono::seconds(value * 60);
+  case 'h': // hour
+    return std::chrono::seconds(value * 3'600);
+  case 'd': // days
+    return std::chrono::seconds(value * 3'600 * 24);
+  case 'w':
+    return std::chrono::seconds(value * 3'600 * 24 * 7);
+  case 'M':
+    return std::chrono::seconds(value * 3'600 * 24 * 7 * 12);
+  }
+  return std::chrono::seconds(0);
+}
+
+struct candlestick_data_t {
+  std::chrono::seconds intervalInSeconds;
+  uint64_t eventTime;
+  uint64_t startTime;
+  uint64_t closeTime;
+  uint64_t firstTradeID;
+  uint64_t lastTradeID;
+  double openPrice;
+  double closePrice;
+  double highPrice;
+  double lowPrice;
+  double baseAssetVolume;
+  double quoteAssetVolume;
+  double tbBaseAssetVolume;  // Taker buy base asset volume
+  double tbQuoteAssetVolume; // Taker buy quote asset volume
+  size_t numberOfTrades;
+  size_t klineIsClosed;
+
+  static candlestick_data_t dataFromCSVLine(std::string const &str) {
+    auto splittedString = split_string(str, ",");
+    candlestick_data_t result;
+
+    if (splittedString.size() != 16) {
+      result.eventTime = 0;
+      return result;
+    }
+    result.eventTime = std::stoull(splittedString[0]);
+    result.startTime = std::stoull(splittedString[1]);
+    result.closeTime = std::stoull(splittedString[2]);
+    result.intervalInSeconds = stringToStdInterval(splittedString[3]);
+    result.firstTradeID = std::stoull(splittedString[4]);
+    result.lastTradeID = std::stoull(splittedString[5]);
+    result.openPrice = std::stod(splittedString[6]);
+    result.closePrice = std::stod(splittedString[7]);
+    result.highPrice = std::stod(splittedString[8]);
+    result.lowPrice = std::stod(splittedString[9]);
+    result.baseAssetVolume = std::stod(splittedString[10]);
+    result.numberOfTrades = std::stoul(splittedString[11]);
+    result.klineIsClosed = std::stoul(splittedString[12]);
+    result.quoteAssetVolume = std::stod(splittedString[13]);
+    result.tbBaseAssetVolume = std::stod(splittedString[14]);
+    result.tbQuoteAssetVolume = std::stod(splittedString[15]);
+    return result;
+  }
+};
+
+struct depth_data_t {
+  std::string tokenName;
+  time_t eventTime = 0;
+  time_t transactionTime = 0;
+  uint64_t firstUpdateID = 0;
+  uint64_t finalUpdateID = 0;
+  uint64_t finalStreamUpdateID = 0;
+
+  struct depth_meta_t {
+    double priceLevel = 0.0;
+    double quantity = 0.0;
+  };
+  std::vector<depth_meta_t> bids;
+  std::vector<depth_meta_t> asks;
+};
+
+template <typename T> struct data_streamer_t {
+  data_streamer_t(fs_list_t const &fileNames) {
+    m_paths.reserve(fileNames.size());
+    for (auto const &filename : fileNames)
+      m_paths.push_back({filename.string(), false});
+  }
+
+private:
+  struct internal_data_t {
+    std::string filename;
+    bool isOpened;
+  };
+  std::vector<internal_data_t> m_paths;
+};
+
+void processBookTickerStream(trade_map_td const &tradeMap) {
+  //
+}
+
+void processCandlestickStream(trade_map_td const &tradeMap) {
+  //
+}
+
+void processTickerStream(trade_map_td const &tradeMap) {
+  //
+}
+
+void processDepthStream(trade_map_td const &tradeMap) {
+  auto sorter =
+      [&tradeMap](
+          char const *str) -> std::optional<data_streamer_t<depth_data_t>> {
+    if (auto iter = tradeMap.find(str); iter != tradeMap.end()) {
+      auto &list = iter->second;
+      std::sort(
+          list.begin(), list.end(),
+          [](std::filesystem::path const &a, std::filesystem::path const &b) {
+            return std::filesystem::last_write_time(a) <
+                   std::filesystem::last_write_time(b);
+          });
+      return data_streamer_t<depth_data_t>(list);
+    }
+    return std::nullopt;
+  };
+
+  auto const spotStreamer = sorter(SPOT);
+  auto const futuresStreamer = sorter(FUTURES);
 }
 
 int main(int argc, char **argv) {
@@ -144,7 +302,7 @@ int main(int argc, char **argv) {
                  "token pair [e.g. btcusdt(default), ethusdt]");
   app.add_option("--streams", streams,
                  "A list of the streams(s) to run. Valid options are: "
-                 "[trade, ticker, bookticker, kline(default)]");
+                 "[trade, ticker, bookticker, depth, kline(default)]");
   app.add_option("--trade-types", tradeTypes,
                  "A list of trade types. Valid options are: "
                  "[futures, spot(default)]");
@@ -173,7 +331,7 @@ int main(int argc, char **argv) {
     streams.push_back(CANDLESTICK);
   } else {
     std::vector<std::string> const validStreams{TRADE, TICKER, BTICKER,
-                                                CANDLESTICK};
+                                                CANDLESTICK, DEPTH};
     for (auto const &stream : streams) {
       if (!listContains(validStreams, stream)) {
         std::cerr << "'" << stream << "' is not a valid stream type";
@@ -227,14 +385,37 @@ int main(int argc, char **argv) {
   if (startTime > endTime)
     std::swap(startTime, endTime);
 
-  auto const csvFiles = getListOfCSVFiles(tradeTypes, streams, startTime,
-                                          endTime, rootDir, token);
+  filename_map_td const csvFiles = getListOfCSVFiles(
+      tradeTypes, streams, startTime, endTime, rootDir, token);
   if (csvFiles.empty()) {
     std::cerr << "No files found matching that criteria" << std::endl;
     return EXIT_FAILURE;
   }
-  std::string const filename = csvFiles[0].string();
-  std::cout << "Filename: " << filename << std::endl;
+
+  if (auto const iter = csvFiles.find(BTICKER); iter != csvFiles.cend()) {
+    std::thread{[bookTickerInfo = iter->second] {
+      processBookTickerStream(bookTickerInfo);
+    }}.detach();
+  }
+
+  if (auto const iter = csvFiles.find(TICKER); iter != csvFiles.cend()) {
+    std::thread{[tickerInfo = iter->second] {
+      processTickerStream(tickerInfo);
+    }}.detach();
+  }
+
+  if (auto const iter = csvFiles.find(CANDLESTICK); iter != csvFiles.cend()) {
+    std::thread{[csData = iter->second] {
+      processCandlestickStream(csData);
+    }}.detach();
+  }
+
+  if (auto const iter = csvFiles.find(DEPTH); iter != csvFiles.cend()) {
+    std::thread{[csData = iter->second] {
+      processDepthStream(csData);
+    }}.detach();
+  }
+
   /*
   csv::CSVReader reader(filename);
   for (auto const &row : reader) {

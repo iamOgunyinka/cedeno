@@ -52,66 +52,36 @@ struct candlestick_data_t {
 class locked_file_t {
   std::mutex m_mutex;
   std::unique_ptr<std::ofstream> m_file = nullptr;
-  bool m_isWritingHeader = false;
+  int m_flushIntervals = 0;
+  bool m_isWritingHeader = true;
 
 public:
   locked_file_t() = default;
-  locked_file_t(std::string const &filename)
-      : m_file(new std::ofstream(filename, std::ios::out)) {
-    if (!(*m_file))
-      throw std::runtime_error("unable to open file");
-  }
-
-  locked_file_t(locked_file_t &&t) noexcept
-      : m_mutex{}, m_file(std::move(t.m_file)) {}
-  locked_file_t &operator=(locked_file_t &&t) noexcept {
-    if (m_file)
-      m_file->close();
-    m_file = std::move(t.m_file);
-    return *this;
-  }
-
-  bool isOpen() const { return m_file && m_file->is_open(); }
-  bool rewriteHeader() const { return m_isWritingHeader; }
-  void rewriteHeader(bool const v) { m_isWritingHeader = v; }
-  void close() {
-    std::lock_guard<std::mutex> lock_g(m_mutex);
-    if (m_file)
-      m_file->close();
-    m_file.reset();
-  }
-
-  void flush() {
-    std::lock_guard<std::mutex> lock_g(m_mutex);
-    if (m_file)
-      (*m_file) << std::flush;
-  }
-
-  bool changeFilename(std::string const &filename) {
-    std::lock_guard<std::mutex> lock_g(m_mutex);
-    if (m_file)
-      m_file->close();
-
-    m_file.reset(new std::ofstream(filename, std::ios::out));
-    if (!(*m_file)) {
-      m_file.reset();
-      return false;
-    }
-    return true;
-  }
+  locked_file_t(std::string const &filename);
+  locked_file_t(locked_file_t &&t) noexcept;
+  locked_file_t &operator=(locked_file_t &&t) noexcept;
+  bool isOpen() const;
+  bool rewriteHeader() const;
+  void rewriteHeader(bool const v);
+  void close();
+  bool changeFilename(std::string const &filename);
 
   template <typename... Args> void write(Args &&...args) {
     std::lock_guard<std::mutex> lock_g(m_mutex);
     writeImpl(std::forward<Args>(args)...);
+    if (++m_flushIntervals >= 200) {
+      m_flushIntervals = 0;
+      flush();
+    }
   }
 
-  ~locked_file_t() {
-    if (m_file)
-      m_file->close();
-    m_file.reset();
-  }
-
+  ~locked_file_t();
 private:
+  void flush() {
+    if (m_file)
+      (*m_file) << std::flush;
+  }
+
   template <class T, class... Args>
   void writeImpl2(T const &value, Args &&...args) {
     ((*m_file << args << ", "), ...);

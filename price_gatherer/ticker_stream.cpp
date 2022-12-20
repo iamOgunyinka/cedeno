@@ -98,10 +98,8 @@ void ticker_stream_t::processResponse(char const *const str,
       optTicker.has_value()) {
     auto const &ticker = *optTicker;
     auto &os = m_tradeMap.dataMap[ticker.tokenName];
-    if (os.rewriteHeader()) {
-      os.rewriteHeader(false);
-      writeCSVHeader();
-    }
+    if (os.rewriteHeader())
+      writeCSVHeader(os);
 
     os.write(ticker.eventTime, ticker.statisticsOpenTime,
              ticker.statisticsCloseTime, ticker.firstTradeID,
@@ -112,23 +110,18 @@ void ticker_stream_t::processResponse(char const *const str,
              ticker.totalTradedBaseAssetVolume,
              ticker.totalTradedQuoteAssetVolume, ticker.bestBidPrice,
              ticker.bestBidQty, ticker.bestAskPrice, ticker.bestAskQty);
-    if (++m_flushInterval == 2'000) {
-      m_flushInterval = 0;
-      os.flush();
-    }
   }
 }
 
-void ticker_stream_t::writeCSVHeader() {
-  for (auto &[_, file] : m_tradeMap.dataMap) {
-    if (file.isOpen()) {
-      file.write("eventTime", "statisticsOpenTime", "statisticsCloseTime",
-                 "firstTradeID", "lastTradeID", "numberOfTrades", "priceChange",
-                 "priceChangePercent", "weightedAveragePrice", "lastPrice",
-                 "lastQuantity", "openPrice", "highPrice", "lowPrice",
-                 "totalTradedBaseAssetVolume", "totalTradedQuoteAssetVolume",
-                 "bestBidPrice", "bestBidQty", "bestAskPrice", "bestAskQty");
-    }
+void ticker_stream_t::writeCSVHeader(binance::locked_file_t &file) {
+  if (file.isOpen()) {
+    file.write("eventTime", "statisticsOpenTime", "statisticsCloseTime",
+               "firstTradeID", "lastTradeID", "numberOfTrades", "priceChange",
+               "priceChangePercent", "weightedAveragePrice", "lastPrice",
+               "lastQuantity", "openPrice", "highPrice", "lowPrice",
+               "totalTradedBaseAssetVolume", "totalTradedQuoteAssetVolume",
+               "bestBidPrice", "bestBidQty", "bestAskPrice", "bestAskQty");
+    file.rewriteHeader(false);
   }
 }
 
@@ -198,28 +191,21 @@ void book_ticker_stream_t::processResponse(char const *const str,
   if (auto const bookTicker = parseBookTicker(str, length);
       bookTicker.has_value()) {
     auto &os = m_tradeMap.dataMap[bookTicker->tokenName];
-    if (os.rewriteHeader()) {
-      os.rewriteHeader(false);
-      writeCSVHeader();
-    }
+    if (os.rewriteHeader())
+      writeCSVHeader(os);
 
     os.write(bookTicker->orderBookUpdateID, bookTicker->bestBidPrice,
              bookTicker->bestBidQty, bookTicker->bestAskPrice,
              bookTicker->bestAskQty, bookTicker->eventTime,
              bookTicker->transactionTime);
-    if (++m_flushInterval == 2'000) {
-      m_flushInterval = 0;
-      os.flush();
-    }
   }
 }
 
-void book_ticker_stream_t::writeCSVHeader() {
-  for (auto &[_, file] : m_tradeMap.dataMap) {
-    if (file.isOpen()) {
-      file.write("OrderBookUpdateID", "BestBidPrice", "BestBidQty",
-                 "BestAskPrice", "BestAskQty", "EventTime", "TransactionTime");
-    }
+void book_ticker_stream_t::writeCSVHeader(binance::locked_file_t &file) {
+  if (file.isOpen()) {
+    file.write("OrderBookUpdateID", "BestBidPrice", "BestBidQty",
+               "BestAskPrice", "BestAskQty", "EventTime", "TransactionTime");
+    file.rewriteHeader(false);
   }
 }
 } // namespace binance

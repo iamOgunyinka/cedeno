@@ -1,5 +1,6 @@
 #include "candlestick_futures_stream.hpp"
 #include "candlestick_spot_stream.hpp"
+#include "depth_stream.hpp"
 #include "ticker_stream.hpp"
 #include "trade_stream.hpp"
 #include <boost/asio/io_context.hpp>
@@ -11,7 +12,8 @@
 #define BTICKER "bookTicker"
 #define TICKER "ticker"
 #define TRADE "trade"
-#define ORDERBOOK "orderBook"
+#define DEPTH "depth"
+
 #define SPOT "spot"
 #define FUTURES "futures"
 
@@ -39,7 +41,7 @@ bool createAllFiles(filename_map_td &filenameMap,
   for (auto const &tokenName_ : tokens) {
     auto const tokenName = binance::toUpperString(tokenName_);
     for (auto const &streamType :
-         {CANDLESTICK, BTICKER, TICKER, TRADE, ORDERBOOK}) {
+         {CANDLESTICK, BTICKER, TICKER, TRADE, DEPTH}) {
       for (auto const &tradeType : {SPOT, FUTURES}) {
         auto const fullPath =
             rootPath / tokenName / *currentDate / streamType / tradeType;
@@ -58,6 +60,19 @@ bool createAllFiles(filename_map_td &filenameMap,
     }
   }
   return true;
+}
+
+void fetchTokenDepth(net::io_context &ioContext, net::ssl::context &sslContext,
+                     trade_map_td &tradeMap) {
+  binance::depth_stream_t fDepthStream(
+      ioContext, sslContext, trade_type_e::futures, tradeMap[FUTURES]);
+
+  binance::depth_stream_t sDepthStream(ioContext, sslContext,
+                                       trade_type_e::spot, tradeMap[SPOT]);
+
+  sDepthStream.start();
+  fDepthStream.start();
+  ioContext.run();
 }
 
 void fetchBookTicker(net::io_context &ioContext, net::ssl::context &sslContext,
@@ -168,6 +183,11 @@ int main(int const argc, char const **argv) {
   std::cout << "Starting the candleStick stream..." << std::endl;
   std::thread([&] {
     fetchCandlestick(ioContext, *sslContext, filenameMap[CANDLESTICK]);
+  }).detach();
+
+  std::cout << "Starting the depth stream ..." << std::endl;
+  std::thread([&] {
+    fetchTokenDepth(ioContext, *sslContext, filenameMap[DEPTH]);
   }).detach();
 
   std::cout << "Starting the periodic time watcher..." << std::endl;

@@ -23,6 +23,50 @@ std::string toUpperString(std::string const &s) {
   return temp;
 }
 
+locked_file_t::locked_file_t(std::string const &filename)
+    : m_file(new std::ofstream(filename, std::ios::out)) {
+  if (!(*m_file))
+    throw std::runtime_error("unable to open file");
+}
+
+locked_file_t::locked_file_t(locked_file_t &&t) noexcept
+    : m_mutex{}, m_file(std::move(t.m_file)) {}
+locked_file_t::~locked_file_t() {
+  if (m_file)
+    m_file->close();
+  m_file.reset();
+}
+
+locked_file_t &locked_file_t::operator=(locked_file_t &&t) noexcept {
+  if (m_file)
+    m_file->close();
+  m_file = std::move(t.m_file);
+  return *this;
+}
+
+bool locked_file_t::isOpen() const { return m_file && m_file->is_open(); }
+bool locked_file_t::rewriteHeader() const { return m_isWritingHeader; }
+void locked_file_t::rewriteHeader(bool const v) { m_isWritingHeader = v; }
+void locked_file_t::close() {
+  std::lock_guard<std::mutex> lock_g(m_mutex);
+  if (m_file)
+    m_file->close();
+  m_file.reset();
+}
+
+bool locked_file_t::changeFilename(std::string const &filename) {
+  std::lock_guard<std::mutex> lock_g(m_mutex);
+  if (m_file)
+    m_file->close();
+
+  m_file.reset(new std::ofstream(filename, std::ios::out));
+  if (!(*m_file)) {
+    m_file.reset();
+    return false;
+  }
+  return true;
+}
+
 std::optional<candlestick_data_t> parseCandleStickData(char const *str,
                                                        size_t const size) {
 #ifdef _MSC_VER

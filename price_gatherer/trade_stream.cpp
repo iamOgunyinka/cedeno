@@ -65,26 +65,19 @@ void trade_stream_t::processResponse(char const *const str,
       optTradeStream.has_value()) {
     auto const &t = *optTradeStream;
     auto &os = m_tradeMap.dataMap[t.tokenName];
-    if (os.rewriteHeader()) {
-      os.rewriteHeader(false);
-      writeCSVHeader();
-    }
+    if (os.rewriteHeader())
+      writeCSVHeader(os);
 
     os.write(t.eventTime, t.aggregateTradeID, t.firstTradeID, t.lastTradeID,
              t.tradeTime, t.price, t.quantity, t.isBuyerMarketMaker);
-    if (++m_flushInterval == 2'000) {
-      m_flushInterval = 0;
-      os.flush();
-    }
   }
 }
 
-void trade_stream_t::writeCSVHeader() {
-  for (auto &[_, file] : m_tradeMap.dataMap) {
-    if (file.isOpen()) {
-      file.write("eventTime", "aggregateTradeID", "firstTradeID", "lastTradeID",
-                 "tradeTime", "price", "quantity", "isBuyerMarketMaker");
-    }
+void trade_stream_t::writeCSVHeader(binance::locked_file_t &file) {
+  if (file.isOpen()) {
+    file.write("eventTime", "aggregateTradeID", "firstTradeID", "lastTradeID",
+               "tradeTime", "price", "quantity", "isBuyerMarketMaker");
+    file.rewriteHeader(false);
   }
 }
 } // namespace binance
