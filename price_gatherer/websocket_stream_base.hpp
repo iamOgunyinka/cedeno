@@ -69,14 +69,16 @@ private:
   void makeSubscription(internal_token_data_t *);
   internal_token_data_t *getNonSubcribedForToken();
 
-private:
+protected:
   net::io_context &m_ioContext;
   net::ssl::context &m_sslContext;
+  std::vector<internal_token_data_t> m_tokens;
   std::optional<resolver> m_resolver = std::nullopt;
+  std::optional<beast::flat_buffer> m_readBuffer;
+
+private:
   std::optional<beast::websocket::stream<beast::ssl_stream<beast::tcp_stream>>>
       m_sslWebStream;
-  std::optional<beast::flat_buffer> m_readBuffer;
-  std::vector<internal_token_data_t> m_tokens;
   std::string m_writeBuffer;
   char const *const m_hostName;
   char const *const m_portNumber;

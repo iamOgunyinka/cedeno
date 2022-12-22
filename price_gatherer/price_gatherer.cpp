@@ -1,5 +1,6 @@
 #include "candlestick_futures_stream.hpp"
 #include "candlestick_spot_stream.hpp"
+#include "depth_stream.hpp"
 #include "ticker_stream.hpp"
 #include "trade_stream.hpp"
 #include <boost/asio/io_context.hpp>
@@ -11,7 +12,8 @@
 #define BTICKER "bookTicker"
 #define TICKER "ticker"
 #define TRADE "trade"
-#define ORDERBOOK "orderBook"
+#define DEPTH "depth"
+
 #define SPOT "spot"
 #define FUTURES "futures"
 
@@ -35,11 +37,12 @@ bool createAllFiles(filename_map_td &filenameMap,
     return false;
   }
 
-  std::filesystem::path const rootPath = std::filesystem::current_path();
+  std::filesystem::path const rootPath =
+      std::filesystem::current_path() / "backtestingFiles";
   for (auto const &tokenName_ : tokens) {
     auto const tokenName = binance::toUpperString(tokenName_);
     for (auto const &streamType :
-         {CANDLESTICK, BTICKER, TICKER, TRADE, ORDERBOOK}) {
+         {CANDLESTICK, BTICKER, TICKER, TRADE, DEPTH}) {
       for (auto const &tradeType : {SPOT, FUTURES}) {
         auto const fullPath =
             rootPath / tokenName / *currentDate / streamType / tradeType;
@@ -58,6 +61,19 @@ bool createAllFiles(filename_map_td &filenameMap,
     }
   }
   return true;
+}
+
+void fetchTokenDepth(net::io_context &ioContext, net::ssl::context &sslContext,
+                     trade_map_td &tradeMap) {
+  binance::depth_stream_t fDepthStream(
+      ioContext, sslContext, trade_type_e::futures, tradeMap[FUTURES]);
+
+  binance::depth_stream_t sDepthStream(ioContext, sslContext,
+                                       trade_type_e::spot, tradeMap[SPOT]);
+
+  sDepthStream.start();
+  fDepthStream.start();
+  ioContext.run();
 }
 
 void fetchBookTicker(net::io_context &ioContext, net::ssl::context &sslContext,
@@ -136,7 +152,7 @@ void timeWatcher(filename_map_td &filenameMap,
   }
 }
 
-int main(int const argc, char const **argv) {
+int main(int argc, char const **argv) {
   // auto const maxThreadSize = std::thread::hardware_concurrency();
   net::io_context ioContext;
   auto sslContext =
@@ -170,11 +186,41 @@ int main(int const argc, char const **argv) {
     fetchCandlestick(ioContext, *sslContext, filenameMap[CANDLESTICK]);
   }).detach();
 
+  std::cout << "Starting the depth stream ..." << std::endl;
+  std::thread([&] {
+    fetchTokenDepth(ioContext, *sslContext, filenameMap[DEPTH]);
+  }).detach();
+
   std::cout << "Starting the periodic time watcher..." << std::endl;
   std::thread([&] { timeWatcher(filenameMap, tokens); }).detach();
 
   std::cout << "Program started successfully!" << std::endl;
   std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  std::optional<net::deadline_timer> timer = std::nullopt;
+
+  if (argc == 2
+#ifdef _DEBUG
+      || argc == 1
+#endif // _DEBUG
+  ) {
+    uint32_t const timerInSeconds =
+#ifdef _DEBUG
+        argc == 1 ? 60 : std::stoul(argv[1]);
+#else
+        std::stoi(argv[1]);
+#endif // _DEBUG
+
+    if (timerInSeconds != 0) {
+      timer.emplace(ioContext);
+      timer->expires_from_now(boost::posix_time::seconds(timerInSeconds));
+      timer->async_wait(
+          [&ioContext](boost::system::error_code const &) mutable {
+            ioContext.stop();
+            // ioContext.reset();
+          });
+    }
+  }
   ioContext.run();
   return 0;
 }
