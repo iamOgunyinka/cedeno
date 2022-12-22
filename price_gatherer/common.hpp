@@ -63,7 +63,7 @@ public:
   bool isOpen() const;
   bool rewriteHeader() const;
   void rewriteHeader(bool const v);
-  void close();
+  void close() { return closeImpl(); }
   bool changeFilename(std::string const &filename);
 
   template <typename... Args> void write(Args &&...args) {
@@ -75,8 +75,11 @@ public:
     }
   }
 
-  ~locked_file_t();
+  ~locked_file_t() { closeImpl(); }
+
 private:
+  void closeImpl();
+
   void flush() {
     if (m_file)
       (*m_file) << std::flush;
@@ -84,7 +87,7 @@ private:
 
   template <class T, class... Args>
   void writeImpl2(T const &value, Args &&...args) {
-    ((*m_file << args << ", "), ...);
+    ((*m_file << args << ","), ...);
     *m_file << value << "\n";
   }
 

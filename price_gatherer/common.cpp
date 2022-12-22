@@ -31,36 +31,32 @@ locked_file_t::locked_file_t(std::string const &filename)
 
 locked_file_t::locked_file_t(locked_file_t &&t) noexcept
     : m_mutex{}, m_file(std::move(t.m_file)) {}
-locked_file_t::~locked_file_t() {
-  if (m_file)
-    m_file->close();
-  m_file.reset();
-}
 
 locked_file_t &locked_file_t::operator=(locked_file_t &&t) noexcept {
-  if (m_file)
-    m_file->close();
+  closeImpl();
+
+  std::lock_guard<std::mutex> lock_g(m_mutex);
   m_file = std::move(t.m_file);
   return *this;
+}
+
+void locked_file_t::closeImpl() {
+  std::lock_guard<std::mutex> lock_g(m_mutex);
+  if (m_file && m_file->is_open())
+    m_file->close();
+  m_file.reset();
 }
 
 bool locked_file_t::isOpen() const { return m_file && m_file->is_open(); }
 bool locked_file_t::rewriteHeader() const { return m_isWritingHeader; }
 void locked_file_t::rewriteHeader(bool const v) { m_isWritingHeader = v; }
-void locked_file_t::close() {
-  std::lock_guard<std::mutex> lock_g(m_mutex);
-  if (m_file)
-    m_file->close();
-  m_file.reset();
-}
 
 bool locked_file_t::changeFilename(std::string const &filename) {
-  std::lock_guard<std::mutex> lock_g(m_mutex);
-  if (m_file)
-    m_file->close();
+  closeImpl();
 
+  std::lock_guard<std::mutex> lock_g(m_mutex);
   m_file.reset(new std::ofstream(filename, std::ios::out));
-  if (!(*m_file)) {
+  if (!m_file->is_open()) {
     m_file.reset();
     return false;
   }

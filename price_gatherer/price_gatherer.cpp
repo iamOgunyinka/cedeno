@@ -37,7 +37,8 @@ bool createAllFiles(filename_map_td &filenameMap,
     return false;
   }
 
-  std::filesystem::path const rootPath = std::filesystem::current_path();
+  std::filesystem::path const rootPath =
+      std::filesystem::current_path() / "backtestingFiles";
   for (auto const &tokenName_ : tokens) {
     auto const tokenName = binance::toUpperString(tokenName_);
     for (auto const &streamType :
@@ -151,7 +152,7 @@ void timeWatcher(filename_map_td &filenameMap,
   }
 }
 
-int main(int const argc, char const **argv) {
+int main(int argc, char const **argv) {
   // auto const maxThreadSize = std::thread::hardware_concurrency();
   net::io_context ioContext;
   auto sslContext =
@@ -195,6 +196,31 @@ int main(int const argc, char const **argv) {
 
   std::cout << "Program started successfully!" << std::endl;
   std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  std::optional<net::deadline_timer> timer = std::nullopt;
+
+  if (argc == 2
+#ifdef _DEBUG
+      || argc == 1
+#endif // _DEBUG
+  ) {
+    uint32_t const timerInSeconds =
+#ifdef _DEBUG
+        argc == 1 ? 60 : std::stoul(argv[1]);
+#else
+        std::stoi(argv[1]);
+#endif // _DEBUG
+
+    if (timerInSeconds != 0) {
+      timer.emplace(ioContext);
+      timer->expires_from_now(boost::posix_time::seconds(timerInSeconds));
+      timer->async_wait(
+          [&ioContext](boost::system::error_code const &) mutable {
+            ioContext.stop();
+            // ioContext.reset();
+          });
+    }
+  }
   ioContext.run();
   return 0;
 }
