@@ -149,6 +149,7 @@
     <ClCompile Include="depth_data.cpp" />
     <ClCompile Include="matching_engine.cpp" />
     <ClCompile Include="order_book.cpp" />
+    <ClCompile Include="user_data.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="candlestick_data.hpp" />
@@ -157,6 +158,7 @@
     <ClInclude Include="depth_data.hpp" />
     <ClInclude Include="matching_engine.hpp" />
     <ClInclude Include="order_book.hpp" />
+    <ClInclude Include="user_data.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

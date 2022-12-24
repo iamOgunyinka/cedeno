@@ -17,32 +17,6 @@
 
 namespace backtesting {
 
-enum class trade_type_e : int {
-  spot,
-  futures,
-};
-
-enum class trade_side_e : int {
-  sell,
-  buy,
-};
-
-enum class trade_market_e : int {
-  limit,
-  market,
-};
-
-struct user_order_request_t {
-  std::string tokenName;
-  double quantity = 0.0;
-  double priceLevel = 0.0;
-  double leverage = 1.0;
-
-  trade_side_e side;
-  trade_type_e type;
-  trade_market_e market;
-};
-
 inline namespace utils {
 using fs_list_t = std::vector<std::filesystem::path>;
 using stringlist_t = std::vector<std::string>;
@@ -69,7 +43,4 @@ std::optional<std::string> currentTimeToString(std::time_t const currentTime,
                                                std::string const &delim);
 bool isCaseInsensitiveStringCompare(std::string const &s, std::string const &t);
 } // namespace utils
-
-int64_t initiateOrder(user_order_request_t const &order);
-
 } // namespace backtesting
