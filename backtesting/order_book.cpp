@@ -1,4 +1,5 @@
 #include "order_book.hpp"
+#include <spdlog/spdlog.h>
 
 namespace backtesting {
 
@@ -59,20 +60,20 @@ void updateSidesWithNewData(std::vector<depth_data_t::depth_meta_t> const &src,
              dest.end());
 }
 
-void pushTrade(trade_list_t &result, user_order_request_t const &order,
+void pushTrade(trade_list_t &result, order_data_t const &order,
                double const qty, double const amount, uint64_t const orderID) {
   trade_list_t::value_type trade;
-  trade.quantityExec = qty;
+  trade.quantityExecuted = qty;
   trade.amountPerPiece = amount;
   trade.orderID = orderID;
   trade.side = order.side;
-  trade.token.name = order.token.name;
+  trade.tokenName = order.tokenName;
   trade.tradeID = tradeNumber++;
   result.push_back(std::move(trade));
 };
 
 trade_list_t marketMatcher(std::vector<depth_data_t::depth_meta_t> &list,
-                           user_order_request_t const &order, double quantity,
+                           order_data_t const &order, double quantity,
                            uint64_t const orderID) {
   if (list.empty())
     return {};
@@ -120,7 +121,7 @@ void order_book_t::run() {
   setNextTimer();
 }
 
-trade_list_t order_book_t::match(user_order_request_t order) {
+trade_list_t order_book_t::match(order_data_t order) {
   auto const isBuying = (order.side == trade_side_e::buy);
   auto &bids = m_currentBook.bids;
   auto &asks = m_currentBook.asks;
@@ -268,7 +269,7 @@ void order_book_t::setNextTimer() {
 
   auto const timeDiff = m_nextData.eventTime - m_currentTimer;
 #ifdef _DEBUG
-  std::cout << "TimeDiff: " << timeDiff << std::endl;
+  spdlog::debug("TimeDiff: {}", timeDiff);
   assert(timeDiff > 0);
 #else
   if (timeDiff <= 0LL)
@@ -287,11 +288,13 @@ void order_book_t::setNextTimer() {
 #ifdef _DEBUG
 void order_book_t::printOrderBook() {
   for (auto const &ask : m_currentBook.asks)
-    std::cout << ask.priceLevel << " -> " << ask.quantity << std::endl;
-  std::cout << "================" << std::endl;
+    spdlog::debug("{} -> {}", ask.priceLevel, ask.quantity);
+
+  spdlog::debug("================");
+
   for (auto const &bid : m_currentBook.bids)
-    std::cout << bid.priceLevel << " -> " << bid.quantity << std::endl;
-  std::cout << "<<========END========>>" << std::endl << std::endl;
+    spdlog::debug("{} -> {}", bid.priceLevel, bid.quantity);
+  spdlog::debug("<<========END========>>\n");
 }
 #endif
 

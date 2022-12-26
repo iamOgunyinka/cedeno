@@ -143,6 +143,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="adaptor.cpp" />
+    <ClCompile Include="database_connector.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="candlestick_data.cpp" />
     <ClCompile Include="common.cpp" />
@@ -152,8 +154,10 @@
     <ClCompile Include="user_data.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="adaptor.hpp" />
     <ClInclude Include="candlestick_data.hpp" />
     <ClInclude Include="common.hpp" />
+    <ClInclude Include="database_connector.hpp" />
     <ClInclude Include="data_streamer.hpp" />
     <ClInclude Include="depth_data.hpp" />
     <ClInclude Include="matching_engine.hpp" />

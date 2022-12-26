@@ -4,9 +4,12 @@
 
 #include <CLI11/CLI11.hpp>
 #include <boost/asio/io_context.hpp>
-#include <iostream>
+#include <random>
+#include <spdlog/spdlog.h>
 
+#include "adaptor.hpp"
 #include "candlestick_data.hpp"
+#include "database_connector.hpp"
 #include "depth_data.hpp"
 
 void processBookTickerStream(backtesting::trade_map_td const &tradeMap) {
@@ -17,8 +20,105 @@ void processTickerStream(backtesting::trade_map_td const &tradeMap) {
   //
 }
 
-using namespace backtesting::utils;
+std::string getDatabaseConfigPath() {
+  return (std::filesystem::current_path()
+#ifdef _DEBUG
+          / "scripts"
+#endif // _DEBUG
+          / "config" / "database.ini")
+      .string();
+}
 
+void setupDummyList(backtesting::db_token_list_t const &tokenList,
+                    backtesting::database_connector_t &dbConnector,
+                    std::vector<backtesting::db_user_t> &userList) {
+  using backtesting::trade_market_e;
+  using backtesting::trade_side_e;
+  using backtesting::trade_type_e;
+
+  std::random_device rd{};
+  std::mt19937 gen{rd()};
+  std::uniform_int_distribution<> uid(0, tokenList.size());
+
+  assert(dbConnector.addNewUser("joshua"));
+  userList = dbConnector.getUserIDs();
+  assert(!userList.empty());
+  assert(userList[0].userID == 1);
+
+  backtesting::db_user_t &user = userList[0];
+
+  backtesting::db_owned_token_list_t ownedTokens;
+  ownedTokens.reserve(20);
+  for (int i = 0; i < 20; ++i) {
+    auto &token = tokenList[uid(gen)];
+    backtesting::db_owned_token_t ownToken;
+    ownToken.ownerID = user.userID;
+    ownToken.tokenID = token.tokenID;
+    ownToken.amountAvailable = 500.0;
+    ownedTokens.push_back(std::move(ownToken));
+  }
+
+  backtesting::db_user_order_list_t orderList;
+  orderList.reserve(10);
+
+  for (int i = 0; i < 10; ++i) {
+    auto const isEven = i % 5 == 0;
+    auto &token = tokenList[uid(gen)];
+    backtesting::db_user_order_t order;
+    order.leverage = 10.0;
+    order.market = int(isEven ? trade_market_e::limit : trade_market_e::market);
+    order.priceLevel = double(i);
+    order.quantity = double(i) + 1.0;
+    order.side = int(isEven ? trade_side_e::buy : trade_side_e::sell);
+    order.tokenID = token.tokenID;
+    order.type = int(isEven ? trade_type_e::futures : trade_type_e::spot);
+    order.userID = user.userID;
+    orderList.push_back(std::move(order));
+  }
+
+  assert(dbConnector.addUserOwnedTokens(ownedTokens));
+  assert(dbConnector.addOrderList(orderList));
+}
+
+void saveTokenFromFileToDatabase(backtesting::database_connector_t &dbConnector,
+                                 backtesting::db_token_list_t &dbTokenList,
+                                 std::string const &rootPath) {
+  using backtesting::trade_type_e;
+  assert(dbTokenList.empty());
+
+  std::vector<std::pair<trade_type_e, char const *>> const pair{
+      {trade_type_e::futures, "futures.csv"}, {trade_type_e::spot, "spot.csv"}};
+
+  auto const dirPath = std::filesystem::path(rootPath);
+  if (!std::filesystem::exists(dirPath))
+    return;
+
+  for (auto const &[tradeType, filename] : pair) {
+    auto const path = dirPath / filename;
+    if (!std::filesystem::exists(path))
+      continue;
+
+    std::ifstream file(path, std::ios::in);
+    if (!file)
+      continue;
+
+    std::string line;
+    while (std::getline(file, line)) {
+      backtesting::utils::trim(line);
+      if (!line.empty()) {
+        backtesting::db_token_list_t::value_type d;
+        d.name = line;
+        d.tradeType = (int)tradeType;
+        dbTokenList.push_back(std::move(d));
+      }
+    }
+  }
+  dbConnector.addTokenList(dbTokenList);
+  dbTokenList.clear();
+  dbTokenList = dbConnector.getListOfAllTokens();
+}
+
+using namespace backtesting::utils;
 int main(int argc, char **argv) {
   CLI::App app{"backtesting software for Creed & Bear LLC"};
 
@@ -31,7 +131,17 @@ int main(int argc, char **argv) {
   std::string rootDir;
   std::string dateFromStr;
   std::string dateToStr;
+  std::string dbConfigFilename = getDatabaseConfigPath();
+  std::string dbLaunchType = "development";
 
+  app.add_option("--db-config", dbConfigFilename,
+                 fmt::format("database configuration filename "
+                             "(default: '{}')",
+                             dbConfigFilename));
+  app.add_option("--db-launch-type", dbLaunchType,
+                 fmt::format("database configuration"
+                             " launch type(default: '{}')",
+                             dbLaunchType));
   app.add_option("--tokens", tokenList,
                  "a list of token pairs [e.g. btcusdt(default), ethusdt]");
   app.add_option("--streams", streams,
@@ -50,18 +160,31 @@ int main(int argc, char **argv) {
 
   CLI11_PARSE(app, argc, argv);
 #ifdef _DEBUG
-  std::cout << "start date: " << dateFromStr << "\n"
-            << "end date: " << dateToStr << "\n"
-            << "rootDir: " << rootDir << "\n";
+  spdlog::info("start date: {}", dateFromStr);
+  spdlog::info("end date: {}", dateToStr);
+  spdlog::info("rootDir: {}", rootDir);
 
   for (auto const &token : tokenList)
-    std::cout << "token: " << token << std::endl;
+    spdlog::info("token: {}", token);
   for (auto const &s : streams)
-    std::cout << "stream: " << s << std::endl;
+    spdlog::info("stream: {}", s);
   for (auto const &t : tradeTypes)
-    std::cout << "trade: " << t << std::endl;
+    spdlog::info("trade: {}", t);
 
 #endif // _DEBUG
+
+  if (dbLaunchType.empty())
+    dbLaunchType = "development";
+
+  if (dbConfigFilename.empty())
+    dbConfigFilename = getDatabaseConfigPath();
+
+  auto const dbConfig =
+      backtesting::parse_database_file(dbConfigFilename, dbLaunchType);
+  if (!dbConfig) {
+    spdlog::error("Unable to get database configuration values");
+    return EXIT_FAILURE;
+  }
 
   if (streams.empty()) {
     streams.push_back(DEPTH);
@@ -70,7 +193,7 @@ int main(int argc, char **argv) {
                                                 CANDLESTICK, DEPTH};
     for (auto const &stream : streams) {
       if (!listContains(validStreams, stream)) {
-        std::cerr << "'" << stream << "' is not a valid stream type";
+        spdlog::error("'{}' is not a valid stream type", stream);
         return EXIT_FAILURE;
       }
     }
@@ -82,7 +205,7 @@ int main(int argc, char **argv) {
     std::vector<std::string> const validTrades{SPOT, FUTURES};
     for (auto const &trade : tradeTypes) {
       if (!listContains(validTrades, trade)) {
-        std::cerr << "'" << trade << "' is not a valid trade type";
+        spdlog::error("'{}' is not a valid trade type", trade);
         return EXIT_FAILURE;
       }
     }
@@ -104,23 +227,21 @@ int main(int argc, char **argv) {
 #endif // _DEBUG
 
   if (!std::filesystem::exists(rootDir)) {
-    std::cerr << "'" << rootDir << "' does not exist" << std::endl;
+    spdlog::error("'{}' does not exist.", rootDir);
     return EXIT_FAILURE;
   }
 
 #ifdef _DEBUG
   if (dateFromStr.empty()) {
     constexpr std::size_t const last24hrs = 3'600 * 24;
-    dateFromStr = backtesting::utils::currentTimeToString(
-                      std::time(nullptr) - last24hrs, "-")
-                      .value() +
-                  " 00:00:00";
+    dateFromStr = fmt::format(
+        "{} 00:00:00",
+        currentTimeToString(std::time(nullptr) - last24hrs, "-").value());
   }
 
   if (dateToStr.empty()) {
-    dateToStr = backtesting::utils::currentTimeToString(std::time(nullptr), "-")
-                    .value() +
-                " 11:59:59";
+    dateToStr = fmt::format(
+        "{} 11:59:59", currentTimeToString(std::time(nullptr), "-").value());
   }
 #endif // _DEBUG
 
@@ -129,8 +250,7 @@ int main(int argc, char **argv) {
       optStartTime.has_value()) {
     startTime = *optStartTime;
   } else {
-    std::cerr << "Unable to calculate the start date from user input"
-              << std::endl;
+    spdlog::error("Unable to calculate the start date from user input");
     return EXIT_FAILURE;
   }
 
@@ -138,8 +258,7 @@ int main(int argc, char **argv) {
       optEndTime.has_value()) {
     endTime = *optEndTime;
   } else {
-    std::cerr << "Unable to calculate the end date from user input"
-              << std::endl;
+    spdlog::error("Unable to calculate the end date from user input");
     return EXIT_FAILURE;
   }
 
@@ -149,8 +268,37 @@ int main(int argc, char **argv) {
   filename_map_td const csvFiles = getListOfCSVFiles(
       tokenList, tradeTypes, streams, startTime, endTime, rootDir);
   if (csvFiles.empty()) {
-    std::cerr << "No files found matching that criteria" << std::endl;
+    spdlog::error("No files found matching that criteria");
     return EXIT_FAILURE;
+  }
+
+  auto databaseConnector =
+      backtesting::database_connector_t::s_get_db_connector();
+  databaseConnector->username(dbConfig.username);
+  databaseConnector->password(dbConfig.password);
+  databaseConnector->database_name(dbConfig.db_dns);
+  if (!databaseConnector->connect())
+    return EXIT_FAILURE;
+
+  auto dbTokenList = databaseConnector->getListOfAllTokens();
+  if (dbTokenList.empty())
+    saveTokenFromFileToDatabase(*databaseConnector, dbTokenList, rootDir);
+  auto dbUserList = databaseConnector->getUserIDs();
+  if (dbUserList.empty())
+    setupDummyList(dbTokenList, *databaseConnector, dbUserList);
+
+  auto const allTokens =
+      backtesting::adaptor::dbTokenListToBtTokenList(dbTokenList);
+  backtesting::user_data_list_t users;
+  for (auto const &u : dbUserList) {
+    backtesting::user_data_t user;
+    user.tokensOwned = backtesting::adaptor::dbOwnedTokenListToBtOwnedToken(
+        databaseConnector->getOwnedTokensByUser(u.userID), dbTokenList);
+    user.orders = backtesting::adaptor::dbOrderListToBtOrderList(
+        databaseConnector->getOrderForUser(u.userID), dbTokenList);
+    user.trades = backtesting::adaptor::dbTradeListToBtTradeList(
+        databaseConnector->getTradesForUser(u.userID), dbTokenList);
+    users.push_back(std::move(user));
   }
 
   if (auto const iter = csvFiles.find(BTICKER); iter != csvFiles.cend()) {

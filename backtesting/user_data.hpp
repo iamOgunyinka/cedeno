@@ -29,15 +29,24 @@ enum class order_result_e : int {
 
 struct token_data_t {
   std::string name;
-  double amountInUse = 0.0;
-  double amountAvailable = 0.0;
-  uint64_t databaseConnectID = 0;
+  std::string baseAsset;
+  std::string quoteAsset;
+  trade_type_e tradeType;
 };
 
-struct user_order_request_t {
-  token_data_t token{};
-  double quantity{};
-  double priceLevel{};
+struct token_owned_by_user_t {
+  std::string tokenName;
+  double amountInUse = 0.0;
+  double amountAvailable = 0.0;
+};
+using token_owned_list_t = std::vector<token_owned_by_user_t>;
+
+struct order_data_t {
+  std::string tokenName;
+  uint64_t orderID = 0;
+  uint64_t userID = 0;
+  double quantity = 0.0;
+  double priceLevel = 0.0;
   double leverage = 1.0;
 
   trade_side_e side;
@@ -45,30 +54,31 @@ struct user_order_request_t {
   trade_market_e market;
 };
 
+using order_list_t = std::vector<order_data_t>;
+
 struct trade_data_t {
-  uint64_t orderID = 0;
+  std::string tokenName;
   uint64_t tradeID = 0;
-  double quantityExec = 0.0;
+  uint64_t orderID = 0;
+  double quantityExecuted = 0.0;
   double amountPerPiece = 0.0;
-  token_data_t token;
   trade_side_e side;
 };
-
-struct user_data_t {
-  std::vector<token_data_t> tokens;
-  std::vector<trade_data_t> trades;
-  uint64_t userID = 0;
-
-  // public:
-  //  std::unique_ptr<user_order_request_t> createOrder();
-};
-
-class database_connection_t {
-  //
-};
-
 using trade_list_t = std::vector<trade_data_t>;
 
-trade_list_t initiateOrder(user_order_request_t const &order);
+struct user_data_t {
+  uint64_t userID = 0;
+  trade_list_t trades;
+  order_list_t orders;
+  token_owned_list_t tokensOwned;
 
+  order_data_t createOrder(std::string const &tokenName, double const quantity,
+                           double const price, double const leverage = 1.0,
+                           trade_type_e const type = trade_type_e::spot,
+                           trade_side_e const side = trade_side_e::buy,
+                           trade_market_e const market = trade_market_e::limit);
+};
+using user_data_list_t = std::vector<user_data_t>;
+
+trade_list_t initiateOrder(order_data_t const &order);
 } // namespace backtesting

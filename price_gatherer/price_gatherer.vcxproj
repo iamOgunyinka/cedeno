@@ -150,7 +150,7 @@
     <ClCompile Include="candlestick_spot_stream.cpp" />
     <ClCompile Include="common.cpp" />
     <ClCompile Include="depth_stream.cpp" />
-    <ClCompile Include="price_gatherer.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="ticker_stream.cpp" />
     <ClCompile Include="trade_stream.cpp" />
     <ClCompile Include="websocket_stream_base.cpp" />

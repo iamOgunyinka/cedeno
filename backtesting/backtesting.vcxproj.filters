@@ -36,6 +36,12 @@
     <ClCompile Include="user_data.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="database_connector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="adaptor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="order_book.hpp">
@@ -57,6 +63,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="user_data.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="database_connector.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="adaptor.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

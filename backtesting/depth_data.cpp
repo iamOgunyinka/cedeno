@@ -139,14 +139,14 @@ depth_data_t::dataFromCSVStream(data_streamer_t<depth_data_t> &dataStreamer) {
   return data;
 }
 
-trade_list_t initiateOrder(user_order_request_t const &order) {
+trade_list_t initiateOrder(order_data_t const &order) {
   if (order.priceLevel < 0.0 || order.quantity < 0.0 || order.leverage < 1.0)
     return {};
 
   auto iter = std::find_if(globalOrderBooks.begin(), globalOrderBooks.end(),
                            [&order](global_order_book_t &orderBook) {
                              return utils::isCaseInsensitiveStringCompare(
-                                 orderBook.tokenName, order.token.name);
+                                 orderBook.tokenName, order.tokenName);
                            });
   if (iter == globalOrderBooks.end())
     return {};

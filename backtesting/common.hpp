@@ -26,6 +26,14 @@ using token_map_td = std::map<std::string, backtesting::fs_list_t>;
 using trade_map_td = std::map<trade_type_td, token_map_td>;
 using filename_map_td = std::map<stream_type_td, trade_map_td>;
 
+void ltrim(std::string &s);
+void rtrim(std::string &s);
+void trim(std::string &s);
+std::string ltrim_copy(std::string s);
+std::string rtrim_copy(std::string s);
+std::string trim_copy(std::string s);
+void trim_string(std::string &str);
+
 std::optional<std::time_t> stringToTimeT(std::string const &s);
 std::string toUpperString(std::string const &s);
 bool listContains(std::vector<std::string> const &container,

@@ -152,6 +152,33 @@ void timeWatcher(filename_map_td &filenameMap,
   }
 }
 
+void fetchAllTokens(net::io_context &ioContext, net::ssl::context &sslContext) {
+  std::vector<std::pair<trade_type_e, char const *>> const pair{
+      {trade_type_e::futures, "futures.csv"}, {trade_type_e::spot, "spot.csv"}};
+
+  auto const dirPath = std::filesystem::current_path() / "backtestingFiles";
+  if (!std::filesystem::exists(dirPath))
+    std::filesystem::create_directories(dirPath);
+
+  for (auto const &[tradeType, filename] : pair) {
+    auto const tokenList =
+        binance::fetchToken(ioContext, sslContext, tradeType);
+    if (tokenList.empty())
+      continue;
+
+    auto const path = dirPath / filename;
+    if (std::filesystem::exists(path))
+      std::filesystem::remove(path);
+
+    std::ofstream file(path, std::ios::trunc);
+    if (!file)
+      continue;
+    for (auto const &token : tokenList)
+      file << token << std::endl;
+    file.close();
+  }
+}
+
 int main(int argc, char const **argv) {
   // auto const maxThreadSize = std::thread::hardware_concurrency();
   net::io_context ioContext;
@@ -162,6 +189,10 @@ int main(int argc, char const **argv) {
 
   std::vector<std::string> const tokens{"BNBUSDT", "BTCUSDT", "RUNEUSDT",
                                         "ETHUSDT"};
+  std::cout << "Fetching all tokens..." << std::endl;
+  fetchAllTokens(ioContext, *sslContext);
+  std::cout << "[DONE] Fetching all tokens..." << std::endl;
+
   filename_map_td filenameMap;
   if (!createAllFiles(filenameMap, tokens))
     return -1;
@@ -211,7 +242,7 @@ int main(int argc, char const **argv) {
         std::stoi(argv[1]);
 #endif // _DEBUG
 
-    if (timerInSeconds != 0) {
+    if (timerInSeconds > 0) {
       timer.emplace(ioContext);
       timer->expires_from_now(boost::posix_time::seconds(timerInSeconds));
       timer->async_wait(
