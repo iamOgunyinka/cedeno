@@ -162,4 +162,61 @@ void depth_stream_t::getDepthSnapshotNoAsync() {
   }
 }
 
+std::vector<std::string> fetchToken(net::io_context &ioContext,
+                                    net::ssl::context &sslContext,
+                                    trade_type_e const tradeType) {
+  std::optional<net::ip::tcp::resolver> resolver;
+
+  bool const isFutures = (tradeType == trade_type_e::futures);
+  std::string const prefix = isFutures ? "f" : "";
+  auto const host = prefix + "api.binance.com";
+  beast::ssl_stream<beast::tcp_stream> stream(ioContext, sslContext);
+  // Set SNI Hostname (many hosts need this to handshake successfully)
+  if (!SSL_set_tlsext_host_name(stream.native_handle(), host.c_str())) {
+    beast::error_code ec{static_cast<int>(::ERR_get_error()),
+                         net::error::get_ssl_category()};
+    return {};
+  }
+  resolver.emplace(ioContext);
+  auto const results = resolver->resolve(host, "443");
+  resolver.reset();
+
+  beast::get_lowest_layer(stream).connect(results);
+  // Perform the SSL handshake
+  stream.handshake(net::ssl::stream_base::client);
+
+  auto const path =
+      (isFutures ? "/fapi/v1/ticker/price" : "/api/v3/ticker/price");
+  http::request<http::string_body> request{http::verb::get, path, 11};
+  request.set(http::field::host, host);
+  request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+  request.set(http::field::accept, "*/*");
+
+  http::write(stream, request);
+
+  // Declare a container to hold the response
+  http::response<http::string_body> response;
+  beast::flat_buffer readBuffer;
+
+  // Receive the HTTP response
+  http::read(stream, readBuffer, response);
+  boost::system::error_code ec;
+  stream.shutdown(ec);
+
+  auto &body = response.body();
+  rapidjson::Document doc;
+  doc.Parse(body.c_str(), body.size());
+
+  assert(doc.IsArray());
+  std::vector<std::string> result;
+  result.reserve(doc.Size());
+
+  for (size_t i = 0; i < doc.Size(); ++i) {
+    assert(doc[i].IsObject());
+    auto const item = doc[i].GetObj();
+    std::string const symbol = item.FindMember("symbol")->value.GetString();
+    result.push_back(symbol);
+  }
+  return result;
+}
 } // namespace binance

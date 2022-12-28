@@ -362,3 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /price_gatherer/backtestingFiles
+*.sqlite3
+/test_data_extractor/backtestingFiles

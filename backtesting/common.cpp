@@ -2,7 +2,7 @@
 #include <sstream>
 
 namespace backtesting {
-inline namespace utils {
+namespace utils {
 bool isCaseInsensitiveStringCompare(std::string const &s,
                                     std::string const &t) {
   auto const len = s.length();
@@ -13,6 +13,41 @@ bool isCaseInsensitiveStringCompare(std::string const &s,
       return false;
   return true;
 }
+
+void ltrim(std::string &s) {
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+            return !std::isspace(ch);
+          }));
+}
+
+void rtrim(std::string &s) {
+  s.erase(std::find_if(s.rbegin(), s.rend(),
+                       [](unsigned char ch) { return !std::isspace(ch); })
+              .base(),
+          s.end());
+}
+
+void trim(std::string &s) {
+  ltrim(s);
+  rtrim(s);
+}
+
+std::string ltrim_copy(std::string s) {
+  ltrim(s);
+  return s;
+}
+
+std::string rtrim_copy(std::string s) {
+  rtrim(s);
+  return s;
+}
+
+std::string trim_copy(std::string s) {
+  trim(s);
+  return s;
+}
+
+void trim_string(std::string &str) { trim(str); }
 
 bool listContains(std::vector<std::string> const &container,
                   std::string const &t) {
@@ -66,8 +101,8 @@ std::optional<std::string> currentTimeToString(std::time_t const currentTime,
   return std::nullopt;
 }
 
-std::vector<std::time_t> intervalsBetweenDates(std::time_t start,
-                                               std::time_t end) {
+std::vector<std::time_t> intervalsBetweenDates(std::time_t const start,
+                                               std::time_t const end) {
   std::time_t const endOfStartDate =
       stringToTimeT(currentTimeToString(start, "-").value() + " 23:59:59")
           .value();
@@ -75,10 +110,10 @@ std::vector<std::time_t> intervalsBetweenDates(std::time_t start,
   std::vector<std::time_t> timeList{start};
   if (endOfStartDate > end) // same day
     return timeList;
-  start = endOfStartDate + 1;
-  while (start <= end) {
-    timeList.push_back(start);
-    start += secondsInOneDay;
+  auto s = endOfStartDate + 1;
+  while (s <= end) {
+    timeList.push_back(s);
+    s += secondsInOneDay;
   }
 
   if (timeList.back() < end)
@@ -120,8 +155,8 @@ getListOfCSVFiles(stringlist_t const &tokenList, stringlist_t const &tradeTypes,
   return paths;
 }
 
-std::vector<std::string> split_string(std::string const &str,
-                                      char const *delim) {
+std::vector<std::string> splitString(std::string const &str,
+                                     char const *delim) {
   std::size_t const delimLength = std::strlen(delim);
   std::size_t fromPos{};
   std::size_t index{str.find(delim, fromPos)};

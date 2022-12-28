@@ -37,7 +37,7 @@ public:
 private:
   void startMonitoringThread();
   void startMonitoringThreadImpl();
-  void writeCSVHeader(binance::locked_file_t&);
+  void writeCSVHeader(binance::locked_file_t &);
   void writeCSVBody(depth_data_t &&);
   std::string getSubscriptionMessage(std::string const &token) const override;
   std::string getStreamType() const override { return "depth"; }
@@ -49,4 +49,8 @@ private:
   trade_type_e const m_tradeType;
   bool m_isFirstRequest = true;
 };
+
+std::vector<std::string> fetchToken(net::io_context &, net::ssl::context &,
+                                    trade_type_e const);
+
 } // namespace binance

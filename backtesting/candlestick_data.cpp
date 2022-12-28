@@ -3,7 +3,7 @@
 
 namespace backtesting {
 candlestick_data_t candlestick_data_t::dataFromCSVLine(std::string const &str) {
-  auto splittedString = backtesting::utils::split_string(str, ",");
+  auto splittedString = backtesting::utils::splitString(str, ",");
   candlestick_data_t result;
 
   if (splittedString.size() != 16) {
