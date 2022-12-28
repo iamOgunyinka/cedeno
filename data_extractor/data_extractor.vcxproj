@@ -24,6 +24,7 @@
     <ProjectGuid>{6c144613-52ad-4a59-b978-90ccebe2f005}</ProjectGuid>
     <RootNamespace>pricegatherer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>data_extractor</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -40,13 +41,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -78,9 +79,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -149,8 +152,8 @@
     <ClCompile Include="candlestick_futures_stream.cpp" />
     <ClCompile Include="candlestick_spot_stream.cpp" />
     <ClCompile Include="common.cpp" />
+    <ClCompile Include="data_extractor.cpp" />
     <ClCompile Include="depth_stream.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="ticker_stream.cpp" />
     <ClCompile Include="trade_stream.cpp" />
     <ClCompile Include="websocket_stream_base.cpp" />
@@ -161,6 +164,7 @@
     <ClInclude Include="candlestick_spot_stream.hpp" />
     <ClInclude Include="common.hpp" />
     <ClInclude Include="container.hpp" />
+    <ClInclude Include="data_extractor.hpp" />
     <ClInclude Include="depth_stream.hpp" />
     <ClInclude Include="ticker_stream.hpp" />
     <ClInclude Include="trade_stream.hpp" />

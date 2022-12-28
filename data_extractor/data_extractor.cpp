@@ -1,3 +1,5 @@
+#include "data_extractor.hpp"
+
 #include "candlestick_futures_stream.hpp"
 #include "candlestick_spot_stream.hpp"
 #include "depth_stream.hpp"
@@ -13,25 +15,21 @@
 #define TICKER "ticker"
 #define TRADE "trade"
 #define DEPTH "depth"
-
 #define SPOT "spot"
 #define FUTURES "futures"
 
 namespace net = boost::asio;
 
+namespace binance {
 using stream_type_td = std::string;
 using trade_type_td = std::string;
-using trade_map_td = std::map<trade_type_td, binance::token_filename_map_t>;
+using trade_map_td = std::map<trade_type_td, token_filename_map_t>;
 using filename_map_td = std::map<stream_type_td, trade_map_td>;
-
-using binance::trade_type_e;
 
 bool createAllFiles(filename_map_td &filenameMap,
                     std::vector<std::string> const &tokens) {
-  auto const currentDate =
-      binance::currentTimeToString(binance::time_type_e::date);
-  auto const currentTime =
-      binance::currentTimeToString(binance::time_type_e::time);
+  auto const currentDate = currentTimeToString(time_type_e::date);
+  auto const currentTime = currentTimeToString(time_type_e::time);
   if (!(currentDate && currentTime)) {
     std::cerr << "Unable to get the current local date/time" << std::endl;
     return false;
@@ -40,7 +38,7 @@ bool createAllFiles(filename_map_td &filenameMap,
   std::filesystem::path const rootPath =
       std::filesystem::current_path() / "backtestingFiles";
   for (auto const &tokenName_ : tokens) {
-    auto const tokenName = binance::toUpperString(tokenName_);
+    auto const tokenName = toUpperString(tokenName_);
     for (auto const &streamType :
          {CANDLESTICK, BTICKER, TICKER, TRADE, DEPTH}) {
       for (auto const &tradeType : {SPOT, FUTURES}) {
@@ -52,7 +50,7 @@ bool createAllFiles(filename_map_td &filenameMap,
         auto const filePath = (fullPath / (*currentTime + ".csv")).string();
         auto &dataMap = filenameMap[streamType][tradeType].dataMap;
         if (dataMap.find(filePath) == dataMap.end()) {
-          dataMap[tokenName] = binance::locked_file_t(filePath);
+          dataMap[tokenName] = locked_file_t(filePath);
         } else {
           dataMap[tokenName].changeFilename(filePath);
         }
@@ -65,11 +63,11 @@ bool createAllFiles(filename_map_td &filenameMap,
 
 void fetchTokenDepth(net::io_context &ioContext, net::ssl::context &sslContext,
                      trade_map_td &tradeMap) {
-  binance::depth_stream_t fDepthStream(
-      ioContext, sslContext, trade_type_e::futures, tradeMap[FUTURES]);
+  depth_stream_t fDepthStream(ioContext, sslContext, trade_type_e::futures,
+                              tradeMap[FUTURES]);
 
-  binance::depth_stream_t sDepthStream(ioContext, sslContext,
-                                       trade_type_e::spot, tradeMap[SPOT]);
+  depth_stream_t sDepthStream(ioContext, sslContext, trade_type_e::spot,
+                              tradeMap[SPOT]);
 
   sDepthStream.start();
   fDepthStream.start();
@@ -78,11 +76,11 @@ void fetchTokenDepth(net::io_context &ioContext, net::ssl::context &sslContext,
 
 void fetchBookTicker(net::io_context &ioContext, net::ssl::context &sslContext,
                      trade_map_td &tradeMap) {
-  binance::book_ticker_stream_t fTickerStream(
-      ioContext, sslContext, trade_type_e::futures, tradeMap[FUTURES]);
+  book_ticker_stream_t fTickerStream(ioContext, sslContext,
+                                     trade_type_e::futures, tradeMap[FUTURES]);
 
-  binance::book_ticker_stream_t sTickerStream(
-      ioContext, sslContext, trade_type_e::spot, tradeMap[SPOT]);
+  book_ticker_stream_t sTickerStream(ioContext, sslContext, trade_type_e::spot,
+                                     tradeMap[SPOT]);
 
   sTickerStream.start();
   fTickerStream.start();
@@ -91,10 +89,10 @@ void fetchBookTicker(net::io_context &ioContext, net::ssl::context &sslContext,
 
 void fetchTicker(net::io_context &ioContext, net::ssl::context &sslContext,
                  trade_map_td &tradeMap) {
-  binance::ticker_stream_t futuresStream(
-      ioContext, sslContext, trade_type_e::futures, tradeMap[FUTURES]);
-  binance::ticker_stream_t spotStream(ioContext, sslContext, trade_type_e::spot,
-                                      tradeMap[SPOT]);
+  ticker_stream_t futuresStream(ioContext, sslContext, trade_type_e::futures,
+                                tradeMap[FUTURES]);
+  ticker_stream_t spotStream(ioContext, sslContext, trade_type_e::spot,
+                             tradeMap[SPOT]);
   futuresStream.start();
   spotStream.start();
   ioContext.run();
@@ -102,10 +100,10 @@ void fetchTicker(net::io_context &ioContext, net::ssl::context &sslContext,
 
 void fetchTradeStream(net::io_context &ioContext, net::ssl::context &sslContext,
                       trade_map_td &tradeMap) {
-  binance::trade_stream_t fTradeStream(
-      ioContext, sslContext, trade_type_e::futures, tradeMap[FUTURES]);
-  binance::trade_stream_t sTradeStream(ioContext, sslContext,
-                                       trade_type_e::spot, tradeMap[SPOT]);
+  trade_stream_t fTradeStream(ioContext, sslContext, trade_type_e::futures,
+                              tradeMap[FUTURES]);
+  trade_stream_t sTradeStream(ioContext, sslContext, trade_type_e::spot,
+                              tradeMap[SPOT]);
 
   fTradeStream.start();
   sTradeStream.start();
@@ -114,10 +112,9 @@ void fetchTradeStream(net::io_context &ioContext, net::ssl::context &sslContext,
 
 void fetchCandlestick(net::io_context &ioContext, net::ssl::context &sslContext,
                       trade_map_td &tradeMap) {
-  binance::candlestick_futures_stream_t fTradeStream(ioContext, sslContext,
-                                                     tradeMap[FUTURES]);
-  binance::candlestick_spot_stream_t sTradeStream(ioContext, sslContext,
-                                                  tradeMap[SPOT]);
+  candlestick_futures_stream_t fTradeStream(ioContext, sslContext,
+                                            tradeMap[FUTURES]);
+  candlestick_spot_stream_t sTradeStream(ioContext, sslContext, tradeMap[SPOT]);
   fTradeStream.start();
   sTradeStream.start();
   ioContext.run();
@@ -161,8 +158,7 @@ void fetchAllTokens(net::io_context &ioContext, net::ssl::context &sslContext) {
     std::filesystem::create_directories(dirPath);
 
   for (auto const &[tradeType, filename] : pair) {
-    auto const tokenList =
-        binance::fetchToken(ioContext, sslContext, tradeType);
+    auto const tokenList = fetchToken(ioContext, sslContext, tradeType);
     if (tokenList.empty())
       continue;
 
@@ -178,10 +174,23 @@ void fetchAllTokens(net::io_context &ioContext, net::ssl::context &sslContext) {
     file.close();
   }
 }
+} // namespace binance
 
-int main(int argc, char const **argv) {
-  // auto const maxThreadSize = std::thread::hardware_concurrency();
-  net::io_context ioContext;
+data_extractor_t::data_extractor_t()
+    : m_ioContext(new net::io_context(std::thread::hardware_concurrency())) {}
+
+data_extractor_t::~data_extractor_t() {
+  stop();
+  delete m_ioContext;
+  m_ioContext = nullptr;
+}
+
+int data_extractor_t::run(std::vector<std::string> &&args) {
+  size_t const argc = args.size();
+
+  auto &ioContext = *m_ioContext;
+  ioContext.reset();
+
   auto sslContext =
       std::make_unique<net::ssl::context>(net::ssl::context::tlsv12_client);
   sslContext->set_default_verify_paths();
@@ -190,68 +199,70 @@ int main(int argc, char const **argv) {
   std::vector<std::string> const tokens{"BNBUSDT", "BTCUSDT", "RUNEUSDT",
                                         "ETHUSDT"};
   std::cout << "Fetching all tokens..." << std::endl;
-  fetchAllTokens(ioContext, *sslContext);
+  binance::fetchAllTokens(ioContext, *sslContext);
   std::cout << "[DONE] Fetching all tokens..." << std::endl;
 
-  filename_map_td filenameMap;
-  if (!createAllFiles(filenameMap, tokens))
+  binance::filename_map_td filenameMap;
+  if (!binance::createAllFiles(filenameMap, tokens))
     return -1;
 
   std::cout << "Starting the trade stream..." << std::endl;
   std::thread([&] {
-    fetchTradeStream(ioContext, *sslContext, filenameMap[TRADE]);
+    binance::fetchTradeStream(ioContext, *sslContext, filenameMap[TRADE]);
   }).detach();
 
   std::cout << "Starting the ticker stream..." << std::endl;
   std::thread([&] {
-    fetchTicker(ioContext, *sslContext, filenameMap[TICKER]);
+    binance::fetchTicker(ioContext, *sslContext, filenameMap[TICKER]);
   }).detach();
 
   std::cout << "Starting the bookTicker stream..." << std::endl;
   std::thread([&] {
-    fetchBookTicker(ioContext, *sslContext, filenameMap[BTICKER]);
+    binance::fetchBookTicker(ioContext, *sslContext, filenameMap[BTICKER]);
   }).detach();
 
   std::cout << "Starting the candleStick stream..." << std::endl;
   std::thread([&] {
-    fetchCandlestick(ioContext, *sslContext, filenameMap[CANDLESTICK]);
+    binance::fetchCandlestick(ioContext, *sslContext, filenameMap[CANDLESTICK]);
   }).detach();
 
   std::cout << "Starting the depth stream ..." << std::endl;
   std::thread([&] {
-    fetchTokenDepth(ioContext, *sslContext, filenameMap[DEPTH]);
+    binance::fetchTokenDepth(ioContext, *sslContext, filenameMap[DEPTH]);
   }).detach();
 
   std::cout << "Starting the periodic time watcher..." << std::endl;
-  std::thread([&] { timeWatcher(filenameMap, tokens); }).detach();
+  std::thread([&] { binance::timeWatcher(filenameMap, tokens); }).detach();
 
   std::cout << "Program started successfully!" << std::endl;
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
   std::optional<net::deadline_timer> timer = std::nullopt;
 
-  if (argc == 2
-#ifdef _DEBUG
-      || argc == 1
-#endif // _DEBUG
-  ) {
-    uint32_t const timerInSeconds =
-#ifdef _DEBUG
-        argc == 1 ? 60 : std::stoul(argv[1]);
-#else
-        std::stoi(argv[1]);
-#endif // _DEBUG
-
+  if (argc == 2) {
+    uint32_t const timerInSeconds = std::stoul(args[1]);
+    std::cout << "Stopping the program in '" << timerInSeconds << "' seconds";
     if (timerInSeconds > 0) {
       timer.emplace(ioContext);
       timer->expires_from_now(boost::posix_time::seconds(timerInSeconds));
       timer->async_wait(
           [&ioContext](boost::system::error_code const &) mutable {
+            std::cout << "Stopping the program right now" << std::endl;
             ioContext.stop();
-            // ioContext.reset();
           });
     }
   }
+
   ioContext.run();
   return 0;
+}
+
+bool data_extractor_t::stop() {
+  auto &ioContext = *m_ioContext;
+  if (!ioContext.stopped()) {
+    ioContext.stop();
+    while (!ioContext.stopped())
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+  return true;
 }
