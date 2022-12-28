@@ -57,7 +57,7 @@ db_config_t parse_database_file(std::string const &filename,
       found = config_name == line.c_str() + 2;
       continue;
     } else if (found) {
-      auto name_pair = utils::split_string(line, ":");
+      auto name_pair = utils::splitString(line, ":");
       if (name_pair.size() != 2)
         continue;
       for (auto &v : name_pair)

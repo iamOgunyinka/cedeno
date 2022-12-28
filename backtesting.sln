@@ -5,9 +5,11 @@ VisualStudioVersion = 16.0.33027.164
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "backtesting_template", "cedeno\cedeno.vcxproj", "{583E2823-DDD5-4D09-8203-A0571C887B1F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "price_gatherer", "price_gatherer\price_gatherer.vcxproj", "{6C144613-52AD-4A59-B978-90CCEBE2F005}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "data_extractor", "data_extractor\data_extractor.vcxproj", "{6C144613-52AD-4A59-B978-90CCEBE2F005}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "backtesting", "backtesting\backtesting.vcxproj", "{82FA2F5C-88B5-4DEA-BAAC-C2B7A2052550}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_data_extractor", "test_data_extractor\test_data_extractor.vcxproj", "{DC114B0C-62EF-42E8-8583-3962C365E011}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +43,14 @@ Global
 		{82FA2F5C-88B5-4DEA-BAAC-C2B7A2052550}.Release|x64.Build.0 = Release|x64
 		{82FA2F5C-88B5-4DEA-BAAC-C2B7A2052550}.Release|x86.ActiveCfg = Release|Win32
 		{82FA2F5C-88B5-4DEA-BAAC-C2B7A2052550}.Release|x86.Build.0 = Release|Win32
+		{DC114B0C-62EF-42E8-8583-3962C365E011}.Debug|x64.ActiveCfg = Debug|x64
+		{DC114B0C-62EF-42E8-8583-3962C365E011}.Debug|x64.Build.0 = Debug|x64
+		{DC114B0C-62EF-42E8-8583-3962C365E011}.Debug|x86.ActiveCfg = Debug|Win32
+		{DC114B0C-62EF-42E8-8583-3962C365E011}.Debug|x86.Build.0 = Debug|Win32
+		{DC114B0C-62EF-42E8-8583-3962C365E011}.Release|x64.ActiveCfg = Release|x64
+		{DC114B0C-62EF-42E8-8583-3962C365E011}.Release|x64.Build.0 = Release|x64
+		{DC114B0C-62EF-42E8-8583-3962C365E011}.Release|x86.ActiveCfg = Release|Win32
+		{DC114B0C-62EF-42E8-8583-3962C365E011}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -12,6 +12,8 @@
 #include "database_connector.hpp"
 #include "depth_data.hpp"
 
+backtesting::global_data_t globalUserData;
+
 void processBookTickerStream(backtesting::trade_map_td const &tradeMap) {
   //
 }
@@ -118,7 +120,10 @@ void saveTokenFromFileToDatabase(backtesting::database_connector_t &dbConnector,
   dbTokenList = dbConnector.getListOfAllTokens();
 }
 
-using namespace backtesting::utils;
+using backtesting::utils::currentTimeToString;
+using backtesting::utils::listContains;
+using backtesting::utils::stringToTimeT;
+
 int main(int argc, char **argv) {
   CLI::App app{"backtesting software for Creed & Bear LLC"};
 
@@ -215,7 +220,6 @@ int main(int argc, char **argv) {
     tokenList.push_back("BTCUSDT");
 #ifdef _DEBUG
     tokenList.push_back("ETHUSDT");
-    tokenList.push_back("RUNEUSDT");
 #endif // _DEBUG
   }
 
@@ -265,7 +269,7 @@ int main(int argc, char **argv) {
   if (startTime > endTime)
     std::swap(startTime, endTime);
 
-  filename_map_td const csvFiles = getListOfCSVFiles(
+  auto const csvFiles = backtesting::utils::getListOfCSVFiles(
       tokenList, tradeTypes, streams, startTime, endTime, rootDir);
   if (csvFiles.empty()) {
     spdlog::error("No files found matching that criteria");
@@ -287,9 +291,12 @@ int main(int argc, char **argv) {
   if (dbUserList.empty())
     setupDummyList(dbTokenList, *databaseConnector, dbUserList);
 
-  auto const allTokens =
+  globalUserData.tokens =
       backtesting::adaptor::dbTokenListToBtTokenList(dbTokenList);
-  backtesting::user_data_list_t users;
+  auto &users = globalUserData.userAccounts;
+  users.clear();
+  users.reserve(dbUserList.size());
+
   for (auto const &u : dbUserList) {
     backtesting::user_data_t user;
     user.tokensOwned = backtesting::adaptor::dbOwnedTokenListToBtOwnedToken(

@@ -33,6 +33,7 @@ struct token_data_t {
   std::string quoteAsset;
   trade_type_e tradeType;
 };
+using token_data_list_t = std::vector<token_data_t>;
 
 struct token_owned_by_user_t {
   std::string tokenName;
@@ -79,6 +80,11 @@ struct user_data_t {
                            trade_market_e const market = trade_market_e::limit);
 };
 using user_data_list_t = std::vector<user_data_t>;
+
+struct global_data_t {
+  token_data_list_t tokens;
+  user_data_list_t userAccounts;
+};
 
 trade_list_t initiateOrder(order_data_t const &order);
 } // namespace backtesting

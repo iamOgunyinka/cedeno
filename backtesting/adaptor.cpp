@@ -2,9 +2,8 @@
 
 namespace backtesting {
 namespace adaptor {
-std::vector<token_data_t>
-dbTokenListToBtTokenList(db_token_list_t const &list) {
-  std::vector<token_data_t> result;
+token_data_list_t dbTokenListToBtTokenList(db_token_list_t const &list) {
+  token_data_list_t result;
   result.reserve(list.size());
   for (auto const &d : list) {
     token_data_t data;

@@ -5,7 +5,7 @@
 
 namespace backtesting {
 namespace adaptor {
-std::vector<token_data_t> dbTokenListToBtTokenList(db_token_list_t const &);
+token_data_list_t dbTokenListToBtTokenList(db_token_list_t const &);
 token_owned_list_t
 dbOwnedTokenListToBtOwnedToken(db_owned_token_list_t const &,
                                db_token_list_t const &tokenList);
