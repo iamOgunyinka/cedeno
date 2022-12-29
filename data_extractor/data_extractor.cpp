@@ -253,15 +253,18 @@ int data_extractor_t::run(std::vector<std::string> &&args) {
     }
   }
 
+  m_contextIsRunning = true;
   ioContext.run();
+  // wait for all objects to be destroyed.
+  std::this_thread::sleep_for(std::chrono::seconds(2));
+  m_contextIsRunning = false;
   return 0;
 }
 
 bool data_extractor_t::stop() {
-  auto &ioContext = *m_ioContext;
-  if (!ioContext.stopped()) {
-    ioContext.stop();
-    while (!ioContext.stopped())
+  if (m_contextIsRunning) {
+    m_ioContext->stop();
+    while (!m_contextIsRunning)
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
   return true;

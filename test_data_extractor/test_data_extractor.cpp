@@ -11,10 +11,10 @@ int main(int argc, char const **argv) {
     args.push_back(argv[i]);
 
   data_extractor_t extractor;
-
+  long long const t = args.size() >= 2 ? std::stoll(args[1]) : 120;
   // run the extractor for only 60 seconds
-  std::thread([&extractor] {
-    std::this_thread::sleep_for(std::chrono::seconds(60));
+  std::thread([&extractor, t] {
+    std::this_thread::sleep_for(std::chrono::seconds(t));
     assert(extractor.stop());
     std::cout << "Stopped" << std::endl;
   }).detach();

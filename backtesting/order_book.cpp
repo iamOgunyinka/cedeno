@@ -302,8 +302,9 @@ void order_book_t::updateOrderBook(depth_data_t &&newestData) {
   updateSidesWithNewData(newestData.asks, m_currentBook.asks, lesserComparator);
   updateSidesWithNewData(newestData.bids, m_currentBook.bids,
                          greaterComparator);
+  shakeOrderBook();
 #ifdef _DEBUG
-  // printOrderBook();
+  printOrderBook();
 #endif // _DEBUG
 }
 } // namespace backtesting

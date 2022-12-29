@@ -225,7 +225,8 @@ int main(int argc, char **argv) {
 
   if (rootDir.empty())
 #ifdef _DEBUG
-    rootDir = "C:\\Users\\Administrator\\Desktop\\example\\backtestingFiles";
+    rootDir = "D:\\Visual Studio "
+              "Projects\\cedeno\\test_data_extractor\\backtestingFiles";
 #else
     rootDir = ".";
 #endif // _DEBUG
@@ -269,9 +270,9 @@ int main(int argc, char **argv) {
   if (startTime > endTime)
     std::swap(startTime, endTime);
 
-  auto const csvFiles = backtesting::utils::getListOfCSVFiles(
+  auto const csvFilenames = backtesting::utils::getListOfCSVFiles(
       tokenList, tradeTypes, streams, startTime, endTime, rootDir);
-  if (csvFiles.empty()) {
+  if (csvFilenames.empty()) {
     spdlog::error("No files found matching that criteria");
     return EXIT_FAILURE;
   }
@@ -308,26 +309,29 @@ int main(int argc, char **argv) {
     users.push_back(std::move(user));
   }
 
-  if (auto const iter = csvFiles.find(BTICKER); iter != csvFiles.cend()) {
+  if (auto const iter = csvFilenames.find(BTICKER);
+      iter != csvFilenames.cend()) {
     std::thread{[bookTickerInfo = iter->second] {
       processBookTickerStream(bookTickerInfo);
     }}.detach();
   }
 
-  if (auto const iter = csvFiles.find(TICKER); iter != csvFiles.cend()) {
+  if (auto const iter = csvFilenames.find(TICKER);
+      iter != csvFilenames.cend()) {
     std::thread{[tickerInfo = iter->second] {
       processTickerStream(tickerInfo);
     }}.detach();
   }
 
-  if (auto const iter = csvFiles.find(CANDLESTICK); iter != csvFiles.cend()) {
+  if (auto const iter = csvFilenames.find(CANDLESTICK);
+      iter != csvFilenames.cend()) {
     std::thread{[csData = iter->second] {
       backtesting::processCandlestickStream(csData);
     }}.detach();
   }
 
   net::io_context ioContext;
-  if (auto iter = csvFiles.find(DEPTH); iter != csvFiles.end()) {
+  if (auto iter = csvFilenames.find(DEPTH); iter != csvFilenames.end()) {
     std::thread{[csData = iter->second, &ioContext]() mutable {
       backtesting::processDepthStream(ioContext, csData);
     }}.detach();
