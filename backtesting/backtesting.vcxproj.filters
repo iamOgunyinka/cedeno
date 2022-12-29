@@ -71,5 +71,8 @@
     <ClInclude Include="adaptor.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="argument.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
