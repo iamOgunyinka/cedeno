@@ -2,6 +2,15 @@
 #include <sstream>
 
 namespace backtesting {
+std::string getDatabaseConfigPath() {
+  return (std::filesystem::current_path()
+#ifdef _DEBUG
+          / "scripts"
+#endif // _DEBUG
+          / "config" / "database.ini")
+      .string();
+}
+
 namespace utils {
 bool isCaseInsensitiveStringCompare(std::string const &s,
                                     std::string const &t) {

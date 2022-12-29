@@ -24,6 +24,8 @@ using token_map_td = std::map<std::string, backtesting::fs_list_t>;
 using trade_map_td = std::map<trade_type_td, token_map_td>;
 using filename_map_td = std::map<stream_type_td, trade_map_td>;
 
+std::string getDatabaseConfigPath();
+
 namespace utils {
 
 void ltrim(std::string &s);

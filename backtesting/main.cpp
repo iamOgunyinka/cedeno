@@ -8,6 +8,7 @@
 #include <spdlog/spdlog.h>
 
 #include "adaptor.hpp"
+#include "argument.hpp"
 #include "candlestick_data.hpp"
 #include "database_connector.hpp"
 #include "depth_data.hpp"
@@ -20,15 +21,6 @@ void processBookTickerStream(backtesting::trade_map_td const &tradeMap) {
 
 void processTickerStream(backtesting::trade_map_td const &tradeMap) {
   //
-}
-
-std::string getDatabaseConfigPath() {
-  return (std::filesystem::current_path()
-#ifdef _DEBUG
-          / "scripts"
-#endif // _DEBUG
-          / "config" / "database.ini")
-      .string();
 }
 
 void setupDummyList(backtesting::db_token_list_t const &tokenList,
@@ -126,77 +118,67 @@ using backtesting::utils::stringToTimeT;
 
 int main(int argc, char **argv) {
   CLI::App app{"backtesting software for Creed & Bear LLC"};
-
+  argument_t args;
   using backtesting::stringlist_t;
 
-  stringlist_t streams;
-  stringlist_t tradeTypes;
-  stringlist_t tokenList;
-
-  std::string rootDir;
-  std::string dateFromStr;
-  std::string dateToStr;
-  std::string dbConfigFilename = getDatabaseConfigPath();
-  std::string dbLaunchType = "development";
-
-  app.add_option("--db-config", dbConfigFilename,
+  app.add_option("--db-config", args.dbConfigFilename,
                  fmt::format("database configuration filename "
                              "(default: '{}')",
-                             dbConfigFilename));
-  app.add_option("--db-launch-type", dbLaunchType,
+                             args.dbConfigFilename));
+  app.add_option("--db-launch-type", args.dbLaunchType,
                  fmt::format("database configuration"
                              " launch type(default: '{}')",
-                             dbLaunchType));
-  app.add_option("--tokens", tokenList,
+                             args.dbLaunchType));
+  app.add_option("--tokens", args.tokenList,
                  "a list of token pairs [e.g. btcusdt(default), ethusdt]");
-  app.add_option("--streams", streams,
+  app.add_option("--streams", args.streams,
                  "A list of the streams(s) to run. Valid options are: "
                  "[trade, ticker, bookticker, depth(default), kline]");
-  app.add_option("--trade-types", tradeTypes,
+  app.add_option("--trade-types", args.tradeTypes,
                  "A list of trade types. Valid options are: "
                  "[futures, spot(default)]");
-  app.add_option("--start-date", dateFromStr,
+  app.add_option("--start-date", args.dateFromStr,
                  "the start datetime (e.g. 2022-12-01 00:00:00)");
-  app.add_option("--end-date", dateToStr,
+  app.add_option("--end-date", args.dateToStr,
                  "the end datetime (e.g. 2022-12-31 23:59:50)");
   app.add_option(
-      "--root-dir", rootDir,
+      "--root-dir", args.rootDir,
       "Root directory where the historical data are stored (default: `pwd`)");
 
   CLI11_PARSE(app, argc, argv);
 #ifdef _DEBUG
-  spdlog::info("start date: {}", dateFromStr);
-  spdlog::info("end date: {}", dateToStr);
-  spdlog::info("rootDir: {}", rootDir);
+  spdlog::info("start date: {}", args.dateFromStr);
+  spdlog::info("end date: {}", args.dateToStr);
+  spdlog::info("rootDir: {}", args.rootDir);
 
-  for (auto const &token : tokenList)
+  for (auto const &token : args.tokenList)
     spdlog::info("token: {}", token);
-  for (auto const &s : streams)
+  for (auto const &s : args.streams)
     spdlog::info("stream: {}", s);
-  for (auto const &t : tradeTypes)
+  for (auto const &t : args.tradeTypes)
     spdlog::info("trade: {}", t);
 
 #endif // _DEBUG
 
-  if (dbLaunchType.empty())
-    dbLaunchType = "development";
+  if (args.dbLaunchType.empty())
+    args.dbLaunchType = "development";
 
-  if (dbConfigFilename.empty())
-    dbConfigFilename = getDatabaseConfigPath();
+  if (args.dbConfigFilename.empty())
+    args.dbConfigFilename = backtesting::getDatabaseConfigPath();
 
-  auto const dbConfig =
-      backtesting::parse_database_file(dbConfigFilename, dbLaunchType);
+  auto const dbConfig = backtesting::parse_database_file(args.dbConfigFilename,
+                                                         args.dbLaunchType);
   if (!dbConfig) {
     spdlog::error("Unable to get database configuration values");
     return EXIT_FAILURE;
   }
 
-  if (streams.empty()) {
-    streams.push_back(DEPTH);
+  if (args.streams.empty()) {
+    args.streams.push_back(DEPTH);
   } else {
     std::vector<std::string> const validStreams{TRADE, TICKER, BTICKER,
                                                 CANDLESTICK, DEPTH};
-    for (auto const &stream : streams) {
+    for (auto const &stream : args.streams) {
       if (!listContains(validStreams, stream)) {
         spdlog::error("'{}' is not a valid stream type", stream);
         return EXIT_FAILURE;
@@ -204,11 +186,11 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (tradeTypes.empty()) {
-    tradeTypes.push_back(SPOT);
+  if (args.tradeTypes.empty()) {
+    args.tradeTypes.push_back(SPOT);
   } else {
     std::vector<std::string> const validTrades{SPOT, FUTURES};
-    for (auto const &trade : tradeTypes) {
+    for (auto const &trade : args.tradeTypes) {
       if (!listContains(validTrades, trade)) {
         spdlog::error("'{}' is not a valid trade type", trade);
         return EXIT_FAILURE;
@@ -216,42 +198,42 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (tokenList.empty()) {
-    tokenList.push_back("BTCUSDT");
+  if (args.tokenList.empty()) {
+    args.tokenList.push_back("BTCUSDT");
 #ifdef _DEBUG
-    tokenList.push_back("ETHUSDT");
+    args.tokenList.push_back("ETHUSDT");
 #endif // _DEBUG
   }
 
-  if (rootDir.empty())
+  if (args.rootDir.empty())
 #ifdef _DEBUG
-    rootDir = "D:\\Visual Studio "
-              "Projects\\cedeno\\test_data_extractor\\backtestingFiles";
+    args.rootDir = "D:\\Visual Studio "
+                   "Projects\\cedeno\\test_data_extractor\\backtestingFiles";
 #else
     rootDir = ".";
 #endif // _DEBUG
 
-  if (!std::filesystem::exists(rootDir)) {
-    spdlog::error("'{}' does not exist.", rootDir);
+  if (!std::filesystem::exists(args.rootDir)) {
+    spdlog::error("'{}' does not exist.", args.rootDir);
     return EXIT_FAILURE;
   }
 
 #ifdef _DEBUG
-  if (dateFromStr.empty()) {
+  if (args.dateFromStr.empty()) {
     constexpr std::size_t const last24hrs = 3'600 * 24;
-    dateFromStr = fmt::format(
+    args.dateFromStr = fmt::format(
         "{} 00:00:00",
         currentTimeToString(std::time(nullptr) - last24hrs, "-").value());
   }
 
-  if (dateToStr.empty()) {
-    dateToStr = fmt::format(
+  if (args.dateToStr.empty()) {
+    args.dateToStr = fmt::format(
         "{} 11:59:59", currentTimeToString(std::time(nullptr), "-").value());
   }
 #endif // _DEBUG
 
   std::time_t startTime = 0, endTime = 0;
-  if (auto const optStartTime = stringToTimeT(dateFromStr);
+  if (auto const optStartTime = stringToTimeT(args.dateFromStr);
       optStartTime.has_value()) {
     startTime = *optStartTime;
   } else {
@@ -259,7 +241,7 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  if (auto const optEndTime = stringToTimeT(dateToStr);
+  if (auto const optEndTime = stringToTimeT(args.dateToStr);
       optEndTime.has_value()) {
     endTime = *optEndTime;
   } else {
@@ -271,7 +253,8 @@ int main(int argc, char **argv) {
     std::swap(startTime, endTime);
 
   auto const csvFilenames = backtesting::utils::getListOfCSVFiles(
-      tokenList, tradeTypes, streams, startTime, endTime, rootDir);
+      args.tokenList, args.tradeTypes, args.streams, startTime, endTime,
+      args.rootDir);
   if (csvFilenames.empty()) {
     spdlog::error("No files found matching that criteria");
     return EXIT_FAILURE;
@@ -287,7 +270,7 @@ int main(int argc, char **argv) {
 
   auto dbTokenList = databaseConnector->getListOfAllTokens();
   if (dbTokenList.empty())
-    saveTokenFromFileToDatabase(*databaseConnector, dbTokenList, rootDir);
+    saveTokenFromFileToDatabase(*databaseConnector, dbTokenList, args.rootDir);
   auto dbUserList = databaseConnector->getUserIDs();
   if (dbUserList.empty())
     setupDummyList(dbTokenList, *databaseConnector, dbUserList);
