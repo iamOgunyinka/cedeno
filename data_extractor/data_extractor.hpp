@@ -21,4 +21,5 @@ public:
 
 private:
   net::io_context *m_ioContext = nullptr;
+  bool m_contextIsRunning = false;
 };

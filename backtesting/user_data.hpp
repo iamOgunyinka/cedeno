@@ -81,10 +81,5 @@ struct user_data_t {
 };
 using user_data_list_t = std::vector<user_data_t>;
 
-struct global_data_t {
-  token_data_list_t tokens;
-  user_data_list_t userAccounts;
-};
-
 trade_list_t initiateOrder(order_data_t const &order);
 } // namespace backtesting
