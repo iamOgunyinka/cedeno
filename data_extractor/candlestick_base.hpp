@@ -7,6 +7,7 @@
 #include <boost/beast/ssl/ssl_stream.hpp>
 #include <boost/beast/websocket/stream.hpp>
 #include <iostream>
+#include <thread>
 
 #include "common.hpp"
 
