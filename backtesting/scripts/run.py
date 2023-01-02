@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 from flask import Flask
 from flask_migrate import Migrate

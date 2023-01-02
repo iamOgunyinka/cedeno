@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 get_filename_component(PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}" ABSOLUTE)
 
 set(PROJECT_NAME libbacktng)
-set(CMAKE_BUILD_TYPE Release)
 
 # find python3 development package
 find_package(Python3 COMPONENTS Development Interpreter REQUIRED)
@@ -56,7 +55,7 @@ if(WIN32)
 else()
   # set stuff for other systems
   link_directories(/usr/lib)
-  link_libraries(stdc++fs pthread)
+  link_libraries(stdc++fs pthread odbc)
 endif()
 
 # Outputs

@@ -21,9 +21,9 @@ namespace backtesting {
 
 class order_book_t {
 public:
-  static friend trade_list_t
+  friend trade_list_t
   matching_engine::match_order(order_book_t &orderBook,
-                               order_data_t const &order);
+                               backtesting::order_data_t const &order);
   order_book_t(net::io_context &ioContext,
                data_streamer_t<depth_data_t> dataStreamer);
   ~order_book_t();
@@ -34,7 +34,7 @@ private:
   void printOrderBook();
 #endif
 
-  [[nodiscard]] trade_list_t match(order_data_t order);
+  [[nodiscard]] trade_list_t match(backtesting::order_data_t order);
   void setNextTimer();
   [[nodiscard]] trade_list_t shakeOrderBook();
   void updateOrderBook(depth_data_t &&newestData);
