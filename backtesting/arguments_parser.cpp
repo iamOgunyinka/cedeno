@@ -114,7 +114,7 @@ void saveTokenFromFileToDatabase(database_connector_t &dbConnector,
 }
 } // namespace backtesting
 
-bool argument_parser_t::parse(std::vector<std::string> argv) {
+bool argument_parser_t::parse(size_t argc, char **argv) {
   m_argumentParsed = false;
 
   CLI::App app{"backtesting software for Creed & Bear LLC"};
@@ -147,9 +147,11 @@ bool argument_parser_t::parse(std::vector<std::string> argv) {
                  "print out every step of the process(default: false)");
 
   try {
-    app.parse(argv);
-  } catch (const CLI::ParseError &e) {
-    spdlog::error(e.what());
+    app.parse(argc, argv);
+  } catch (CLI::ParseError &e) {
+    if (e.get_exit_code() != 0)
+      spdlog::error(e.what());
+    app.exit(e);
     return false;
   }
 
@@ -326,7 +328,14 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(backtester, m) {
   py::class_<argument_parser_t>(m, "argument_parser_t")
-      .def("parse", &argument_parser_t::parse)
+      .def("parse",
+           [](argument_parser_t &a, std::vector<std::string> args) {
+             std::vector<char *> csStrs;
+             csStrs.reserve(args.size());
+             for (auto &s : args)
+               csStrs.push_back(const_cast<char *>(s.c_str()));
+             return a.parse(csStrs.size(), csStrs.data());
+           })
       .def("prepareData", &argument_parser_t::prepareData)
       .def("isReady", &argument_parser_t::isReady)
       .def("runBacktester", &argument_parser_t::runBacktester);

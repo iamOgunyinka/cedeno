@@ -25,7 +25,7 @@ struct argument_t {
 
 class argument_parser_t {
 public:
-  bool parse(std::vector<std::string> args);
+  bool parse(size_t argc, char **argv);
   bool prepareData();
   bool isReady() const { return m_argumentParsed && m_authenticatedData; }
   int runBacktester();
