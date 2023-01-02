@@ -1,5 +1,7 @@
 #include "common.hpp"
 #include <sstream>
+#include <algorithm>
+#include <cstring>
 
 namespace backtesting {
 std::string getDatabaseConfigPath() {

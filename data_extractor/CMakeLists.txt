@@ -55,7 +55,7 @@ if(WIN32)
 else()
   # set stuff for other systems
   link_directories(/usr/lib)
-  link_libraries(stdc++fs pthread)
+  link_libraries(stdc++fs pthread ssl crypto)
 endif()
 
 # Outputs

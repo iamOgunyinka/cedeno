@@ -1,4 +1,5 @@
 #include "adaptor.hpp"
+#include <algorithm>
 
 namespace backtesting {
 namespace adaptor {
