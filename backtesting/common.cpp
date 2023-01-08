@@ -1,7 +1,8 @@
 #include "common.hpp"
-#include <sstream>
 #include <algorithm>
 #include <cstring>
+#include <random>
+#include <sstream>
 
 namespace backtesting {
 std::string getDatabaseConfigPath() {
@@ -59,6 +60,30 @@ std::string trim_copy(std::string s) {
 }
 
 void trim_string(std::string &str) { trim(str); }
+
+std::size_t getRandomInteger() {
+  static std::random_device rd{};
+  static std::mt19937 gen{rd()};
+  static std::uniform_int_distribution<> uid(1, 50);
+  return uid(gen);
+}
+
+char getRandomChar() {
+  static std::random_device rd{};
+  static std::mt19937 gen{rd()};
+  static std::uniform_int_distribution<> uid(0, 52);
+  static char const *all_alphas =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
+  return all_alphas[uid(gen)];
+}
+
+std::string getRandomString(std::size_t const length) {
+  std::string result{};
+  result.reserve(length);
+  for (std::size_t i = 0; i != length; ++i)
+    result.push_back(getRandomChar());
+  return result;
+}
 
 bool listContains(std::vector<std::string> const &container,
                   std::string const &t) {

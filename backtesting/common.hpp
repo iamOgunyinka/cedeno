@@ -35,7 +35,9 @@ std::string ltrim_copy(std::string s);
 std::string rtrim_copy(std::string s);
 std::string trim_copy(std::string s);
 void trim_string(std::string &str);
-
+std::string getRandomString(std::size_t const length);
+std::size_t getRandomInteger();
+char getRandomChar();
 std::optional<std::time_t> stringToTimeT(std::string const &s);
 std::string toUpperString(std::string const &s);
 bool listContains(std::vector<std::string> const &container,

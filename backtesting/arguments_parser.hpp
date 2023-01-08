@@ -1,7 +1,6 @@
 #pragma once
 
 #include "common.hpp"
-#include "user_data.hpp"
 #include <pybind11/stl.h>
 
 namespace backtesting {
@@ -34,14 +33,4 @@ private:
   std::optional<backtesting::argument_t> m_args;
   bool m_argumentParsed = false;
   bool m_authenticatedData = false;
-};
-
-struct global_data_t {
-  global_data_t() {}
-
-  unsigned long long startTime = 0;
-  unsigned long long endTime = 0;
-  backtesting::filename_map_td listOfFiles;
-  backtesting::token_data_list_t allTokens;
-  backtesting::user_data_list_t allUserAccounts;
 };

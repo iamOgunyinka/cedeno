@@ -1,4 +1,5 @@
 #include "arguments_parser.hpp"
+#include "global_data.hpp"
 #include <boost/asio/io_context.hpp>
 #include <thread>
 

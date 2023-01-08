@@ -3,6 +3,7 @@
 #include "adaptor.hpp"
 #include "common.hpp"
 #include "database_connector.hpp"
+#include "global_data.hpp"
 #include <CLI11/CLI11.hpp>
 #include <pybind11/pybind11.h>
 #include <random>
@@ -36,22 +37,22 @@ void setupDummyList(db_token_list_t const &tokenList,
   std::mt19937 gen{rd()};
   std::uniform_int_distribution<> uid(0, tokenList.size());
 
-  assert(dbConnector.addNewUser("joshua"));
+  assert(dbConnector.addNewUser("joshua") > 0);
   userList = dbConnector.getUserIDs();
   assert(!userList.empty());
   assert(userList[0].userID == 1);
 
   db_user_t &user = userList[0];
-  db_owned_token_list_t ownedTokens;
-  ownedTokens.reserve(20);
+  db_user_asset_list_t assets;
+  assets.reserve(20);
 
   for (int i = 0; i < 20; ++i) {
     auto &token = tokenList[uid(gen)];
-    db_owned_token_t ownToken;
-    ownToken.ownerID = user.userID;
-    ownToken.tokenID = token.tokenID;
-    ownToken.amountAvailable = 500.0;
-    ownedTokens.push_back(std::move(ownToken));
+    db_user_asset_list_t::value_type userAsset;
+    userAsset.ownerID = user.userID;
+    userAsset.tokenID = token.tokenID;
+    userAsset.amountAvailable = 500.0;
+    assets.push_back(std::move(userAsset));
   }
 
   db_user_order_list_t orderList;
@@ -72,8 +73,10 @@ void setupDummyList(db_token_list_t const &tokenList,
     orderList.push_back(std::move(order));
   }
 
-  assert(dbConnector.addUserOwnedTokens(ownedTokens));
-  assert(dbConnector.addOrderList(orderList));
+  if (!dbConnector.addUserAssets(assets))
+    throw std::runtime_error("assets should not be empty when testing");
+  if (!dbConnector.addOrderList(orderList))
+    throw std::runtime_error("user should have some orders for testing");
 }
 
 void saveTokenFromFileToDatabase(database_connector_t &dbConnector,
@@ -311,8 +314,8 @@ bool argument_parser_t::prepareData() {
 
   for (auto const &u : dbUserList) {
     backtesting::user_data_t user;
-    user.tokensOwned = backtesting::adaptor::dbOwnedTokenListToBtOwnedToken(
-        databaseConnector->getOwnedTokensByUser(u.userID), dbTokenList);
+    user.assets = backtesting::adaptor::dbUserAssetsToBtUserAssets(
+        databaseConnector->getAllAssetsByUser(u.userID), dbTokenList);
     user.orders = backtesting::adaptor::dbOrderListToBtOrderList(
         databaseConnector->getOrderForUser(u.userID), dbTokenList);
     user.trades = backtesting::adaptor::dbTradeListToBtTradeList(

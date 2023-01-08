@@ -35,11 +35,13 @@ void processDepthStream(net::io_context &ioContext, trade_map_td &tradeMap) {
     global_order_book_t d;
     d.tokenName = tokenName;
     if (auto spotStreamer = sorter(value, SPOT); spotStreamer.has_value()) {
-      d.spot.reset(new order_book_t(ioContext, std::move(*spotStreamer)));
+      d.spot.reset(new order_book_t(ioContext, std::move(*spotStreamer),
+                                    trade_type_e::spot));
     }
     if (auto futuresStreamer = sorter(value, FUTURES);
         futuresStreamer.has_value()) {
-      d.futures.reset(new order_book_t(ioContext, std::move(*futuresStreamer)));
+      d.futures.reset(new order_book_t(ioContext, std::move(*futuresStreamer),
+                                       trade_type_e::futures));
     }
 
     if (d.futures || d.spot)

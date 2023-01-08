@@ -2,6 +2,10 @@
 #include <algorithm>
 
 namespace backtesting {
+namespace utils {
+bool isCaseInsensitiveStringCompare(std::string const &s, std::string const &t);
+}
+
 namespace adaptor {
 token_data_list_t dbTokenListToBtTokenList(db_token_list_t const &list) {
   token_data_list_t result;
@@ -12,27 +16,53 @@ token_data_list_t dbTokenListToBtTokenList(db_token_list_t const &list) {
     data.tradeType = static_cast<trade_type_e>(d.tradeType);
     data.baseAsset = d.baseAsset;
     data.quoteAsset = d.quoteAsset;
+    data.tokenID = d.tokenID;
     result.push_back(std::move(data));
   }
   return result;
 }
 
-token_owned_list_t
-dbOwnedTokenListToBtOwnedToken(db_owned_token_list_t const &list,
-                               db_token_list_t const &tokenList) {
-  token_owned_list_t result;
-  result.reserve(list.size());
-  for (auto const &d : list) {
+db_user_asset_list_t
+btUserAssetsToDbUserAssets(uint64_t const userID,
+                           user_asset_list_t const &userAssets,
+                           token_data_list_t const &tokenList) {
+  db_user_asset_list_t dbAssets;
+  dbAssets.reserve(userAssets.size());
+  for (auto const &a : userAssets) {
+    db_user_asset_list_t::value_type asset;
+    asset.ownerID = userID;
+    asset.amountAvailable = a.amountAvailable;
+    asset.amountInUse = a.amountInUse;
+    auto iter = std::find_if(tokenList.cbegin(), tokenList.cend(),
+                             [&a](token_data_t const &data) {
+                               return utils::isCaseInsensitiveStringCompare(
+                                          data.name, a.tokenName) &&
+                                      (a.tradeType == data.tradeType);
+                             });
+    if (iter == std::cend(tokenList))
+      throw std::runtime_error("Invalid token");
+    asset.tokenID = iter->tokenID;
+    dbAssets.push_back(std::move(asset));
+  }
+  return dbAssets;
+}
+
+user_asset_list_t
+dbUserAssetsToBtUserAssets(db_user_asset_list_t const &dbAssets,
+                           db_token_list_t const &tokenList) {
+  user_asset_list_t result;
+  result.reserve(dbAssets.size());
+  for (auto const &d : dbAssets) {
     auto iter = std::find_if(
         tokenList.cbegin(), tokenList.cend(),
         [tkID = d.tokenID](db_token_t const &a) { return a.tokenID == tkID; });
     if (iter == tokenList.cend())
       continue;
-    token_owned_list_t::value_type data;
-    data.tokenName = iter->name;
-    data.amountInUse = d.amountInUse;
-    data.amountAvailable = d.amountAvailable;
-    result.push_back(std::move(data));
+    user_asset_list_t::value_type userAsset;
+    userAsset.tokenName = iter->name;
+    userAsset.amountInUse = d.amountInUse;
+    userAsset.amountAvailable = d.amountAvailable;
+    result.push_back(std::move(userAsset));
   }
   return result;
 }

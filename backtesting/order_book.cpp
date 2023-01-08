@@ -2,45 +2,82 @@
 #include <spdlog/spdlog.h>
 
 namespace backtesting {
+using simple_sort_callback_t = bool (*)(details::order_meta_data_t const &a,
+                                        details::order_meta_data_t const &b);
 
-static int64_t orderNumber = 0x2'300'820'000;
-static int64_t tradeNumber = 0x1'500'320'012;
+static int64_t orderNumber = 0x0'300'820'000;
 
-bool isGreater(depth_data_t::depth_meta_t const &a,
-               depth_data_t::depth_meta_t const &b) {
+bool isGreater(details::order_meta_data_t const &a,
+               details::order_meta_data_t const &b) {
   return a.priceLevel > b.priceLevel;
 }
 
-bool isLesser(depth_data_t::depth_meta_t const &a,
-              depth_data_t::depth_meta_t const &b) {
+bool isLesser(details::order_meta_data_t const &a,
+              details::order_meta_data_t const &b) {
   return a.priceLevel < b.priceLevel;
 }
 
 struct lesser_comparator_t {
-  bool operator()(double const a, depth_data_t::depth_meta_t const &b) const {
+  bool operator()(double const a, details::order_meta_data_t const &b) const {
     return a < b.priceLevel;
   }
-  bool operator()(depth_data_t::depth_meta_t const &a, double const b) const {
+
+  bool operator()(details::order_meta_data_t const &a, double const b) const {
     return a.priceLevel < b;
   }
 };
+static lesser_comparator_t lesserComparator{};
 
 struct greater_comparator_t {
-  bool operator()(double const a, depth_data_t::depth_meta_t const &b) const {
+  bool operator()(double const a, details::order_meta_data_t const &b) const {
     return a > b.priceLevel;
   }
-  bool operator()(depth_data_t::depth_meta_t const &a, double const b) const {
+
+  bool operator()(details::order_meta_data_t const &a, double const b) const {
     return a.priceLevel > b;
   }
 };
-
-static lesser_comparator_t lesserComparator{};
 static greater_comparator_t greaterComparator{};
 
 template <typename Func>
-void updateSidesWithNewData(std::vector<depth_data_t::depth_meta_t> const &src,
-                            std::vector<depth_data_t::depth_meta_t> &dest,
-                            Func comparator) {
+void updateSidesWithNewOrder(order_data_t const &order,
+                             std::vector<details::order_meta_data_t> &dest,
+                             Func comparator) {
+  auto iter =
+      std::lower_bound(dest.begin(), dest.end(), order.priceLevel, comparator);
+  if (iter != dest.end() && iter->priceLevel == order.priceLevel) {
+    if (order.quantity == 0.0)
+      dest.erase(iter);
+    else {
+      iter->totalQuantity += order.quantity;
+      iter->orders.push_back(order);
+    }
+  } else {
+    details::order_meta_data_t newInsert{};
+    newInsert.orders.push_back(std::move(order));
+    newInsert.priceLevel = order.priceLevel;
+    newInsert.totalQuantity = order.quantity;
+    dest.insert(iter, std::move(newInsert));
+  }
+}
+
+template <typename Func>
+void updateSidesWithNewOrder(order_list_t const &src,
+                             std::vector<details::order_meta_data_t> &dest,
+                             Func comparator) {
+  for (auto const &d : src)
+    updateSidesWithNewOrder(d, dest, comparator);
+
+  dest.erase(std::remove_if(dest.begin(), dest.end(),
+                            [](auto const &a) { return a.quantity == 0.0; }),
+             dest.end());
+}
+
+template <typename Func>
+void updateSidesWithNewDepth(std::vector<depth_data_t::depth_meta_t> const &src,
+                             std::vector<details::order_meta_data_t> &dest,
+                             trade_side_e const side,
+                             trade_type_e const tradeType, Func comparator) {
   for (auto const &d : src) {
     auto iter =
         std::lower_bound(dest.begin(), dest.end(), d.priceLevel, comparator);
@@ -49,62 +86,127 @@ void updateSidesWithNewData(std::vector<depth_data_t::depth_meta_t> const &src,
         dest.erase(iter);
         continue;
       } else {
-        iter->quantity += d.quantity;
+        iter->totalQuantity += d.quantity;
+        order_data_t order;
+        order.market = market_type_e::limit;
+        order.priceLevel = d.priceLevel;
+        order.quantity = d.quantity;
+        order.side = side;
+        order.type = tradeType;
+        order.orderID = orderNumber++;
+        iter->orders.push_back(std::move(order));
       }
     } else {
-      dest.insert(iter, d);
+      dest.insert(iter, orderMetaDataFromDepth(d, side, tradeType));
     }
   }
+
   dest.erase(std::remove_if(dest.begin(), dest.end(),
-                            [](auto const &a) { return a.quantity == 0.0; }),
+                            [](details::order_meta_data_t const &a) {
+                              return a.totalQuantity == 0.0;
+                            }),
              dest.end());
 }
 
-void pushTrade(trade_list_t &result, order_data_t const &order,
-               double const qty, double const amount, uint64_t const orderID) {
-  trade_list_t::value_type trade;
+[[nodiscard]] trade_data_t getNewTrade(order_data_t const &order,
+                                       double const qty, double const amount) {
+  static int64_t tradeNumber = 0x0'500'320'012;
+
+  trade_data_t trade;
   trade.quantityExecuted = qty;
   trade.amountPerPiece = amount;
-  trade.orderID = orderID;
+  trade.orderID = order.orderID;
   trade.side = order.side;
   trade.tokenName = order.tokenName;
   trade.tradeID = tradeNumber++;
-  result.push_back(std::move(trade));
-};
 
-trade_list_t marketMatcher(std::vector<depth_data_t::depth_meta_t> &list,
-                           order_data_t const &order, double quantity,
-                           uint64_t const orderID) {
-  if (list.empty())
-    return {};
+  return trade;
+}
+
+[[nodiscard]] trade_list_t
+getExecutedTradesFromOrders(details::order_meta_data_t &data,
+                            double quantityTraded, double const priceLevel) {
+  trade_list_t trades;
+  while (quantityTraded > 0.0) {
+    if (data.orders.empty())
+      break;
+    auto &order = data.orders.front();
+    double const tempQty = std::min(order.quantity, quantityTraded);
+    auto trade = getNewTrade(order, tempQty, priceLevel);
+    order.quantity -= tempQty;
+    quantityTraded -= tempQty;
+    if (order.quantity == 0.0)
+      data.orders.erase(data.orders.begin());
+    trades.push_back(std::move(trade));
+  }
+  return trades;
+}
+
+trade_list_t marketMatcher(std::vector<details::order_meta_data_t> &list,
+                           double &quantity, order_data_t const &order) {
   trade_list_t result;
+  if (list.empty())
+    return result;
 
   while (quantity > 0.0 && !list.empty()) {
     auto &front = list.front();
-    if (front.quantity > quantity) {
-      pushTrade(result, order, quantity, front.priceLevel, orderID);
-      front.quantity -= quantity;
-      quantity = 0.0;
-    } else if (front.quantity == quantity) {
-      pushTrade(result, order, front.quantity, front.priceLevel, orderID);
-      quantity = 0.0;
+    double const price = front.priceLevel;
+    double const execQty = std::min(quantity, front.totalQuantity);
+
+    auto trade = getNewTrade(order, execQty, price);
+    auto otherTrades = getExecutedTradesFromOrders(front, execQty, price);
+
+    front.totalQuantity -= execQty;
+    quantity -= execQty;
+
+    if (front.totalQuantity == 0.0)
       list.erase(list.begin());
-    } else {
-      pushTrade(result, order, front.quantity, front.priceLevel, orderID);
-      quantity -= front.quantity;
-      list.erase(list.begin());
-    }
+
+    result.push_back(trade);
+    result.insert(result.end(), otherTrades.begin(), otherTrades.end());
   }
   return result;
 }
 
+details::order_meta_data_t
+orderMetaDataFromDepth(depth_data_t::depth_meta_t const &depth,
+                       trade_side_e const side, trade_type_e const tradeType) {
+  details::order_meta_data_t d;
+  d.totalQuantity += depth.quantity;
+  d.priceLevel = depth.priceLevel;
+
+  order_data_t order;
+  order.market = market_type_e::limit;
+  order.priceLevel = depth.priceLevel;
+  order.quantity = depth.quantity;
+  order.side = side;
+  order.type = tradeType;
+  order.orderID = orderNumber++;
+  d.orders.push_back(order);
+  return d;
+}
+
+void insertAndSort(std::vector<depth_data_t::depth_meta_t> const &depthList,
+                   std::vector<details::order_meta_data_t> &dst,
+                   trade_side_e const side, trade_type_e const tradeType,
+                   simple_sort_callback_t comparator) {
+  for (auto const &depth : depthList)
+    dst.push_back(orderMetaDataFromDepth(depth, side, tradeType));
+
+  std::sort(dst.begin(), dst.end(), comparator);
+}
+
 order_book_t::order_book_t(net::io_context &ioContext,
-                           data_streamer_t<depth_data_t> dataStreamer)
+                           data_streamer_t<depth_data_t> dataStreamer,
+                           trade_type_e const tradeType)
     : m_ioContext(ioContext), m_dataStreamer(std::move(dataStreamer)),
-      m_currentBook(m_dataStreamer.getNextData()),
-      m_currentTimer(m_currentBook.eventTime) {
-  std::sort(m_currentBook.asks.begin(), m_currentBook.asks.end(), isLesser);
-  std::sort(m_currentBook.bids.begin(), m_currentBook.bids.end(), isGreater);
+      m_currentTimer(0), m_tradeType(tradeType) {
+  auto firstData = m_dataStreamer.getNextData();
+  insertAndSort(firstData.bids, m_orderBook.bids, trade_side_e::buy,
+                m_tradeType, isGreater);
+  insertAndSort(firstData.asks, m_orderBook.asks, trade_side_e::sell,
+                m_tradeType, isLesser);
+  m_currentTimer = firstData.eventTime;
 }
 
 order_book_t::~order_book_t() {
@@ -123,43 +225,43 @@ void order_book_t::run() {
 
 trade_list_t order_book_t::match(order_data_t order) {
   auto const isBuying = (order.side == trade_side_e::buy);
-  auto &bids = m_currentBook.bids;
-  auto &asks = m_currentBook.asks;
+  auto &bids = m_orderBook.bids;
+  auto &asks = m_orderBook.asks;
 
   trade_list_t result;
   if (order.market == trade_market_e::market) {
-    return marketMatcher(isBuying ? asks : bids, order, order.quantity,
-                         orderNumber++);
+    return marketMatcher(isBuying ? asks : bids, order.quantity, order);
   } else if (order.market == trade_market_e::limit) {
     if (isBuying) {
       double &qty = order.quantity;
       if (asks.empty() ||
           (!bids.empty() && order.priceLevel <= bids.front().priceLevel) ||
           (!asks.empty() && asks.front().priceLevel > order.priceLevel)) {
-        depth_data_t::depth_meta_t temp{order.priceLevel, qty};
-        updateSidesWithNewData({std::move(temp)}, bids, greaterComparator);
-        pushTrade(result, order, 0.0, 0.0, orderNumber++);
+        updateSidesWithNewOrder(order, bids, greaterComparator);
         return result;
       }
 
       assert(bids.front().priceLevel < order.priceLevel);
 
-      auto const orderID = orderNumber++;
       while (!asks.empty()) {
-        if (asks.front().priceLevel <= order.priceLevel) { // full or partial
-          if (qty <= asks.front().quantity) {
-            pushTrade(result, order, qty, asks.front().priceLevel, orderID);
-            asks.front().quantity -= qty;
-            qty = 0.0;
-            if (asks.front().quantity == 0.0)
-              asks.erase(asks.begin());
-            return result;
-          } else if (qty > asks.front().quantity) {
-            pushTrade(result, order, asks.front().quantity,
-                      asks.front().priceLevel, orderID);
-            qty -= asks.front().quantity;
+        auto &ask = asks.front();
+        if (ask.priceLevel <= order.priceLevel) { // full or partial
+          double const price = std::max(ask.priceLevel, order.priceLevel);
+          double const execQty = std::min(order.quantity, ask.totalQuantity);
+
+          auto trade = getNewTrade(order, execQty, price);
+          auto otherTrades = getExecutedTradesFromOrders(ask, execQty, price);
+
+          ask.totalQuantity -= execQty;
+          order.quantity -= execQty;
+
+          if (ask.totalQuantity == 0.0)
             asks.erase(asks.begin());
-          }
+          result.push_back(std::move(trade));
+          result.insert(result.end(), otherTrades.begin(), otherTrades.end());
+
+          if (order.quantity == 0.0)
+            return result;
         } else { // partial
           assert(qty > 0.0);
           break;
@@ -169,17 +271,14 @@ trade_list_t order_book_t::match(order_data_t order) {
       assert(qty > 0.0);
 
       if (qty > 0.0) {
-        depth_data_t::depth_meta_t temp{order.priceLevel, qty};
-        updateSidesWithNewData({std::move(temp)}, bids, greaterComparator);
+        updateSidesWithNewOrder(order, bids, greaterComparator);
         return result;
       }
       // something is wrong with the order matching engine implementation
       throw std::runtime_error("internal error");
     } else if (order.side == trade_side_e::sell) { // selling
       if (bids.empty() || (order.priceLevel > bids.front().priceLevel)) {
-        depth_data_t::depth_meta_t temp{order.priceLevel, order.quantity};
-        updateSidesWithNewData({std::move(temp)}, bids, greaterComparator);
-        pushTrade(result, order, 0.0, 0.0, orderNumber++);
+        updateSidesWithNewOrder(order, bids, greaterComparator);
         return result;
       }
 
@@ -187,21 +286,24 @@ trade_list_t order_book_t::match(order_data_t order) {
 
       auto const orderID = orderNumber++;
       while (!bids.empty()) {
+        auto &bid = bids.front();
         if (bids.front().priceLevel >= order.priceLevel) {
-          if (order.quantity <= bids.front().quantity) {
-            pushTrade(result, order, order.quantity, bids.front().priceLevel,
-                      orderID);
-            bids.front().quantity -= order.quantity;
-            order.quantity = 0.0;
-            if (bids.front().quantity == 0.0)
-              bids.erase(bids.begin());
-            return result;
-          } else if (order.quantity > bids.front().quantity) {
-            pushTrade(result, order, bids.front().quantity,
-                      bids.front().priceLevel, orderID);
-            order.quantity -= bids.front().quantity;
+          double const price = std::min(bid.priceLevel, order.priceLevel);
+          double const execQty = std::min(order.quantity, bid.totalQuantity);
+
+          auto trade = getNewTrade(order, execQty, price);
+          auto otherTrades = getExecutedTradesFromOrders(bid, execQty, price);
+
+          order.quantity -= execQty;
+          bid.totalQuantity -= execQty;
+
+          if (bid.totalQuantity == 0.0)
             bids.erase(bids.begin());
-          }
+          result.push_back(std::move(trade));
+          result.insert(result.end(), otherTrades.begin(), otherTrades.end());
+
+          if (order.quantity == 0.0)
+            return result;
         } else {
           break;
         }
@@ -210,8 +312,7 @@ trade_list_t order_book_t::match(order_data_t order) {
       assert(order.quantity > 0.0);
 
       if (order.quantity > 0.0) {
-        depth_data_t::depth_meta_t temp{order.priceLevel, order.quantity};
-        updateSidesWithNewData({std::move(temp)}, asks, lesserComparator);
+        updateSidesWithNewOrder(order, asks, lesserComparator);
         return result;
       }
       // something is wrong with the order matching engine implementation
@@ -224,32 +325,53 @@ trade_list_t order_book_t::match(order_data_t order) {
   return result;
 }
 
-trade_list_t order_book_t::shakeOrderBook() {
-  auto &bids = m_currentBook.bids;
-  auto &asks = m_currentBook.asks;
+/*
+Asks
+1.3 -> 100
+1.29 -> 98
+1.28 -> 3
+1.26 -> 12
+1.21 -> 15
+1.19 -> 10
+1.17 -> 11
+============= 8 <= BUY (LIMIT)
+1.19 -> 3
+1.18 -> 1
+1.17 -> 5
+1.14 -> 11
+1.12 -> 13
+1.10 -> 52
+Bids
+*/
 
-  trade_list_t result;
-  // buying first
+trade_list_t order_book_t::shakeOrderBook() {
+  auto &bids = m_orderBook.bids;
+  auto &asks = m_orderBook.asks;
+
   if (asks.empty() || bids.empty() ||
       bids.front().priceLevel < asks.front().priceLevel)
-    return result;
+    return {};
 
-  while (!asks.empty()) {
-    if (bids.empty())
-      break;
-    if (asks.front().priceLevel <= bids.front().priceLevel) {
-      if (bids.front().quantity <= asks.front().quantity) {
-        asks.front().quantity -= bids.front().quantity;
-        bids.erase(bids.begin());
+  trade_list_t result{};
+  while (!(asks.empty() && bids.empty())) {
+    auto &ask = asks.front();
+    auto &bid = bids.front();
+    if (ask.priceLevel <= bid.priceLevel) {
+      double const price = std::max(ask.priceLevel, bid.priceLevel);
+      double const execQty = std::min(bid.totalQuantity, ask.totalQuantity);
 
-        if (asks.front().quantity == 0.0)
-          asks.erase(asks.begin());
-      } else if (bids.front().quantity >= asks.front().quantity) {
-        bids.front().quantity -= asks.front().quantity;
+      auto otherTrades = getExecutedTradesFromOrders(bid, execQty, price);
+      result.insert(result.end(), otherTrades.begin(), otherTrades.end());
+      otherTrades = getExecutedTradesFromOrders(ask, execQty, price);
+      result.insert(result.end(), otherTrades.begin(), otherTrades.end());
+
+      ask.totalQuantity -= execQty;
+      if (ask.totalQuantity == 0.0)
         asks.erase(asks.begin());
-        if (bids.front().quantity == 0.0)
-          bids.erase(bids.begin());
-      }
+
+      bid.totalQuantity -= execQty;
+      if (bid.totalQuantity == 0.0)
+        bids.erase(bids.begin());
     } else { // nothing to be done again
       break;
     }
@@ -287,22 +409,23 @@ void order_book_t::setNextTimer() {
 
 #ifdef _DEBUG
 void order_book_t::printOrderBook() {
-  for (auto const &ask : m_currentBook.asks)
-    spdlog::debug("{} -> {}", ask.priceLevel, ask.quantity);
+  for (auto const &ask : m_orderBook.asks)
+    spdlog::debug("{} -> {}", ask.priceLevel, ask.totalQuantity);
 
   spdlog::debug("================");
 
-  for (auto const &bid : m_currentBook.bids)
-    spdlog::debug("{} -> {}", bid.priceLevel, bid.quantity);
+  for (auto const &bid : m_orderBook.bids)
+    spdlog::debug("{} -> {}", bid.priceLevel, bid.totalQuantity);
   spdlog::debug("<<========END========>>\n");
 }
 #endif
 
 void order_book_t::updateOrderBook(depth_data_t &&newestData) {
-  updateSidesWithNewData(newestData.asks, m_currentBook.asks, lesserComparator);
-  updateSidesWithNewData(newestData.bids, m_currentBook.bids,
-                         greaterComparator);
-  shakeOrderBook();
+  updateSidesWithNewDepth(newestData.asks, m_orderBook.asks, trade_side_e::sell,
+                          m_tradeType, lesserComparator);
+  updateSidesWithNewDepth(newestData.bids, m_orderBook.bids, trade_side_e::buy,
+                          m_tradeType, greaterComparator);
+  (void)shakeOrderBook();
 #ifdef _DEBUG
   printOrderBook();
 #endif // _DEBUG

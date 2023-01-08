@@ -22,9 +22,9 @@ otl_stream &operator>>(otl_stream &os, db_trade_data_t &trade) {
          trade.amountPerPiece >> trade.tokenID >> trade.side;
 }
 
-otl_stream &operator>>(otl_stream &os, db_owned_token_t &item) {
-  return os >> item.databaseID >> item.ownerID >> item.tokenID >>
-         item.amountInUse >> item.amountAvailable;
+otl_stream &operator>>(otl_stream &os, db_user_asset_t &asset) {
+  return os >> asset.databaseID >> asset.ownerID >> asset.tokenID >>
+         asset.amountInUse >> asset.amountAvailable;
 }
 
 otl_stream &operator>>(otl_stream &os, db_user_t &user) {
@@ -138,26 +138,26 @@ bool database_connector_t::connect() {
   return is_running;
 }
 
-db_owned_token_list_t
-database_connector_t::getOwnedTokensByUser(int const userID) {
+db_user_asset_list_t
+database_connector_t::getAllAssetsByUser(int const userID) {
   auto const sqlStatement =
       fmt::format("SELECT id, ownerID, tokenID, amountInUse, amountAvailable "
                   "FROM `bt_owned_tokens` WHERE ownerID={}",
                   userID);
-  db_owned_token_list_t result;
+  db_user_asset_list_t assets;
   std::lock_guard<std::mutex> lockG(db_mutex_);
   try {
     otl_stream dbStream{100, sqlStatement.c_str(), otl_connector_};
-    db_owned_token_t t;
+    db_user_asset_t userAsset;
     for (auto &stream : dbStream) {
-      stream >> t;
-      result.push_back(std::move(t));
+      stream >> userAsset;
+      assets.push_back(std::move(userAsset));
     }
   } catch (otl_exception const &e) {
     log_sql_error(e);
-    result.clear();
+    assets.clear();
   }
-  return result;
+  return assets;
 }
 
 db_user_order_list_t database_connector_t::getOrderForUser(int const userID) {
@@ -278,8 +278,7 @@ bool database_connector_t::addTokenList(db_token_list_t const &list) {
   return true;
 }
 
-bool database_connector_t::addUserOwnedTokens(
-    db_owned_token_list_t const &list) {
+bool database_connector_t::addUserAssets(db_user_asset_list_t const &list) {
   auto const sqlStatement =
       "INSERT INTO `bt_owned_tokens`(tokenID, ownerID, amountInUse,"
       "amountAvailable) VALUES({}, {}, {}, {})";
@@ -319,17 +318,21 @@ bool database_connector_t::addOrderList(db_user_order_list_t const &list) {
   return true;
 }
 
-bool database_connector_t::addNewUser(std::string const &username) {
+int64_t database_connector_t::addNewUser(std::string const &username) {
+  int64_t id = -1;
   auto const sqlStatement =
       fmt::format("INSERT INTO `bt_users`(username) VALUES('{}')", username);
   std::lock_guard<std::mutex> lock_g{db_mutex_};
   try {
     otl_cursor::direct_exec(otl_connector_, sqlStatement.c_str(),
                             otl_exception::enabled);
+    auto const sqlStatement = fmt::format(
+        "SELECT id FROM `bt_users` WHERE `username`='{}'", username);
+    otl_stream stream{1, sqlStatement.c_str(), otl_connector_};
+    (void)(stream >> id);
   } catch (otl_exception const &e) {
     log_sql_error(e);
-    return false;
   }
-  return true;
+  return id;
 }
 } // namespace backtesting
