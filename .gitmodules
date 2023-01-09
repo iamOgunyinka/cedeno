@@ -11,3 +11,6 @@
 	path = third-party/pybind11
 	url = https://github.com/pybind/pybind11
 	branch = stable
+[submodule "third-party/Signals"]
+	path = third-party/Signals
+	url = https://github.com/pbhogan/Signals.git
