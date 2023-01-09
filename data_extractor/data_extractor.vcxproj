@@ -21,10 +21,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{583e2823-ddd5-4d09-8203-a0571c887b1f}</ProjectGuid>
-    <RootNamespace>cedeno</RootNamespace>
+    <ProjectGuid>{6c144613-52ad-4a59-b978-90ccebe2f005}</ProjectGuid>
+    <RootNamespace>pricegatherer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>backtesting_template</ProjectName>
+    <ProjectName>data_extractor</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -41,13 +41,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -79,9 +79,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <TargetName>lib$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -118,13 +120,14 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Visual Studio Projects\cedeno\cedeno;D:\Visual Studio Projects\cedeno\third-party\CLI11\include;D:\vcpkg\installed\x64-windows\include;D:\boost_1_78\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Visual Studio Projects\cedeno\third-party\rapidjson\include;D:\vcpkg\installed\x64-windows\include;D:\boost_1_78\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\vcpkg\installed\x64-windows\debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;libprotobufd.lib;abseil_dll.lib;absl_cordz_functions.lib;absl_cordz_handle.lib;absl_cordz_info.lib;absl_cordz_sample_token.lib;absl_cord_internal.lib;absl_flags.lib;absl_flags_commandlineflag.lib;absl_flags_commandlineflag_internal.lib;absl_flags_config.lib;absl_flags_internal.lib;absl_flags_marshalling.lib;absl_flags_parse.lib;absl_flags_private_handle_accessor.lib;absl_flags_program_name.lib;absl_flags_reflection.lib;absl_flags_usage.lib;absl_flags_usage_internal.lib;absl_low_level_hash.lib;absl_random_internal_distribution_test_util.lib;absl_statusor.lib;absl_strerror.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\vcpkg\installed\x64-windows\debug\lib;D:\boost_1_78\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -135,6 +138,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>D:\Visual Studio Projects\cedeno\third-party\rapidjson\include;D:\vcpkg\installed\x64-windows\include;D:\boost_1_78\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -144,53 +149,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="base\account.cc" />
-    <ClCompile Include="base\base.pb.cc" />
-    <ClCompile Include="base\history.cc" />
-    <ClCompile Include="base\side_input.cc" />
-    <ClCompile Include="eval\eval.cc" />
-    <ClCompile Include="eval\eval.pb.cc" />
-    <ClCompile Include="indicators\exponential_moving_average.cc" />
-    <ClCompile Include="indicators\last_n_ohlc_ticks.cc" />
-    <ClCompile Include="indicators\moving_average_convergence_divergence.cc" />
-    <ClCompile Include="indicators\relative_strength_index.cc" />
-    <ClCompile Include="indicators\simple_moving_average.cc" />
-    <ClCompile Include="indicators\stochastic_oscillator.cc" />
-    <ClCompile Include="indicators\util.cc" />
-    <ClCompile Include="indicators\volatility.cc" />
-    <ClCompile Include="logging\csv_logger.cc" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="traders\rebalancing_trader.cc" />
-    <ClCompile Include="traders\stop_trader.cc" />
-    <ClCompile Include="traders\trader_config.pb.cc" />
-    <ClCompile Include="traders\trader_factory.cc" />
-    <ClCompile Include="util\time.cc" />
+    <ClCompile Include="candlestick_futures_stream.cpp" />
+    <ClCompile Include="candlestick_spot_stream.cpp" />
+    <ClCompile Include="common.cpp" />
+    <ClCompile Include="data_extractor.cpp" />
+    <ClCompile Include="depth_stream.cpp" />
+    <ClCompile Include="ticker_stream.cpp" />
+    <ClCompile Include="trade_stream.cpp" />
+    <ClCompile Include="websocket_stream_base.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="base\account.h" />
-    <ClInclude Include="base\base.h" />
-    <ClInclude Include="base\base.pb.h" />
-    <ClInclude Include="base\history.h" />
-    <ClInclude Include="base\side_input.h" />
-    <ClInclude Include="base\trader.h" />
-    <ClInclude Include="eval\eval.h" />
-    <ClInclude Include="eval\eval.pb.h" />
-    <ClInclude Include="indicators\exponential_moving_average.h" />
-    <ClInclude Include="indicators\last_n_ohlc_ticks.h" />
-    <ClInclude Include="indicators\moving_average_convergence_divergence.h" />
-    <ClInclude Include="indicators\relative_strength_index.h" />
-    <ClInclude Include="indicators\simple_moving_average.h" />
-    <ClInclude Include="indicators\stochastic_oscillator.h" />
-    <ClInclude Include="indicators\util.h" />
-    <ClInclude Include="indicators\volatility.h" />
-    <ClInclude Include="logging\csv_logger.h" />
-    <ClInclude Include="logging\logger.h" />
-    <ClInclude Include="traders\rebalancing_trader.h" />
-    <ClInclude Include="traders\stop_trader.h" />
-    <ClInclude Include="traders\trader_config.pb.h" />
-    <ClInclude Include="traders\trader_factory.h" />
-    <ClInclude Include="util\proto.h" />
-    <ClInclude Include="util\time.h" />
+    <ClInclude Include="candlestick_base.hpp" />
+    <ClInclude Include="candlestick_futures_stream.hpp" />
+    <ClInclude Include="candlestick_spot_stream.hpp" />
+    <ClInclude Include="common.hpp" />
+    <ClInclude Include="container.hpp" />
+    <ClInclude Include="data_extractor.hpp" />
+    <ClInclude Include="depth_stream.hpp" />
+    <ClInclude Include="ticker_stream.hpp" />
+    <ClInclude Include="trade_stream.hpp" />
+    <ClInclude Include="websocket_stream_base.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

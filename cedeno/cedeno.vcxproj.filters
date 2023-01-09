@@ -13,10 +13,180 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\base">
+      <UniqueIdentifier>{c6bbe556-dee3-4365-a974-c4aec4f7fa9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\eval">
+      <UniqueIdentifier>{6a61a295-cd66-4b2e-a5e8-4b0dc6d292b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\indicators">
+      <UniqueIdentifier>{b6d47234-a62c-4b95-81cd-d87929ca69d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\logging">
+      <UniqueIdentifier>{82b7eefb-a5bd-43ec-981a-1861c2c4a6a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\traders">
+      <UniqueIdentifier>{5b72954b-ac53-4356-bbfa-c9c359ade2af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\utils">
+      <UniqueIdentifier>{b8d8cc6a-d680-436b-b78d-2d17defd6369}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\base">
+      <UniqueIdentifier>{dc3d8dc9-4874-496f-8159-3ccaf8c32708}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\eval">
+      <UniqueIdentifier>{d2b3b4bc-d63e-4b15-8ce8-36d54aa944c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\indicators">
+      <UniqueIdentifier>{d77742cb-5dbd-4bf2-9b08-69e4594fd0f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\logging">
+      <UniqueIdentifier>{be5e6386-6f1a-4eeb-a5a1-b05eda650969}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{f6b8a18a-284d-4d49-ab19-74c4561faf4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\traders">
+      <UniqueIdentifier>{4df5708f-7fa4-4ab8-9097-1c11be1959e4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cedeno.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="base\account.cc">
+      <Filter>Source Files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="base\history.cc">
+      <Filter>Source Files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="base\side_input.cc">
+      <Filter>Source Files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="eval\eval.cc">
+      <Filter>Source Files\eval</Filter>
+    </ClCompile>
+    <ClCompile Include="indicators\exponential_moving_average.cc">
+      <Filter>Source Files\indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="indicators\last_n_ohlc_ticks.cc">
+      <Filter>Source Files\indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="indicators\moving_average_convergence_divergence.cc">
+      <Filter>Source Files\indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="indicators\relative_strength_index.cc">
+      <Filter>Source Files\indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="indicators\simple_moving_average.cc">
+      <Filter>Source Files\indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="indicators\stochastic_oscillator.cc">
+      <Filter>Source Files\indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="indicators\util.cc">
+      <Filter>Source Files\indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="indicators\volatility.cc">
+      <Filter>Source Files\indicators</Filter>
+    </ClCompile>
+    <ClCompile Include="logging\csv_logger.cc">
+      <Filter>Source Files\logging</Filter>
+    </ClCompile>
+    <ClCompile Include="traders\rebalancing_trader.cc">
+      <Filter>Source Files\traders</Filter>
+    </ClCompile>
+    <ClCompile Include="traders\stop_trader.cc">
+      <Filter>Source Files\traders</Filter>
+    </ClCompile>
+    <ClCompile Include="traders\trader_factory.cc">
+      <Filter>Source Files\traders</Filter>
+    </ClCompile>
+    <ClCompile Include="util\time.cc">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="base\base.pb.cc">
+      <Filter>Source Files\base</Filter>
+    </ClCompile>
+    <ClCompile Include="eval\eval.pb.cc">
+      <Filter>Source Files\eval</Filter>
+    </ClCompile>
+    <ClCompile Include="traders\trader_config.pb.cc">
+      <Filter>Source Files\traders</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="base\account.h">
+      <Filter>Header Files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="base\base.h">
+      <Filter>Header Files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="base\history.h">
+      <Filter>Header Files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="base\side_input.h">
+      <Filter>Header Files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="base\trader.h">
+      <Filter>Header Files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="eval\eval.h">
+      <Filter>Header Files\eval</Filter>
+    </ClInclude>
+    <ClInclude Include="indicators\exponential_moving_average.h">
+      <Filter>Header Files\indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="indicators\last_n_ohlc_ticks.h">
+      <Filter>Header Files\indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="indicators\moving_average_convergence_divergence.h">
+      <Filter>Header Files\indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="indicators\relative_strength_index.h">
+      <Filter>Header Files\indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="indicators\simple_moving_average.h">
+      <Filter>Header Files\indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="indicators\stochastic_oscillator.h">
+      <Filter>Header Files\indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="indicators\util.h">
+      <Filter>Header Files\indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="indicators\volatility.h">
+      <Filter>Header Files\indicators</Filter>
+    </ClInclude>
+    <ClInclude Include="logging\csv_logger.h">
+      <Filter>Header Files\logging</Filter>
+    </ClInclude>
+    <ClInclude Include="logging\logger.h">
+      <Filter>Header Files\logging</Filter>
+    </ClInclude>
+    <ClInclude Include="traders\rebalancing_trader.h">
+      <Filter>Header Files\traders</Filter>
+    </ClInclude>
+    <ClInclude Include="traders\stop_trader.h">
+      <Filter>Header Files\traders</Filter>
+    </ClInclude>
+    <ClInclude Include="traders\trader_factory.h">
+      <Filter>Header Files\traders</Filter>
+    </ClInclude>
+    <ClInclude Include="util\proto.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="util\time.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="base\base.pb.h">
+      <Filter>Header Files\base</Filter>
+    </ClInclude>
+    <ClInclude Include="eval\eval.pb.h">
+      <Filter>Header Files\eval</Filter>
+    </ClInclude>
+    <ClInclude Include="traders\trader_config.pb.h">
+      <Filter>Header Files\traders</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
