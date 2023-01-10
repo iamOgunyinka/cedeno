@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 namespace boost {
 namespace asio {
@@ -16,7 +15,7 @@ class data_extractor_t {
 public:
   data_extractor_t();
   ~data_extractor_t();
-  int run(std::vector<std::string> &&args);
+  int run(size_t const argc, char **argv);
   bool stop();
 
 private:
