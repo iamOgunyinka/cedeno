@@ -121,6 +121,7 @@ void updateSidesWithNewDepth(std::vector<depth_data_t::depth_meta_t> const &src,
   trade.tokenName = order.tokenName;
   trade.tradeID = tradeNumber++;
   trade.eventTime = std::time(nullptr);
+  trade.tradeType = order.type;
 
   return trade;
 }

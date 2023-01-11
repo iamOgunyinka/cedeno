@@ -28,7 +28,7 @@ user_data_t::createOrder(std::string const &tokenName, double const quantity,
 }
 
 std::optional<order_data_t>
-user_data_t::createOrder(uint64_t const &tokenID, double const quantity,
+user_data_t::createOrder(uint64_t const tokenID, double const quantity,
                          double const price, double const leverage,
                          trade_side_e const side, trade_market_e const market) {
   auto &tokens = globalRtData.allTokens;

@@ -3,6 +3,9 @@
 #include <memory>
 #include <spdlog/spdlog.h>
 
+std::map<int, std::vector<backtesting::new_trades_callback_t>>
+    registeredCallbacks;
+
 namespace matching_engine {
 
 void match_order(backtesting::order_book_t &orderBook,
@@ -32,7 +35,16 @@ trade_signal_handler_t::GetTradesDelegate() {
 void trade_signal_handler_t::OnNewTradesImpl() {
   while (true) {
     auto trades = tradeList.get();
-    spdlog::info("Trades executed: ", trades.size());
+    spdlog::info("Trades executed: {}", trades.size());
+
+    if (!(registeredCallbacks.empty() && trades.empty())) {
+      auto &callbacks = registeredCallbacks[(int)trades[0].tradeType];
+      for (auto const &callback : callbacks) {
+        if (callback)
+          callback(trades);
+      }
+    }
   }
 }
+
 } // namespace matching_engine
