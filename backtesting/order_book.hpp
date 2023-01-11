@@ -3,6 +3,7 @@
 #include <boost/asio/deadline_timer.hpp>
 #include <memory>
 
+#include "Signals/Signal.h"
 #include "depth_data.hpp"
 #include "user_data.hpp"
 
@@ -13,8 +14,8 @@ class order_book_t;
 }
 
 namespace matching_engine {
-backtesting::trade_list_t match_order(backtesting::order_book_t &orderBook,
-                                      backtesting::order_data_t const &order);
+void match_order(backtesting::order_book_t &orderBook,
+                 backtesting::order_data_t const &order);
 }
 
 namespace backtesting {
@@ -32,9 +33,10 @@ struct order_book_meta_t {
 
 class order_book_t {
 public:
-  friend trade_list_t
+  friend void
   matching_engine::match_order(order_book_t &orderBook,
                                backtesting::order_data_t const &order);
+  Gallant::Signal1<trade_list_t> NewTradesCreated;
   order_book_t(net::io_context &ioContext,
                data_streamer_t<depth_data_t> dataStreamer,
                trade_type_e const t);
@@ -46,9 +48,9 @@ private:
   void printOrderBook();
 #endif
 
-  [[nodiscard]] trade_list_t match(backtesting::order_data_t order);
+  void match(backtesting::order_data_t order);
   void setNextTimer();
-  [[nodiscard]] trade_list_t shakeOrderBook();
+  void shakeOrderBook();
   void updateOrderBook(depth_data_t &&newestData);
 
 private:

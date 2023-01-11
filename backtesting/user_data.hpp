@@ -66,6 +66,7 @@ struct trade_data_t {
   std::string tokenName;
   uint64_t tradeID = 0;
   uint64_t orderID = 0;
+  uint64_t eventTime = 0;
   double quantityExecuted = 0.0;
   double amountPerPiece = 0.0;
   trade_side_e side = trade_side_e::none;
@@ -104,5 +105,5 @@ private:
 
 using user_data_list_t = std::vector<user_data_t>;
 
-trade_list_t initiateOrder(order_data_t const &order);
+bool initiateOrder(order_data_t const &order);
 } // namespace backtesting

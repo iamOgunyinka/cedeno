@@ -165,6 +165,7 @@
     <ClInclude Include="arguments_parser.hpp" />
     <ClInclude Include="candlestick_data.hpp" />
     <ClInclude Include="common.hpp" />
+    <ClInclude Include="container.hpp" />
     <ClInclude Include="database_connector.hpp" />
     <ClInclude Include="database_types.hpp" />
     <ClInclude Include="data_streamer.hpp" />

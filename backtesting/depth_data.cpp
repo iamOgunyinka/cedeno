@@ -48,11 +48,17 @@ void processDepthStream(net::io_context &ioContext, trade_map_td &tradeMap) {
       globalOrderBooks.push_back(std::move(d));
   }
 
+  auto &newTradesDelegate =
+      matching_engine::trade_signal_handler_t::GetTradesDelegate();
   for (auto &orderBook : globalOrderBooks) {
-    if (orderBook.futures)
+    if (orderBook.futures) {
+      orderBook.futures->NewTradesCreated.Connect(newTradesDelegate);
       orderBook.futures->run();
-    if (orderBook.spot)
+    }
+    if (orderBook.spot) {
+      orderBook.spot->NewTradesCreated.Connect(newTradesDelegate);
       orderBook.spot->run();
+    }
   }
 
   ioContext.run();
@@ -141,9 +147,9 @@ depth_data_t::dataFromCSVStream(data_streamer_t<depth_data_t> &dataStreamer) {
   return data;
 }
 
-trade_list_t initiateOrder(order_data_t const &order) {
+bool initiateOrder(order_data_t const &order) {
   if (order.priceLevel < 0.0 || order.quantity < 0.0 || order.leverage < 1.0)
-    return {};
+    return false;
 
   auto iter = std::find_if(globalOrderBooks.begin(), globalOrderBooks.end(),
                            [&order](global_order_book_t &orderBook) {
@@ -151,15 +157,16 @@ trade_list_t initiateOrder(order_data_t const &order) {
                                  orderBook.tokenName, order.tokenName);
                            });
   if (iter == globalOrderBooks.end())
-    return {};
+    return false;
 
   auto &orderBook = *iter;
   auto const isFutures = order.type == trade_type_e::futures;
   if ((isFutures && !orderBook.futures) || (!isFutures && !orderBook.spot))
-    return {};
+    return false;
 
-  return matching_engine::match_order(
-      isFutures ? *orderBook.futures : *orderBook.spot, order);
+  matching_engine::match_order(isFutures ? *orderBook.futures : *orderBook.spot,
+                               order);
+  return true;
 }
 
 } // namespace backtesting
