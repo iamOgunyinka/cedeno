@@ -12,6 +12,6 @@ struct global_data_t {
   backtesting::token_data_list_t allTokens;
   backtesting::user_data_list_t allUserAccounts;
 
-  static bool newUser(backtesting::user_asset_list_t tokensOwned,
-                      bool forceCreationIfUserExists = false);
+  static bool newUser(backtesting::user_asset_list_t tokensOwned);
+  static global_data_t &instance();
 };

@@ -32,7 +32,6 @@ else()
   set(Boost_USE_STATIC_LIBS OFF) 
   set(Boost_USE_MULTITHREADED ON)  
   set(Boost_USE_STATIC_RUNTIME OFF)
-# message("${PROJECT_DIR}/../third-party/CLI11")
   include_directories(${Boost_INCLUDE_DIRS})
   link_directories(${Boost_LIBRARY_DIRS})
 endif()
@@ -48,6 +47,7 @@ endif()
 include_directories(${PROJECT_DIR}/../third-party)
 include_directories(${PROJECT_DIR}/../third-party/rapidjson/include)
 include_directories(${PROJECT_DIR}/../third-party/pybind11/include)
+include_directories(${PROJECT_DIR}/../third-party/spdlog/include)
 
 if(WIN32)
   # set stuff for windows
@@ -123,9 +123,12 @@ set(HEADERS_FILES
 source_group("Headers" FILES ${HEADERS_FILES})
 
 # Add executable to build.
-add_library(libdataextract STATIC 
-   ${SRC_FILES} ${HEADERS_FILES}
-)
+
+if (ENABLE_LIBS_FOR_TEST)
+  add_library(libdataextract STATIC ${SRC_FILES} ${HEADERS_FILES})
+else()
+  pybind11_add_module(libdataextract ${SRC_FILES} ${HEADERS_FILES})
+endif()
 
 if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++17 -O3")

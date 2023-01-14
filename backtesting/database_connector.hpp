@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef BT_USE_WITH_DB
+
 #include "database_types.hpp"
 #include <memory>
 #include <mutex>
@@ -67,3 +69,5 @@ void log_sql_error(otl_exception const &exception);
                                               std::string const &config_name);
 
 } // namespace backtesting
+
+#endif // BT_USE_WITH_DB
