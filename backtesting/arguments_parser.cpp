@@ -1,20 +1,32 @@
 #include "arguments_parser.hpp"
 
 #include "adaptor.hpp"
-#include "common.hpp"
+
+#ifdef BT_USE_WITH_DB
 #include "database_connector.hpp"
+#endif // BT_USE_WITH_DB
+
 #include "global_data.hpp"
 #include <CLI11/CLI11.hpp>
-#include <pybind11/pybind11.h>
 #include <random>
 #include <spdlog/spdlog.h>
 
-#define ERROR_PARSE() (m_args.reset(), m_argumentParsed)
 #define PRINT_INFO(str, ...)                                                   \
   {                                                                            \
     if (verbose)                                                               \
       spdlog::info(str, ##__VA_ARGS__);                                        \
   }
+
+#define ERROR_PARSE() (m_config.reset(), m_argumentParsed)
+#define PRINT_ERROR(str, ...)                                                  \
+  {                                                                            \
+    if (verbose)                                                               \
+      spdlog::error(str, ##__VA_ARGS__);                                       \
+  }
+
+#define ERROR_EXIT(str, ...)                                                   \
+  PRINT_ERROR(str, ##__VA_ARGS__)                                              \
+  return ERROR_PARSE();
 
 using backtesting::utils::currentTimeToString;
 using backtesting::utils::listContains;
@@ -27,9 +39,8 @@ bool verbose =
     false;
 #endif // _DEBUG
 
-extern global_data_t globalRtData;
-
 namespace backtesting {
+#ifdef BT_USE_WITH_DB
 void setupDummyList(db_token_list_t const &tokenList,
                     database_connector_t &dbConnector,
                     std::vector<db_user_t> &userList) {
@@ -37,7 +48,8 @@ void setupDummyList(db_token_list_t const &tokenList,
   std::mt19937 gen{rd()};
   std::uniform_int_distribution<> uid(0, tokenList.size());
 
-  assert(dbConnector.addNewUser("joshua") > 0);
+  int result = dbConnector.addNewUser("joshua");
+  assert(result > 0);
   userList = dbConnector.getUserIDs();
   assert(!userList.empty());
   assert(userList[0].userID == 1);
@@ -115,14 +127,194 @@ void saveTokenFromFileToDatabase(database_connector_t &dbConnector,
   dbTokenList.clear();
   dbTokenList = dbConnector.getListOfAllTokens();
 }
+
+#else
+void readTokensFromFileImpl(token_data_list_t &result,
+                            trade_type_e const tradeType,
+                            std::string const &filename) {
+  std::ifstream file(filename, std::ios::in);
+  if (!file)
+    return;
+
+  std::string line;
+  while (std::getline(file, line)) {
+    utils::trim(line);
+    if (!line.empty()) {
+      token_data_t d;
+      d.name = line;
+      d.tradeType = tradeType;
+      result.push_back(std::move(d));
+    }
+  }
+}
+
+token_data_list_t readTokensFromFile(std::string const &rootPath) {
+  std::vector<std::pair<trade_type_e, char const *>> const pair{
+      {trade_type_e::futures, "futures.csv"}, {trade_type_e::spot, "spot.csv"}};
+
+  auto const dirPath = std::filesystem::path(rootPath);
+  backtesting::token_data_list_t result;
+
+  if (!std::filesystem::exists(dirPath))
+    return result;
+
+  for (auto const &[tradeType, filename] : pair) {
+    auto const path = dirPath / filename;
+    if (!std::filesystem::exists(filename))
+      continue;
+    readTokensFromFileImpl(result, tradeType, path.string());
+  }
+  return result;
+}
+#endif
 } // namespace backtesting
 
-bool argument_parser_t::parse(size_t argc, char **argv) {
+backtesting_t::backtesting_t()
+    : m_config{std::nullopt}, m_argumentParsed(false),
+      m_authenticatedData(false) {}
+
+backtesting_t::backtesting_t(backtesting::configuration_t const &config)
+    : backtesting_t{} {
+  if (!parseImpl(config))
+    throw std::logic_error("invalid configuration used");
+}
+
+bool backtesting_t::parseImpl(backtesting::configuration_t config) {
+#ifdef BT_USE_WITH_DB
+  if (config.dbLaunchType.empty())
+    config.dbLaunchType = "development";
+
+  if (config.dbConfigFilename.empty())
+    config.dbConfigFilename = backtesting::getDatabaseConfigPath();
+
+  auto const dbConfig = backtesting::parse_database_file(
+      config.dbConfigFilename, config.dbLaunchType);
+  if (!dbConfig) {
+    spdlog::error("Unable to get database configuration values");
+    return ERROR_PARSE();
+  }
+#endif
+
+  if (config.streams.empty()) {
+    PRINT_INFO("Streams not specified, will use 'DEPTH' as default")
+    config.streams.push_back(DEPTH);
+  } else {
+    std::vector<std::string> const validStreams{TRADE, TICKER, BTICKER,
+                                                CANDLESTICK, DEPTH};
+    for (auto const &stream : config.streams) {
+      if (!listContains(validStreams, stream)) {
+        ERROR_EXIT("'{}' is not a valid stream type", stream)
+      }
+    }
+  }
+
+  if (config.tradeTypes.empty()) {
+    PRINT_INFO("trade type not specified, will use 'SPOT' as default")
+    config.tradeTypes.push_back(SPOT);
+  } else {
+    std::vector<std::string> const validTrades{SPOT, FUTURES};
+    for (auto const &trade : config.tradeTypes) {
+      if (!listContains(validTrades, trade)) {
+        ERROR_EXIT("'{}' is not a valid trade type", trade);
+      }
+    }
+  }
+
+  if (config.tokenList.empty()) {
+    PRINT_INFO("token list is empty, using 'BTCUSDT' as the default");
+    config.tokenList.push_back("BTCUSDT");
+#ifdef _DEBUG
+    PRINT_INFO("adding 'ETHUSDT' to the token list");
+    config.tokenList.push_back("ETHUSDT");
+#endif // _DEBUG
+  }
+
+  if (config.rootDir.empty()) {
+    config.rootDir =
+        (std::filesystem::current_path() / "backtestingFiles").string();
+  }
+
+  if (!std::filesystem::exists(config.rootDir)) {
+    ERROR_EXIT("'{}' does not exist.", config.rootDir);
+  }
+
+#ifdef _DEBUG
+  if (config.dateFromStr.empty()) {
+    constexpr std::size_t const last24hrs = 3'600 * 24;
+    config.dateFromStr = fmt::format(
+        "{} 00:00:00",
+        currentTimeToString(std::time(nullptr) - last24hrs, "-").value());
+    PRINT_INFO("Start date not specified, will use '{}'", config.dateFromStr)
+  }
+
+  if (config.dateToStr.empty()) {
+    config.dateToStr = fmt::format(
+        "{} 23:59:59", currentTimeToString(std::time(nullptr), "-").value());
+    PRINT_INFO("End-date not specified, will use '{}'", config.dateToStr)
+  }
+#endif // _DEBUG
+
+  auto &globalRtData = global_data_t::instance();
+
+  if (auto const optStartTime = stringToTimeT(config.dateFromStr);
+      optStartTime.has_value()) {
+    globalRtData.startTime = *optStartTime;
+  } else {
+    ERROR_EXIT("Unable to calculate the start date from user input");
+  }
+
+  if (auto const optEndTime = stringToTimeT(config.dateToStr);
+      optEndTime.has_value()) {
+    globalRtData.endTime = *optEndTime;
+  } else {
+    ERROR_EXIT("Unable to calculate the end date from user input");
+  }
+
+  if (globalRtData.startTime > globalRtData.endTime)
+    std::swap(globalRtData.startTime, globalRtData.endTime);
+
+  globalRtData.listOfFiles = backtesting::utils::getListOfCSVFiles(
+      config.tokenList, config.tradeTypes, config.streams,
+      globalRtData.startTime, globalRtData.endTime, config.rootDir);
+
+  if (globalRtData.listOfFiles.empty()) {
+    ERROR_EXIT("No files found matching the user-defined criteria");
+  }
+
+#ifdef BT_USE_WITH_DB
+  auto databaseConnector =
+      backtesting::database_connector_t::s_get_db_connector();
+  databaseConnector->username(dbConfig.username);
+  databaseConnector->password(dbConfig.password);
+  databaseConnector->database_name(dbConfig.db_dns);
+  if (!databaseConnector->connect())
+    return ERROR_PARSE();
+#endif
+
+  if (verbose) {
+    spdlog::info("start date: {}", config.dateFromStr);
+    spdlog::info("end date: {}", config.dateToStr);
+    spdlog::info("rootDir: {}", config.rootDir);
+
+    for (auto const &token : config.tokenList)
+      spdlog::info("token: {}", token);
+    for (auto const &s : config.streams)
+      spdlog::info("stream: {}", s);
+    for (auto const &t : config.tradeTypes)
+      spdlog::info("trade: {}", t);
+  }
+
+  m_argumentParsed = true;
+  return m_argumentParsed;
+}
+
+bool backtesting_t::parse(size_t argc, char **argv) {
   m_argumentParsed = false;
 
   CLI::App app{"backtesting software for Creed & Bear LLC"};
-  auto &args = m_args.emplace();
+  auto &args = m_config.emplace();
 
+#ifdef BT_USE_WITH_DB
   app.add_option("--db-config", args.dbConfigFilename,
                  fmt::format("database configuration filename "
                              "(default: '{}')",
@@ -131,6 +323,8 @@ bool argument_parser_t::parse(size_t argc, char **argv) {
                  fmt::format("database configuration"
                              " launch type(default: '{}')",
                              args.dbLaunchType));
+#endif
+
   app.add_option("--tokens", args.tokenList,
                  "a list of token pairs [e.g. btcusdt(default), ethusdt]");
   app.add_option("--streams", args.streams,
@@ -153,155 +347,29 @@ bool argument_parser_t::parse(size_t argc, char **argv) {
     app.parse(argc, argv);
   } catch (CLI::ParseError &e) {
     if (e.get_exit_code() != 0)
-      spdlog::error(e.what());
+      PRINT_ERROR(e.what());
     app.exit(e);
-    return false;
-  }
-
-  if (verbose) {
-    spdlog::info("start date: {}", args.dateFromStr);
-    spdlog::info("end date: {}", args.dateToStr);
-    spdlog::info("rootDir: {}", args.rootDir);
-
-    for (auto const &token : args.tokenList)
-      spdlog::info("token: {}", token);
-    for (auto const &s : args.streams)
-      spdlog::info("stream: {}", s);
-    for (auto const &t : args.tradeTypes)
-      spdlog::info("trade: {}", t);
-  }
-
-  if (args.dbLaunchType.empty())
-    args.dbLaunchType = "development";
-
-  if (args.dbConfigFilename.empty())
-    args.dbConfigFilename = backtesting::getDatabaseConfigPath();
-
-  auto const dbConfig = backtesting::parse_database_file(args.dbConfigFilename,
-                                                         args.dbLaunchType);
-  if (!dbConfig) {
-    spdlog::error("Unable to get database configuration values");
     return ERROR_PARSE();
   }
 
-  if (args.streams.empty()) {
-    PRINT_INFO("Streams not specified, will use 'DEPTH' as default")
-    args.streams.push_back(DEPTH);
-  } else {
-    std::vector<std::string> const validStreams{TRADE, TICKER, BTICKER,
-                                                CANDLESTICK, DEPTH};
-    for (auto const &stream : args.streams) {
-      if (!listContains(validStreams, stream)) {
-        spdlog::error("'{}' is not a valid stream type", stream);
-        return ERROR_PARSE();
-      }
-    }
-  }
-
-  if (args.tradeTypes.empty()) {
-    PRINT_INFO("trade type not specified, will use 'SPOT' as default")
-    args.tradeTypes.push_back(SPOT);
-  } else {
-    std::vector<std::string> const validTrades{SPOT, FUTURES};
-    for (auto const &trade : args.tradeTypes) {
-      if (!listContains(validTrades, trade)) {
-        spdlog::error("'{}' is not a valid trade type", trade);
-        return ERROR_PARSE();
-      }
-    }
-  }
-
-  if (args.tokenList.empty()) {
-    PRINT_INFO("token list is empty, using 'BTCUSDT' as the default");
-    args.tokenList.push_back("BTCUSDT");
-#ifdef _DEBUG
-    PRINT_INFO("adding 'ETHUSDT' to the token list");
-    args.tokenList.push_back("ETHUSDT");
-#endif // _DEBUG
-  }
-
-  if (args.rootDir.empty())
-#ifdef _DEBUG
-    args.rootDir = "D:\\Visual Studio "
-                   "Projects\\cedeno\\test_data_extractor\\backtestingFiles";
-#else
-    args.rootDir = ".";
-#endif // _DEBUG
-
-  if (!std::filesystem::exists(args.rootDir)) {
-    spdlog::error("'{}' does not exist.", args.rootDir);
-    return ERROR_PARSE();
-  }
-
-#ifdef _DEBUG
-  if (args.dateFromStr.empty()) {
-    constexpr std::size_t const last24hrs = 3'600 * 24;
-    args.dateFromStr = fmt::format(
-        "{} 00:00:00",
-        currentTimeToString(std::time(nullptr) - last24hrs, "-").value());
-    PRINT_INFO("Start date not specified, will use '{}'", args.dateFromStr)
-  }
-
-  if (args.dateToStr.empty()) {
-    args.dateToStr = fmt::format(
-        "{} 23:59:59", currentTimeToString(std::time(nullptr), "-").value());
-    PRINT_INFO("End-date not specified, will use '{}'", args.dateToStr)
-  }
-#endif // _DEBUG
-
-  if (auto const optStartTime = stringToTimeT(args.dateFromStr);
-      optStartTime.has_value()) {
-    globalRtData.startTime = *optStartTime;
-  } else {
-    spdlog::error("Unable to calculate the start date from user input");
-    return ERROR_PARSE();
-  }
-
-  if (auto const optEndTime = stringToTimeT(args.dateToStr);
-      optEndTime.has_value()) {
-    globalRtData.endTime = *optEndTime;
-  } else {
-    spdlog::error("Unable to calculate the end date from user input");
-    return ERROR_PARSE();
-  }
-
-  if (globalRtData.startTime > globalRtData.endTime)
-    std::swap(globalRtData.startTime, globalRtData.endTime);
-
-  globalRtData.listOfFiles = backtesting::utils::getListOfCSVFiles(
-      args.tokenList, args.tradeTypes, args.streams, globalRtData.startTime,
-      globalRtData.endTime, args.rootDir);
-
-  if (globalRtData.listOfFiles.empty()) {
-    spdlog::error("No files found matching the user-defined criteria");
-    return ERROR_PARSE();
-  }
-
-  auto databaseConnector =
-      backtesting::database_connector_t::s_get_db_connector();
-  databaseConnector->username(dbConfig.username);
-  databaseConnector->password(dbConfig.password);
-  databaseConnector->database_name(dbConfig.db_dns);
-  if (!databaseConnector->connect())
-    return ERROR_PARSE();
-
-  m_argumentParsed = true;
-  return m_argumentParsed;
+  return parseImpl(args);
 }
 
-bool argument_parser_t::prepareData() {
+bool backtesting_t::prepareData() {
   if (!m_argumentParsed) {
-    spdlog::error(
+    ERROR_EXIT(
         "The user-settings has not been parsed yet, call .parse on the object");
-    return m_argumentParsed;
   }
 
+  auto &globalRtData = global_data_t::instance();
+
+#ifdef BT_USE_WITH_DB
   auto databaseConnector =
       backtesting::database_connector_t::s_get_db_connector();
   auto dbTokenList = databaseConnector->getListOfAllTokens();
   if (dbTokenList.empty())
     saveTokenFromFileToDatabase(*databaseConnector, dbTokenList,
-                                m_args->rootDir);
+                                m_config->rootDir);
   auto dbUserList = databaseConnector->getUserIDs();
   if (dbUserList.empty())
     setupDummyList(dbTokenList, *databaseConnector, dbUserList);
@@ -313,33 +381,29 @@ bool argument_parser_t::prepareData() {
   users.reserve(dbUserList.size());
 
   for (auto const &u : dbUserList) {
-    backtesting::user_data_t user;
-    user.assets = backtesting::adaptor::dbUserAssetsToBtUserAssets(
+    auto user = std::make_shared<backtesting::user_data_t>();
+    user->assets = backtesting::adaptor::dbUserAssetsToBtUserAssets(
         databaseConnector->getAllAssetsByUser(u.userID), dbTokenList);
-    user.orders = backtesting::adaptor::dbOrderListToBtOrderList(
-        databaseConnector->getOrderForUser(u.userID), dbTokenList);
-    user.trades = backtesting::adaptor::dbTradeListToBtTradeList(
+    user->orders = backtesting::adaptor::dbOrderListToBtOrderList(
+        databaseConnector->getOrderForUser(u.userID), dbTokenList, user.get());
+    user->trades = backtesting::adaptor::dbTradeListToBtTradeList(
         databaseConnector->getTradesForUser(u.userID), dbTokenList);
     users.push_back(std::move(user));
   }
+
+#else
+  globalRtData.allTokens = backtesting::readTokensFromFile(m_config->rootDir);
+
+#endif
 
   m_authenticatedData = true;
   return true;
 }
 
-namespace py = pybind11;
-
-PYBIND11_MODULE(backtester, m) {
-  py::class_<argument_parser_t>(m, "argument_parser_t")
-      .def("parse",
-           [](argument_parser_t &a, std::vector<std::string> args) {
-             std::vector<char *> csStrs;
-             csStrs.reserve(args.size());
-             for (auto &s : args)
-               csStrs.push_back(const_cast<char *>(s.c_str()));
-             return a.parse(csStrs.size(), csStrs.data());
-           })
-      .def("prepareData", &argument_parser_t::prepareData)
-      .def("isReady", &argument_parser_t::isReady)
-      .def("runBacktester", &argument_parser_t::runBacktester);
+std::optional<backtesting_t>
+newBTInstance(backtesting::configuration_t const &config) {
+  backtesting_t bt;
+  if (!(bt.parseImpl(config) && bt.prepareData() && bt.isReady()))
+    return std::nullopt;
+  return bt;
 }

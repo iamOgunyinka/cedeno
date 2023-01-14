@@ -1,3 +1,5 @@
+#ifdef BT_USE_WITH_DB
+
 #include "database_connector.hpp"
 
 #include "common.hpp"
@@ -336,3 +338,5 @@ int64_t database_connector_t::addNewUser(std::string const &username) {
   return id;
 }
 } // namespace backtesting
+
+#endif // BT_USE_WITH_DB

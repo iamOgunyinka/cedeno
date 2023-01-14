@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 # Project
 get_filename_component(PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}" ABSOLUTE)
 
-set(PROJECT_NAME libbacktng)
+set(PROJECT_NAME jbacktest)
 
 # find python3 development package
 find_package(Python3 COMPONENTS Development Interpreter REQUIRED)
@@ -93,17 +93,23 @@ message("${PROJECT_NAME}: CURR BIN DIR: ${CMAKE_CURRENT_BINARY_DIR}")
 # Files of project and target to build                     #
 ############################################################
 
+if (ENABLE_BT_DATABASE)
+  add_definitions( -DBT_USE_WITH_DB)
+endif()
+
 # Source Files
 set(SRC_FILES
   adaptor.cpp
-  arguments_parser.cpp
   arg_parser_extension.cpp
+  arguments_parser.cpp
   candlestick_data.cpp
   common.cpp
   database_connector.cpp
   depth_data.cpp
+  global_data.cpp
   matching_engine.cpp
   order_book.cpp
+  py_wrapper.cpp
   user_data.cpp
 )
 
@@ -115,20 +121,27 @@ set(HEADERS_FILES
   arguments_parser.hpp
   candlestick_data.hpp
   common.hpp
-  database_connector.hpp
+  container.hpp
   data_streamer.hpp
+  database_connector.hpp
+  database_types.hpp
   depth_data.hpp
+  global_data.hpp
   matching_engine.hpp
   order_book.hpp
+  py_wrapper.hpp
   user_data.hpp
 )
 
 source_group("Headers" FILES ${HEADERS_FILES})
 
 # Add executable to build.
-add_library(libbacktng STATIC 
-   ${SRC_FILES} ${HEADERS_FILES}
-)
+
+if (ENABLE_LIBS_FOR_TEST)
+  add_library(jbacktest STATIC ${SRC_FILES} ${HEADERS_FILES})
+else()
+  pybind11_add_module(jbacktest ${SRC_FILES} ${HEADERS_FILES})
+endif()
 
 if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++17 -O3")

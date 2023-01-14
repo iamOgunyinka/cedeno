@@ -1,3 +1,5 @@
+#ifdef BT_USE_WITH_DB
+
 #include "adaptor.hpp"
 #include <algorithm>
 
@@ -68,7 +70,8 @@ dbUserAssetsToBtUserAssets(db_user_asset_list_t const &dbAssets,
 }
 
 order_list_t dbOrderListToBtOrderList(db_user_order_list_t const &list,
-                                      db_token_list_t const &tokenList) {
+                                      db_token_list_t const &tokenList,
+                                      user_data_t *user) {
   order_list_t result;
   result.reserve(list.size());
   for (auto const &d : list) {
@@ -88,7 +91,7 @@ order_list_t dbOrderListToBtOrderList(db_user_order_list_t const &list,
     data.quantity = d.quantity;
     data.side = static_cast<trade_side_e>(d.side);
     data.type = static_cast<trade_type_e>(d.type);
-    data.userID = d.userID;
+    data.user = user;
 
     result.push_back(std::move(data));
   }
@@ -120,3 +123,5 @@ trade_list_t dbTradeListToBtTradeList(db_trade_data_list_t const &list,
 }
 } // namespace adaptor
 } // namespace backtesting
+
+#endif // BT_USE_WITH_DB

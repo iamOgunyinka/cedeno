@@ -69,10 +69,8 @@ std::optional<depth_data_t> parseDepthStream(char const *const str,
 
 void depth_stream_t::writeCSVBody(depth_data_t &&depth) {
   auto &os = m_tradeMap.dataMap[depth.tokenName];
-  if (os.rewriteHeader()) {
-    std::cout << (int)m_tradeType << ":" << depth.tokenName << std::endl;
+  if (os.rewriteHeader())
     writeCSVHeader(os);
-  }
 
   for (auto const &a : depth.asks) {
     os.write("A", depth.eventTime, depth.transactionTime, depth.firstUpdateID,

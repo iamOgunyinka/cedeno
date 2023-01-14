@@ -9,6 +9,8 @@ websocket_stream_base_t::~websocket_stream_base_t() {
 }
 
 void websocket_stream_base_t::start() {
+  if (m_tokens.empty())
+    return;
   m_resolver.emplace(m_ioContext);
   m_resolver->async_resolve(
       m_hostName, m_portNumber,

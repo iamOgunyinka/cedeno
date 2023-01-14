@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef BT_USE_WITH_DB
+
 #include <string>
 #include <vector>
 
@@ -52,3 +54,5 @@ struct db_trade_data_t {
 using db_trade_data_list_t = std::vector<db_trade_data_t>;
 
 } // namespace backtesting
+
+#endif // BT_USE_WITH_DB

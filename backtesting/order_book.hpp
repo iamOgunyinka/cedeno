@@ -25,6 +25,7 @@ struct order_meta_data_t {
   double priceLevel = 0.0;
   std::vector<order_data_t> orders;
 };
+
 struct order_book_meta_t {
   std::vector<order_meta_data_t> bids;
   std::vector<order_meta_data_t> asks;

@@ -2,8 +2,8 @@
 
 int main(int argc, char **argv) {
 
-  argument_parser_t parser{};
+  backtesting_t parser{};
   if (!(parser.parse(argc, argv) && parser.prepareData()))
     return EXIT_FAILURE;
-  return parser.runBacktester();
+  return parser.run();
 }

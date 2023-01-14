@@ -25,7 +25,7 @@ std::string toUpperString(std::string const &s) {
 
 locked_file_t::locked_file_t(std::string const &filename)
     : m_file(new std::ofstream(filename, std::ios::out)) {
-  if (!(*m_file))
+  if (!m_file->is_open())
     throw std::runtime_error("unable to open file");
 }
 

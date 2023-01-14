@@ -49,10 +49,11 @@ struct user_asset_t {
 };
 using user_asset_list_t = std::vector<user_asset_t>;
 
+struct user_data_t;
 struct order_data_t {
   std::string tokenName;
   uint64_t orderID = 0;
-  uint64_t userID = 0;
+  user_data_t *user = nullptr;
   double quantity = 0.0;
   double priceLevel = 0.0;
   double leverage = 1.0;
@@ -70,7 +71,9 @@ struct trade_data_t {
   double quantityExecuted = 0.0;
   double amountPerPiece = 0.0;
   trade_side_e side = trade_side_e::none;
+  trade_type_e tradeType = trade_type_e::none;
 };
+
 using trade_list_t = std::vector<trade_data_t>;
 
 struct user_data_t {
@@ -86,8 +89,8 @@ struct user_data_t {
               trade_side_e const side = trade_side_e::buy,
               trade_market_e const market = trade_market_e::limit);
   std::optional<order_data_t>
-  createOrder(uint64_t const &tokenID, double const quantity,
-              double const price, double const leverage = 1.0,
+  createOrder(uint64_t const tokenID, double const quantity, double const price,
+              double const leverage = 1.0,
               trade_side_e const side = trade_side_e::buy,
               trade_market_e const market = trade_market_e::limit);
   uint64_t getUserID() const { return userID; }
@@ -103,7 +106,7 @@ private:
                                trade_market_e const market);
 };
 
-using user_data_list_t = std::vector<user_data_t>;
-
+using user_data_list_t = std::vector<std::shared_ptr<user_data_t>>;
+using new_trades_callback_t = void (*)(backtesting::trade_list_t const &);
 bool initiateOrder(order_data_t const &order);
 } // namespace backtesting

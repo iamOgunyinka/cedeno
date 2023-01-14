@@ -3,8 +3,6 @@
 #include <boost/asio/io_context.hpp>
 #include <thread>
 
-global_data_t globalRtData;
-
 namespace net = boost::asio;
 
 namespace backtesting {
@@ -19,10 +17,11 @@ void processTickerStream(trade_map_td const &tradeMap) {
 }
 } // namespace backtesting
 
-int argument_parser_t::runBacktester() {
+int backtesting_t::run() {
   if (!isReady())
     return EXIT_FAILURE;
 
+  auto &globalRtData = global_data_t::instance();
   auto &csvFilenames = globalRtData.listOfFiles;
   if (auto const iter = csvFilenames.find(BTICKER);
       iter != csvFilenames.cend()) {
