@@ -32,4 +32,4 @@ pipelines:
               - git checkout impl
               - git submodule update --init --recursive
               - cmake .
-              - make -j 4
+              - make
