@@ -39,4 +39,4 @@ jobs:
     - name: Build
       run: |
         cmake .
-        make -j 4
+        make -j 2
