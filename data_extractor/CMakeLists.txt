@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 # Project
 get_filename_component(PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}" ABSOLUTE)
 
-set(PROJECT_NAME libdataextract)
+set(PROJECT_NAME data_extract)
 
 # find python3 development package
 find_package(Python3 COMPONENTS Development Interpreter REQUIRED)
@@ -124,11 +124,7 @@ source_group("Headers" FILES ${HEADERS_FILES})
 
 # Add executable to build.
 
-if (ENABLE_LIBS_FOR_TEST)
-  add_library(libdataextract STATIC ${SRC_FILES} ${HEADERS_FILES})
-else()
-  pybind11_add_module(libdataextract ${SRC_FILES} ${HEADERS_FILES})
-endif()
+add_library(data_extract STATIC ${SRC_FILES} ${HEADERS_FILES})
 
 if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++17 -O3")

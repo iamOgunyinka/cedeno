@@ -30,6 +30,7 @@ PYBIND11_MODULE(jbacktest, m) {
       .value("rejected", backtesting::order_result_e::rejected);
 
   py::class_<backtesting::configuration_t>(m, "Configuration")
+      .def(py::init<>())
       .def_readwrite("streams", &backtesting::configuration_t::streams)
       .def_readwrite("trades", &backtesting::configuration_t::tradeTypes)
       .def_readwrite("symbols", &backtesting::configuration_t::tokenList)
@@ -45,6 +46,7 @@ PYBIND11_MODULE(jbacktest, m) {
       ;
 
   py::class_<backtesting::user_asset_t>(m, "UserAsset")
+      .def(py::init<>())
       .def_property("baseBalance", &backtesting::user_asset_t::getBaseBalance,
                     &backtesting::user_asset_t::setBaseBalance)
       .def_property("quoteBalance", &backtesting::user_asset_t::getQuoteBalance,
@@ -53,6 +55,7 @@ PYBIND11_MODULE(jbacktest, m) {
                     &backtesting::user_asset_t::setTokenName);
 
   py::class_<backtesting::order_data_t>(m, "OrderData")
+      .def(py::init<>())
       .def_readwrite("leverage", &backtesting::order_data_t::leverage)
       .def_readwrite("market", &backtesting::order_data_t::market)
       .def_readwrite("orderID", &backtesting::order_data_t::orderID)
@@ -63,6 +66,7 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readwrite("type", &backtesting::order_data_t::type);
 
   py::class_<backtesting::trade_data_t>(m, "TradeData")
+      .def(py::init<>())
       .def_readwrite("tokenName", &backtesting::trade_data_t::tokenName)
       .def_readwrite("tradeID", &backtesting::trade_data_t::tradeID)
       .def_readwrite("orderID", &backtesting::trade_data_t::orderID)
@@ -74,6 +78,7 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readwrite("side", &backtesting::trade_data_t::side);
 
   py::class_<backtesting::user_data_t>(m, "UserData")
+      .def(py::init<>())
       .def_readwrite("userID", &backtesting::user_data_t::userID)
       .def_readwrite("trades", &backtesting::user_data_t::trades)
       .def_readwrite("orders", &backtesting::user_data_t::orders)
@@ -86,6 +91,7 @@ PYBIND11_MODULE(jbacktest, m) {
       .def("getAssets", &backtesting::user_data_t::getAssets);
 
   py::class_<token_data_t>(m, "Token")
+      .def(py::init<>())
       .def_readwrite("tokenID", &token_data_t::tokenID)
       .def_readwrite("name", &token_data_t::name)
       .def_readwrite("baseAsset", &token_data_t::baseAsset)
@@ -93,14 +99,14 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readwrite("tradeType", &token_data_t::tradeType);
 
   py::class_<backtesting_t>(m, "Backtesting")
-      .def("parse",
+      /*.def("parse",
            [](backtesting_t &a, std::vector<std::string> args) {
              std::vector<char *> csStrs;
              csStrs.reserve(args.size());
              for (auto &s : args)
                csStrs.push_back(const_cast<char *>(s.c_str()));
              return a.parse(csStrs.size(), csStrs.data());
-           })
+           })*/
       .def_static("instance",
                   [](backtesting::configuration_t config) {
                     return newBTInstance(std::move(config));

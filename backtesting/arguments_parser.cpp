@@ -206,10 +206,12 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
   } else {
     std::vector<std::string> const validStreams{TRADE, TICKER, BTICKER,
                                                 CANDLESTICK, DEPTH};
-    for (auto const &stream : config.streams) {
+    for (auto &stream : config.streams) {
       if (!listContains(validStreams, stream)) {
         ERROR_EXIT("'{}' is not a valid stream type", stream)
       }
+      for (auto &s : stream)
+        s = tolower(s);
     }
   }
 
@@ -218,10 +220,12 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     config.tradeTypes.push_back(SPOT);
   } else {
     std::vector<std::string> const validTrades{SPOT, FUTURES};
-    for (auto const &trade : config.tradeTypes) {
+    for (auto &trade : config.tradeTypes) {
       if (!listContains(validTrades, trade)) {
         ERROR_EXIT("'{}' is not a valid trade type", trade);
       }
+      for (auto &t : trade)
+        t = tolower(t);
     }
   }
 
@@ -232,6 +236,11 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     PRINT_INFO("adding 'ETHUSDT' to the token list");
     config.tokenList.push_back("ETHUSDT");
 #endif // _DEBUG
+  } else {
+    for (auto &token : config.tokenList) {
+      for (auto &t : token)
+        t = toupper(t);
+    }
   }
 
   if (config.rootDir.empty()) {
@@ -243,7 +252,6 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     ERROR_EXIT("'{}' does not exist.", config.rootDir);
   }
 
-#ifdef _DEBUG
   if (config.dateFromStr.empty()) {
     constexpr std::size_t const last24hrs = 3'600 * 24;
     config.dateFromStr = fmt::format(
@@ -257,7 +265,6 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
         "{} 23:59:59", currentTimeToString(std::time(nullptr), "-").value());
     PRINT_INFO("End-date not specified, will use '{}'", config.dateToStr)
   }
-#endif // _DEBUG
 
   auto &globalRtData = global_data_t::instance();
 
