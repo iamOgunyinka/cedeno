@@ -18,7 +18,7 @@ pipelines:
               - mkdir ~/boost_dir
               - tar -xzvf ~/boost_181.tar.gz -C ~/boost_dir
               - export BOOST_ROOT="~/boost_dir/boost_1_81_0/"
-              - apt-get install python3-dev git cmake python3-pip libssl-dev unixodbc-dev
+              - apt-get install -y python3-dev git cmake python3-pip libssl-dev unixodbc-dev
               - pip3 install pytest
               - git clone https://github.com/pybind/pybind11 ~/pybind11
               - thisdir=`pwd`
