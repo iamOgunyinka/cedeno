@@ -17,7 +17,6 @@ pipelines:
               - wget  https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O ~/boost_181.tar.gz
               - mkdir ~/boost_dir
               - tar -xzvf ~/boost_181.tar.gz -C ~/boost_dir
-              - export BOOST_ROOT="~/boost_dir/boost_1_81_0/"
               - apt-get install -y python3-dev git cmake python3-pip libssl-dev unixodbc-dev
               - pip3 install pytest
               - git clone https://github.com/pybind/pybind11 ~/pybind11
@@ -27,6 +26,7 @@ pipelines:
               - cmake ..
               - make check -j 4
               - make install -j 4
+              - export BOOST_ROOT="~/boost_dir/boost_1_81_0/"
               - cd $thisdir
               - git checkout impl
               - git submodule update --init --recursive
