@@ -1,0 +1,43 @@
+# Template C++ Application
+
+# This template allows you to validate your C++ application.
+# The workflow allows running tests and code linting on the default branch.
+
+
+image: gcc:10.2
+
+
+pipelines:
+  default:
+    - parallel:
+        - step:
+            name: Test
+            script:
+              - make check
+        - step:
+            name: Lint
+            script:
+              - apt update && apt -y install cppcheck && cppcheck .
+              - wget  https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O ~/Downloads/boost_181.tar.gz
+              - mkdir ~/Downloads/boost_dir
+              - tar -xzvf ~/Downloads/boost_181.tar.gz -C ~/Downloads/boost_dir
+              - export BOOST_ROOT="~/Downloads/boost_dir/boost_1_81_0/"
+              - apt-get install python3-dev git cmake python3-pip libssl-dev unixodbc-dev
+              - pip3 install pytest
+              - git clone https://github.com/pybind/pybind11 ~/Downloads/pybind11
+              - thisdir=`pwd`
+              - cd ~/Downloads/pybind11
+              - mkdir build && cd $_
+              - cmake ..
+              - make check -j 4
+              - make install -j 4
+              - cd $thisdir
+              - git submodule update --init --recursive
+              - cmake .
+              - make -j 4
+        - step:
+            name: Build and Run
+            script:
+              - make compile
+              # Execute your C++ application after compilation to check success
+              - make distcheck
