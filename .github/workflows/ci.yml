@@ -40,3 +40,8 @@ jobs:
       run: |
         cmake .
         make -j 2
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+       name: my-artifact
+       path: "./MyArtifacts"
