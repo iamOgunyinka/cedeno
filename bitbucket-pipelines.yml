@@ -13,7 +13,7 @@ pipelines:
         - step:
             name: Build libraries
             script:
-              - apt update && apt -y install cppcheck && cppcheck .
+              - apt update && apt -y install cmake binutils
               - wget  https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O ~/boost_181.tar.gz
               - mkdir ~/boost_dir
               - tar -xzvf ~/boost_181.tar.gz -C ~/boost_dir
