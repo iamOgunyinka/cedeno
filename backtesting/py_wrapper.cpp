@@ -99,14 +99,6 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readwrite("tradeType", &token_data_t::tradeType);
 
   py::class_<backtesting_t>(m, "Backtesting")
-      /*.def("parse",
-           [](backtesting_t &a, std::vector<std::string> args) {
-             std::vector<char *> csStrs;
-             csStrs.reserve(args.size());
-             for (auto &s : args)
-               csStrs.push_back(const_cast<char *>(s.c_str()));
-             return a.parse(csStrs.size(), csStrs.data());
-           })*/
       .def_static("instance",
                   [](backtesting::configuration_t config) {
                     return newBTInstance(std::move(config));
