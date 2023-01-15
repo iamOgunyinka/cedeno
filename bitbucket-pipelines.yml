@@ -11,11 +11,7 @@ pipelines:
   default:
     - parallel:
         - step:
-            name: Test
-            script:
-              - make check
-        - step:
-            name: Lint
+            name: Build libraries
             script:
               - apt update && apt -y install cppcheck && cppcheck .
               - wget  https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O ~/Downloads/boost_181.tar.gz
@@ -35,9 +31,3 @@ pipelines:
               - git submodule update --init --recursive
               - cmake .
               - make -j 4
-        - step:
-            name: Build and Run
-            script:
-              - make compile
-              # Execute your C++ application after compilation to check success
-              - make distcheck
