@@ -4,7 +4,7 @@
 # The workflow allows running tests and code linting on the default branch.
 
 
-image: gcc:10.2
+image: atlassian/default-image:3
 
 
 pipelines:
@@ -18,7 +18,7 @@ pipelines:
               - wget  https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O ~/boost_181.tar.gz
               - mkdir ~/boost_dir
               - tar -xzvf ~/boost_181.tar.gz -C ~/boost_dir
-              - apt-get install -y python3-dev git cmake python3-pip libssl-dev unixodbc-dev
+              - apt-get install -y python3-dev git cmake python3-pip libssl-dev unixodbc-dev gcc g++
               - pip3 install pytest
               - git clone https://github.com/pybind/pybind11 ~/pybind11
               - thisdir=`pwd`
