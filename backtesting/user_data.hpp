@@ -42,10 +42,21 @@ struct token_data_t {
 using token_data_list_t = std::vector<token_data_t>;
 
 struct user_asset_t {
+  struct temp_token_t {
+    double amountInUse = 0.0;
+    double amountAvailable = 0.0;
+  };
+  temp_token_t base{};
+  temp_token_t quote{};
   std::string tokenName;
-  double amountInUse = 0.0;
-  double amountAvailable = 0.0;
   trade_type_e tradeType = trade_type_e::none;
+
+  double getBaseBalance() { return base.amountAvailable; }
+  double getQuoteBalance() { return quote.amountAvailable; }
+  std::string getTokenName() { return tokenName; }
+  void setBaseBalance(double const b) { base.amountAvailable = b; }
+  void setQuoteBalance(double const q) { quote.amountAvailable = q; }
+  void setTokenName(std::string const &name) { tokenName = name; }
 };
 using user_asset_list_t = std::vector<user_asset_t>;
 
@@ -83,22 +94,28 @@ struct user_data_t {
   user_asset_list_t assets;
 
   std::optional<order_data_t>
-  createOrder(std::string const &tokenName, double const quantity,
-              double const price, double const leverage = 1.0,
-              trade_type_e const type = trade_type_e::spot,
-              trade_side_e const side = trade_side_e::buy,
-              trade_market_e const market = trade_market_e::limit);
+  getLimitOrder(std::string const &tokenName, double const quantity,
+                double const price, double const leverage = 1.0,
+                trade_type_e const type = trade_type_e::spot,
+                trade_side_e const side = trade_side_e::buy);
   std::optional<order_data_t>
-  createOrder(uint64_t const tokenID, double const quantity, double const price,
-              double const leverage = 1.0,
-              trade_side_e const side = trade_side_e::buy,
-              trade_market_e const market = trade_market_e::limit);
+  getMarketOrder(std::string const &tokenName, double const price,
+                 double const leverage = 1.0,
+                 trade_type_e const tradeType = trade_type_e::spot,
+                 trade_side_e const side = trade_side_e::buy);
   uint64_t getUserID() const { return userID; }
   order_list_t getOrders() const { return orders; }
   trade_list_t getTrades() const { return trades; }
   user_asset_list_t getAssets() const { return assets; }
+  void OnNewTrade(order_data_t const &order, double const quantityExecuted,
+                  double const amount);
 
 private:
+  bool hasTradableBalance(std::string const &tokenName,
+                          trade_type_e const tradeType, trade_side_e const side,
+                          double const quantity, double const amount);
+  bool isValidTradeToken(std::string const &tokenName,
+                         trade_type_e const tradeType) const;
   order_data_t createOrderImpl(std::string const &tokenName,
                                double const quantity, double const price,
                                double const leverage, trade_type_e const type,

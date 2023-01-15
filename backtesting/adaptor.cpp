@@ -33,8 +33,10 @@ btUserAssetsToDbUserAssets(uint64_t const userID,
   for (auto const &a : userAssets) {
     db_user_asset_list_t::value_type asset;
     asset.ownerID = userID;
-    asset.amountAvailable = a.amountAvailable;
-    asset.amountInUse = a.amountInUse;
+    asset.base.amountAvailable = a.base.amountAvailable;
+    asset.base.amountInUse = a.base.amountInUse;
+    asset.quote.amountAvailable = a.quote.amountAvailable;
+    asset.quote.amountInUse = a.quote.amountInUse;
     auto iter = std::find_if(tokenList.cbegin(), tokenList.cend(),
                              [&a](token_data_t const &data) {
                                return utils::isCaseInsensitiveStringCompare(
@@ -62,8 +64,10 @@ dbUserAssetsToBtUserAssets(db_user_asset_list_t const &dbAssets,
       continue;
     user_asset_list_t::value_type userAsset;
     userAsset.tokenName = iter->name;
-    userAsset.amountInUse = d.amountInUse;
-    userAsset.amountAvailable = d.amountAvailable;
+    userAsset.base.amountInUse = d.base.amountInUse;
+    userAsset.base.amountAvailable = d.base.amountAvailable;
+    userAsset.quote.amountInUse = d.quote.amountInUse;
+    userAsset.quote.amountAvailable = d.quote.amountAvailable;
     result.push_back(std::move(userAsset));
   }
   return result;
@@ -113,10 +117,10 @@ trade_list_t dbTradeListToBtTradeList(db_trade_data_list_t const &list,
     data.amountPerPiece = d.amountPerPiece;
     data.quantityExecuted = d.quantityExec;
     data.orderID = d.orderID;
+    data.tradeType = static_cast<trade_type_e>(d.tradeType);
     data.side = static_cast<trade_side_e>(d.side);
     data.tokenName = iter->name;
     data.tradeID = d.tradeID;
-
     result.push_back(std::move(data));
   }
   return result;

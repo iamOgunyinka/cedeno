@@ -56,21 +56,21 @@ void setupDummyList(db_token_list_t const &tokenList,
 
   db_user_t &user = userList[0];
   db_user_asset_list_t assets;
-  assets.reserve(20);
+  assets.reserve(10);
 
-  for (int i = 0; i < 20; ++i) {
+  for (int i = 0; i < 10; ++i) {
     auto &token = tokenList[uid(gen)];
     db_user_asset_list_t::value_type userAsset;
     userAsset.ownerID = user.userID;
     userAsset.tokenID = token.tokenID;
-    userAsset.amountAvailable = 500.0;
+    userAsset.quote.amountAvailable = 500.0;
     assets.push_back(std::move(userAsset));
   }
 
   db_user_order_list_t orderList;
-  orderList.reserve(10);
+  orderList.reserve(5);
 
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 5; ++i) {
     auto const isEven = i % 5 == 0;
     auto &token = tokenList[uid(gen)];
     db_user_order_t order;
@@ -140,8 +140,13 @@ void readTokensFromFileImpl(token_data_list_t &result,
   while (std::getline(file, line)) {
     utils::trim(line);
     if (!line.empty()) {
+      auto const &splits = utils::splitString(line, ",");
+      if (splits.size() != 3)
+        continue;
       token_data_t d;
-      d.name = line;
+      d.name = splits[0];
+      d.baseAsset = splits[1];
+      d.quoteAsset = splits[2];
       d.tradeType = tradeType;
       result.push_back(std::move(d));
     }

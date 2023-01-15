@@ -17,11 +17,15 @@ struct db_token_t {
 using db_token_list_t = std::vector<db_token_t>;
 
 struct db_user_asset_t {
+  struct temp_asset_t {
+    double amountInUse = 0.0;
+    double amountAvailable = 0.0;
+  };
   int databaseID = 0;
   int ownerID = 0;
   int tokenID = 0;
-  double amountInUse = 0.0;
-  double amountAvailable = 0.0;
+  temp_asset_t base{};
+  temp_asset_t quote{};
 };
 using db_user_asset_list_t = std::vector<db_user_asset_t>;
 
@@ -46,8 +50,10 @@ using db_user_order_list_t = std::vector<db_user_order_t>;
 struct db_trade_data_t {
   int tradeID = 0;
   int orderID = 0;
+  int userID = 0;
   int tokenID = 0;
   int side = 0;
+  int tradeType = 0;
   double quantityExec = 0.0;
   double amountPerPiece = 0.0;
 };

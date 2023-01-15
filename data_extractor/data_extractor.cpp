@@ -187,8 +187,10 @@ void fetchAndSaveAllTokens(net::io_context &ioContext,
     std::ofstream file(path, std::ios::trunc);
     if (!file)
       continue;
-    for (auto const &token : tokenList)
-      file << token << std::endl;
+    for (auto const &token : tokenList) {
+      file << fmt::format("{},{},{}\n", token.fullTokenName, token.base,
+                          token.quote);
+    }
     file.close();
   }
   spdlog::info("[DONE] Fetching all tokens...");

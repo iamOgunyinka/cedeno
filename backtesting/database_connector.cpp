@@ -20,13 +20,15 @@ otl_stream &operator>>(otl_stream &os, db_user_order_t &item) {
 }
 
 otl_stream &operator>>(otl_stream &os, db_trade_data_t &trade) {
-  return os >> trade.tradeID >> trade.orderID >> trade.quantityExec >>
-         trade.amountPerPiece >> trade.tokenID >> trade.side;
+  return os >> trade.tradeID >> trade.orderID >> trade.userID >>
+         trade.quantityExec >> trade.amountPerPiece >> trade.tokenID >>
+         trade.side >> trade.tradeType;
 }
 
 otl_stream &operator>>(otl_stream &os, db_user_asset_t &asset) {
   return os >> asset.databaseID >> asset.ownerID >> asset.tokenID >>
-         asset.amountInUse >> asset.amountAvailable;
+         asset.base.amountInUse >> asset.base.amountAvailable >>
+         asset.quote.amountInUse >> asset.quote.amountAvailable;
 }
 
 otl_stream &operator>>(otl_stream &os, db_user_t &user) {
@@ -143,8 +145,9 @@ bool database_connector_t::connect() {
 db_user_asset_list_t
 database_connector_t::getAllAssetsByUser(int const userID) {
   auto const sqlStatement =
-      fmt::format("SELECT id, ownerID, tokenID, amountInUse, amountAvailable "
-                  "FROM `bt_owned_tokens` WHERE ownerID={}",
+      fmt::format("SELECT id, ownerID, tokenID, baseAmountInUse, "
+                  "baseAmountAvailable, quoteAmountInUse, quoteAmountAvailable "
+                  "FROM `bt_user_assets` WHERE ownerID={}",
                   userID);
   db_user_asset_list_t assets;
   std::lock_guard<std::mutex> lockG(db_mutex_);
@@ -185,8 +188,9 @@ db_user_order_list_t database_connector_t::getOrderForUser(int const userID) {
 
 db_trade_data_list_t database_connector_t::getTradesForUser(int const userID) {
   auto const sqlStatement =
-      fmt::format("SELECT id, orderID, quantity, amount, tokenID, side "
-                  "FROM `bt_trades` WHERE userID='{}'",
+      fmt::format("SELECT id, orderID, userID, quantity, amount, "
+                  "tokenID, side, tradeType FROM `bt_trades` WHERE "
+                  "userID='{}'",
                   userID);
   db_trade_data_list_t result;
   std::lock_guard<std::mutex> lockG(db_mutex_);
@@ -207,8 +211,8 @@ db_trade_data_list_t database_connector_t::getTradesForUser(int const userID) {
 db_trade_data_list_t
 database_connector_t::getTradesByOrderID(int const orderID) {
   auto const sqlStatement =
-      fmt::format("SELECT id, orderID, quantity, amount, tokenID, side "
-                  "FROM `bt_trades` WHERE orderID='{}'",
+      fmt::format("SELECT id, orderID, userID, quantity, amount, tokenID,"
+                  "side, tradeType FROM `bt_trades` WHERE orderID='{}'",
                   orderID);
   db_trade_data_list_t result;
   std::lock_guard<std::mutex> lockG(db_mutex_);
@@ -265,7 +269,8 @@ std::vector<db_user_t> database_connector_t::getUserIDs() {
 
 bool database_connector_t::addTokenList(db_token_list_t const &list) {
   auto const sqlStatement =
-      "INSERT INTO `bt_tokens`(tradeType, tokenName) VALUES({}, '{}')";
+      "INSERT INTO `bt_tokens`(tradeType, tokenName, "
+      "baseToken, quoteToken) VALUES({}, '{}', '{}', '{}')";
   std::lock_guard<std::mutex> lock_g{db_mutex_};
   try {
     for (auto const &d : list) {
@@ -282,13 +287,15 @@ bool database_connector_t::addTokenList(db_token_list_t const &list) {
 
 bool database_connector_t::addUserAssets(db_user_asset_list_t const &list) {
   auto const sqlStatement =
-      "INSERT INTO `bt_owned_tokens`(tokenID, ownerID, amountInUse,"
-      "amountAvailable) VALUES({}, {}, {}, {})";
+      "INSERT INTO `bt_user_assets`(tokenID, ownerID, baseAmountInUse,"
+      "baseAmountAvailable, quoteAmountInUse, quoteAmountAvailable) "
+      "VALUES({}, {}, {}, {}, {}, {})";
   std::lock_guard<std::mutex> lock_g{db_mutex_};
   try {
     for (auto const &d : list) {
-      auto const command = fmt::format(sqlStatement, d.tokenID, d.ownerID,
-                                       d.amountInUse, d.amountAvailable);
+      auto const command = fmt::format(
+          sqlStatement, d.tokenID, d.ownerID, d.base.amountInUse,
+          d.base.amountAvailable, d.quote.amountInUse, d.quote.amountAvailable);
       otl_cursor::direct_exec(otl_connector_, command.c_str(),
                               otl_exception::enabled);
     }

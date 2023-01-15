@@ -50,7 +50,13 @@ private:
   bool m_isFirstRequest = true;
 };
 
-std::vector<std::string> fetchToken(net::io_context &, net::ssl::context &,
-                                    trade_type_e const);
+struct temp_token_data_t {
+  std::string fullTokenName;
+  std::string base;
+  std::string quote;
+};
+
+std::vector<temp_token_data_t>
+fetchToken(net::io_context &, net::ssl::context &, trade_type_e const);
 
 } // namespace binance
