@@ -13,7 +13,8 @@ pipelines:
         - step:
             name: Build libraries
             script:
-              - apt update && apt -y install cmake binutils
+              - apt update && apt upgrade -y
+              - apt update && apt-get install -y cmake=3.22.1-1ubuntu1.22.04.1
               - wget  https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O ~/boost_181.tar.gz
               - mkdir ~/boost_dir
               - tar -xzvf ~/boost_181.tar.gz -C ~/boost_dir
