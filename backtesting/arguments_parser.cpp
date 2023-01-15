@@ -56,21 +56,21 @@ void setupDummyList(db_token_list_t const &tokenList,
 
   db_user_t &user = userList[0];
   db_user_asset_list_t assets;
-  assets.reserve(20);
+  assets.reserve(10);
 
-  for (int i = 0; i < 20; ++i) {
+  for (int i = 0; i < 10; ++i) {
     auto &token = tokenList[uid(gen)];
     db_user_asset_list_t::value_type userAsset;
     userAsset.ownerID = user.userID;
     userAsset.tokenID = token.tokenID;
-    userAsset.amountAvailable = 500.0;
+    userAsset.quote.amountAvailable = 500.0;
     assets.push_back(std::move(userAsset));
   }
 
   db_user_order_list_t orderList;
-  orderList.reserve(10);
+  orderList.reserve(5);
 
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 5; ++i) {
     auto const isEven = i % 5 == 0;
     auto &token = tokenList[uid(gen)];
     db_user_order_t order;
@@ -140,8 +140,13 @@ void readTokensFromFileImpl(token_data_list_t &result,
   while (std::getline(file, line)) {
     utils::trim(line);
     if (!line.empty()) {
+      auto const &splits = utils::splitString(line, ",");
+      if (splits.size() != 3)
+        continue;
       token_data_t d;
-      d.name = line;
+      d.name = splits[0];
+      d.baseAsset = splits[1];
+      d.quoteAsset = splits[2];
       d.tradeType = tradeType;
       result.push_back(std::move(d));
     }
@@ -201,10 +206,12 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
   } else {
     std::vector<std::string> const validStreams{TRADE, TICKER, BTICKER,
                                                 CANDLESTICK, DEPTH};
-    for (auto const &stream : config.streams) {
+    for (auto &stream : config.streams) {
       if (!listContains(validStreams, stream)) {
         ERROR_EXIT("'{}' is not a valid stream type", stream)
       }
+      for (auto &s : stream)
+        s = tolower(s);
     }
   }
 
@@ -213,10 +220,12 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     config.tradeTypes.push_back(SPOT);
   } else {
     std::vector<std::string> const validTrades{SPOT, FUTURES};
-    for (auto const &trade : config.tradeTypes) {
+    for (auto &trade : config.tradeTypes) {
       if (!listContains(validTrades, trade)) {
         ERROR_EXIT("'{}' is not a valid trade type", trade);
       }
+      for (auto &t : trade)
+        t = tolower(t);
     }
   }
 
@@ -227,6 +236,11 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     PRINT_INFO("adding 'ETHUSDT' to the token list");
     config.tokenList.push_back("ETHUSDT");
 #endif // _DEBUG
+  } else {
+    for (auto &token : config.tokenList) {
+      for (auto &t : token)
+        t = toupper(t);
+    }
   }
 
   if (config.rootDir.empty()) {
@@ -238,7 +252,6 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     ERROR_EXIT("'{}' does not exist.", config.rootDir);
   }
 
-#ifdef _DEBUG
   if (config.dateFromStr.empty()) {
     constexpr std::size_t const last24hrs = 3'600 * 24;
     config.dateFromStr = fmt::format(
@@ -252,7 +265,6 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
         "{} 23:59:59", currentTimeToString(std::time(nullptr), "-").value());
     PRINT_INFO("End-date not specified, will use '{}'", config.dateToStr)
   }
-#endif // _DEBUG
 
   auto &globalRtData = global_data_t::instance();
 

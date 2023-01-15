@@ -82,7 +82,7 @@ message("${PROJECT_NAME}: CURR BIN DIR: ${CMAKE_CURRENT_BINARY_DIR}")
 
 # Add executable to build.
 add_executable(test_dext test_data_extractor.cpp)
-target_link_libraries(test_dext libdataextract)
+target_link_libraries(test_dext data_extract)
 
 if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -std=c++17 -O3")

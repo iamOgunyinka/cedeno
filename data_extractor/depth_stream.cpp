@@ -160,9 +160,9 @@ void depth_stream_t::getDepthSnapshotNoAsync() {
   }
 }
 
-std::vector<std::string> fetchToken(net::io_context &ioContext,
-                                    net::ssl::context &sslContext,
-                                    trade_type_e const tradeType) {
+std::vector<temp_token_data_t> fetchToken(net::io_context &ioContext,
+                                          net::ssl::context &sslContext,
+                                          trade_type_e const tradeType) {
   std::optional<net::ip::tcp::resolver> resolver;
 
   bool const isFutures = (tradeType == trade_type_e::futures);
@@ -184,7 +184,7 @@ std::vector<std::string> fetchToken(net::io_context &ioContext,
   stream.handshake(net::ssl::stream_base::client);
 
   auto const path =
-      (isFutures ? "/fapi/v1/ticker/price" : "/api/v3/ticker/price");
+      (isFutures ? "/fapi/v1/exchangeInfo" : "/api/v3/exchangeInfo");
   http::request<http::string_body> request{http::verb::get, path, 11};
   request.set(http::field::host, host);
   request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
@@ -205,15 +205,26 @@ std::vector<std::string> fetchToken(net::io_context &ioContext,
   rapidjson::Document doc;
   doc.Parse(body.c_str(), body.size());
 
-  assert(doc.IsArray());
-  std::vector<std::string> result;
-  result.reserve(doc.Size());
+  if (!doc.IsObject())
+    throw std::runtime_error("Invalid object returned from Binance");
+  auto const &rootObject = doc.GetObject();
+  auto symbolIter = rootObject.FindMember("symbols");
+  if (symbolIter == rootObject.end() || !symbolIter->value.IsArray())
+    throw std::runtime_error("Invalid symbols list returned from Binance");
 
-  for (size_t i = 0; i < doc.Size(); ++i) {
-    assert(doc[i].IsObject());
-    auto const item = doc[i].GetObj();
-    std::string const symbol = item.FindMember("symbol")->value.GetString();
-    result.push_back(symbol);
+  auto const &symbols = symbolIter->value.GetArray();
+  std::vector<temp_token_data_t> result;
+  result.reserve(symbols.Size());
+
+  for (size_t i = 0; i < symbols.Size(); ++i) {
+    if (!symbols[i].IsObject())
+      continue;
+    auto const &item = symbols[i].GetObj();
+    temp_token_data_t data;
+    data.fullTokenName = item.FindMember("symbol")->value.GetString();
+    data.base = item.FindMember("baseAsset")->value.GetString();
+    data.quote = item.FindMember("quoteAsset")->value.GetString();
+    result.push_back(std::move(data));
   }
   return result;
 }

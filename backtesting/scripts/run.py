@@ -12,17 +12,19 @@ class User(db.Model):
 	__tablename__ = 'bt_users'
 	id = db.Column(db.Integer, primary_key=True, unique=True, index=True)
 	username = db.Column(db.String(16), unique=True, index=True)
-	ownedTokens = db.relationship('OwnedToken', backref='user', lazy='dynamic', cascade='all,delete')
+	assets = db.relationship('UserAsset', backref='user', lazy='dynamic', cascade='all,delete')
 	# trades = db.relationship('Trade', backref='user', lazy='dynamic', cascade='all,delete')
 
 
-class OwnedToken(db.Model):
-	__tablename__ = 'bt_owned_tokens'
+class UserAsset(db.Model):
+	__tablename__ = 'bt_user_assets'
 	id= db.Column(db.Integer, primary_key=True, unique=True, index=True)
 	ownerID = db.Column(db.Integer, db.ForeignKey('bt_users.id'), nullable=False)
 	tokenID = db.Column(db.Integer, db.ForeignKey('bt_tokens.id'), nullable=False, unique=False)
-	amountInUse = db.Column(db.Float, nullable=False, unique=False)
-	amountAvailable = db.Column(db.Float, nullable=False, unique=False)
+	baseAmountInUse = db.Column(db.Float, nullable=False, unique=False)
+	baseAmountAvailable = db.Column(db.Float, nullable=False, unique=False)
+	quoteAmountInUse = db.Column(db.Float, nullable=False, unique=False)
+	quoteAmountAvailable = db.Column(db.Float, nullable=False, unique=False)
 
 
 class TokenPair(db.Model):
@@ -56,6 +58,7 @@ class Trade(db.Model):
 	amount = db.Column(db.Float, nullable=False, default=0.0, unique=False)
 	tokenID = db.Column(db.Integer, db.ForeignKey('bt_tokens.id'), nullable=False)
 	side = db.Column(db.SmallInteger, nullable=False, unique=False)
+	tradeType = db.Column(db.SmallInteger, nullable=False, unique=False)
 
 
 def create_app(config_name):

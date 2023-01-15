@@ -123,6 +123,8 @@ void updateSidesWithNewDepth(std::vector<depth_data_t::depth_meta_t> const &src,
   trade.eventTime = std::time(nullptr);
   trade.tradeType = order.type;
 
+  if (order.user) // send notification to the "orderer"
+    order.user->OnNewTrade(order, qty, amount * qty);
   return trade;
 }
 
@@ -146,20 +148,23 @@ getExecutedTradesFromOrders(details::order_meta_data_t &data,
 }
 
 trade_list_t marketMatcher(std::vector<details::order_meta_data_t> &list,
-                           double &quantity, order_data_t const &order) {
+                           double &amountAvailableToSpend,
+                           order_data_t const &order) {
   trade_list_t result;
   if (list.empty())
     return result;
 
-  while (quantity > 0.0 && !list.empty()) {
+  while (amountAvailableToSpend > 0.0 && !list.empty()) {
     auto &front = list.front();
     double const price = front.priceLevel;
-    double const execQty = std::min(quantity, front.totalQuantity);
+    double const expectedExecQty = price / amountAvailableToSpend;
+    double const execQty = std::min(expectedExecQty, front.totalQuantity);
+    double const amountSpent = execQty * price;
 
     auto trade = getNewTrade(order, execQty, price);
     auto otherTrades = getExecutedTradesFromOrders(front, execQty, price);
     front.totalQuantity -= execQty;
-    quantity -= execQty;
+    amountAvailableToSpend -= amountSpent;
 
     if (front.totalQuantity == 0.0)
       list.erase(list.begin());
@@ -224,6 +229,7 @@ void order_book_t::run() {
 
   setNextTimer();
 }
+
 void order_book_t::match(order_data_t order) {
   auto const isBuying = (order.side == trade_side_e::buy);
   auto &bids = m_orderBook.bids;
@@ -235,7 +241,7 @@ void order_book_t::match(order_data_t order) {
 
   trade_list_t result;
   if (order.market == trade_market_e::market) {
-    result = marketMatcher(isBuying ? asks : bids, order.quantity, order);
+    result = marketMatcher(isBuying ? asks : bids, order.priceLevel, order);
   } else if (order.market == trade_market_e::limit) {
     if (isBuying) {
       double &qty = order.quantity;
@@ -298,7 +304,6 @@ void order_book_t::match(order_data_t order) {
 
           auto trade = getNewTrade(order, execQty, price);
           auto otherTrades = getExecutedTradesFromOrders(bid, execQty, price);
-
           order.quantity -= execQty;
           bid.totalQuantity -= execQty;
 
