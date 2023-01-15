@@ -34,9 +34,13 @@ jobs:
         sudo make install -j 4
         export BOOST_ROOT="~/boost_dir/boost_1_81_0/"
         cd $thisdir
-        git checkout impl
         git submodule update --init --recursive
     - name: Build
       run: |
         cmake .
         make -j 2
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+       name: my-artifact
+       path: "./lib"
