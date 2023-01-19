@@ -41,7 +41,7 @@ bool verbose =
 
 namespace backtesting {
 #ifdef BT_USE_WITH_DB
-void setupDummyList(db_token_list_t const &tokenList,
+void setupDummyList(token_data_list_t const &tokenList,
                     database_connector_t &dbConnector,
                     std::vector<db_user_t> &userList) {
   std::random_device rd{};
@@ -62,8 +62,8 @@ void setupDummyList(db_token_list_t const &tokenList,
     auto &token = tokenList[uid(gen)];
     db_user_asset_list_t::value_type userAsset;
     userAsset.ownerID = user.userID;
-    userAsset.tokenID = token.tokenID;
-    userAsset.quote.amountAvailable = 500.0;
+    userAsset.tokenName = token.name;
+    userAsset.amountAvailable = 500.0;
     assets.push_back(std::move(userAsset));
   }
 
@@ -79,7 +79,7 @@ void setupDummyList(db_token_list_t const &tokenList,
     order.priceLevel = double(i);
     order.quantity = double(i) + 1.0;
     order.side = int(isEven ? trade_side_e::buy : trade_side_e::sell);
-    order.tokenID = token.tokenID;
+    order.symbol = token.name;
     order.type = int(isEven ? trade_type_e::futures : trade_type_e::spot);
     order.userID = user.userID;
     orderList.push_back(std::move(order));
@@ -93,6 +93,7 @@ void setupDummyList(db_token_list_t const &tokenList,
 
 void saveTokenFromFileToDatabase(database_connector_t &dbConnector,
                                  db_token_list_t &dbTokenList,
+                                 token_data_list_t &tokenList,
                                  std::string const &rootPath) {
   assert(dbTokenList.empty());
 
@@ -116,10 +117,20 @@ void saveTokenFromFileToDatabase(database_connector_t &dbConnector,
     while (std::getline(file, line)) {
       utils::trim(line);
       if (!line.empty()) {
-        db_token_list_t::value_type d;
-        d.name = line;
-        d.tradeType = (int)tradeType;
-        dbTokenList.push_back(std::move(d));
+        auto const &splits = utils::splitString(line, ",");
+        if (splits.size() != 3)
+          continue;
+        token_data_list_t::value_type d;
+        d.name = splits[0];
+        d.baseAsset = splits[1];
+        d.quoteAsset = splits[2];
+        d.tradeType = tradeType;
+
+        db_token_list_t::value_type db;
+        db.name = d.name;
+        db.tradeType = (int)tradeType;
+        dbTokenList.push_back(std::move(db));
+        tokenList.push_back(std::move(d));
       }
     }
   }
@@ -143,7 +154,7 @@ void readTokensFromFileImpl(token_data_list_t &result,
       auto const &splits = utils::splitString(line, ",");
       if (splits.size() != 3)
         continue;
-      token_data_t d;
+      token_data_list_t::value_type d;
       d.name = splits[0];
       d.baseAsset = splits[1];
       d.quoteAsset = splits[2];
@@ -379,15 +390,15 @@ bool backtesting_t::prepareData() {
   auto databaseConnector =
       backtesting::database_connector_t::s_get_db_connector();
   auto dbTokenList = databaseConnector->getListOfAllTokens();
-  if (dbTokenList.empty())
+  if (dbTokenList.empty()) {
     saveTokenFromFileToDatabase(*databaseConnector, dbTokenList,
-                                m_config->rootDir);
+                                globalRtData.allTokens, m_config->rootDir);
+  }
+
   auto dbUserList = databaseConnector->getUserIDs();
   if (dbUserList.empty())
-    setupDummyList(dbTokenList, *databaseConnector, dbUserList);
+    setupDummyList(globalRtData.allTokens, *databaseConnector, dbUserList);
 
-  globalRtData.allTokens =
-      backtesting::adaptor::dbTokenListToBtTokenList(dbTokenList);
   auto &users = globalRtData.allUserAccounts;
   users.clear();
   users.reserve(dbUserList.size());
@@ -395,11 +406,12 @@ bool backtesting_t::prepareData() {
   for (auto const &u : dbUserList) {
     auto user = std::make_shared<backtesting::user_data_t>();
     user->assets = backtesting::adaptor::dbUserAssetsToBtUserAssets(
-        databaseConnector->getAllAssetsByUser(u.userID), dbTokenList);
+        databaseConnector->getAllAssetsByUser(u.userID));
     user->orders = backtesting::adaptor::dbOrderListToBtOrderList(
-        databaseConnector->getOrderForUser(u.userID), dbTokenList, user.get());
+        databaseConnector->getOrderForUser(u.userID), globalRtData.allTokens,
+        user.get());
     user->trades = backtesting::adaptor::dbTradeListToBtTradeList(
-        databaseConnector->getTradesForUser(u.userID), dbTokenList);
+        databaseConnector->getTradesForUser(u.userID), globalRtData.allTokens);
     users.push_back(std::move(user));
   }
 
@@ -407,6 +419,19 @@ bool backtesting_t::prepareData() {
   globalRtData.allTokens = backtesting::readTokensFromFile(m_config->rootDir);
 
 #endif
+
+  using backtesting::utils::toUpperString;
+  using backtesting::utils::trim;
+  for (auto &token : globalRtData.allTokens) {
+    trim(token.name);
+    trim(token.quoteAsset);
+    trim(token.baseAsset);
+    if (!token.quoteAsset.empty())
+      globalRtData.validSymbols.insert(toUpperString(token.quoteAsset));
+
+    if (!token.baseAsset.empty())
+      globalRtData.validSymbols.insert(toUpperString(token.baseAsset));
+  }
 
   m_authenticatedData = true;
   return true;

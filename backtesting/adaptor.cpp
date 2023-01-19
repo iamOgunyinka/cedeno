@@ -9,85 +9,69 @@ bool isCaseInsensitiveStringCompare(std::string const &s, std::string const &t);
 }
 
 namespace adaptor {
+
+internal_token_data_t dbTokenToBtTokenData(db_token_t const &d) {
+  internal_token_data_t data;
+  data.name = d.name;
+  data.tradeType = static_cast<trade_type_e>(d.tradeType);
+  data.baseAsset = d.baseAsset;
+  data.quoteAsset = d.quoteAsset;
+  return data;
+}
+
 token_data_list_t dbTokenListToBtTokenList(db_token_list_t const &list) {
   token_data_list_t result;
   result.reserve(list.size());
-  for (auto const &d : list) {
-    token_data_t data;
-    data.name = d.name;
-    data.tradeType = static_cast<trade_type_e>(d.tradeType);
-    data.baseAsset = d.baseAsset;
-    data.quoteAsset = d.quoteAsset;
-    data.tokenID = d.tokenID;
-    result.push_back(std::move(data));
-  }
+  for (auto const &d : list)
+    result.push_back(dbTokenToBtTokenData(d));
   return result;
 }
 
 db_user_asset_list_t
 btUserAssetsToDbUserAssets(uint64_t const userID,
-                           user_asset_list_t const &userAssets,
-                           token_data_list_t const &tokenList) {
+                           user_asset_list_t const &userAssets) {
   db_user_asset_list_t dbAssets;
   dbAssets.reserve(userAssets.size());
   for (auto const &a : userAssets) {
     db_user_asset_list_t::value_type asset;
     asset.ownerID = userID;
-    asset.base.amountAvailable = a.base.amountAvailable;
-    asset.base.amountInUse = a.base.amountInUse;
-    asset.quote.amountAvailable = a.quote.amountAvailable;
-    asset.quote.amountInUse = a.quote.amountInUse;
-    auto iter = std::find_if(tokenList.cbegin(), tokenList.cend(),
-                             [&a](token_data_t const &data) {
-                               return utils::isCaseInsensitiveStringCompare(
-                                          data.name, a.tokenName) &&
-                                      (a.tradeType == data.tradeType);
-                             });
-    if (iter == std::cend(tokenList))
-      throw std::runtime_error("Invalid token");
-    asset.tokenID = iter->tokenID;
+    asset.amountAvailable = a.amountAvailable;
+    asset.amountInUse = a.amountInUse;
+    asset.tokenName = a.tokenName;
     dbAssets.push_back(std::move(asset));
   }
   return dbAssets;
 }
 
 user_asset_list_t
-dbUserAssetsToBtUserAssets(db_user_asset_list_t const &dbAssets,
-                           db_token_list_t const &tokenList) {
+dbUserAssetsToBtUserAssets(db_user_asset_list_t const &dbAssets) {
   user_asset_list_t result;
   result.reserve(dbAssets.size());
   for (auto const &d : dbAssets) {
-    auto iter = std::find_if(
-        tokenList.cbegin(), tokenList.cend(),
-        [tkID = d.tokenID](db_token_t const &a) { return a.tokenID == tkID; });
-    if (iter == tokenList.cend())
-      continue;
     user_asset_list_t::value_type userAsset;
-    userAsset.tokenName = iter->name;
-    userAsset.base.amountInUse = d.base.amountInUse;
-    userAsset.base.amountAvailable = d.base.amountAvailable;
-    userAsset.quote.amountInUse = d.quote.amountInUse;
-    userAsset.quote.amountAvailable = d.quote.amountAvailable;
+    userAsset.tokenName = d.tokenName;
+    userAsset.amountInUse = d.amountInUse;
+    userAsset.amountAvailable = d.amountAvailable;
     result.push_back(std::move(userAsset));
   }
   return result;
 }
 
 order_list_t dbOrderListToBtOrderList(db_user_order_list_t const &list,
-                                      db_token_list_t const &tokenList,
+                                      token_data_list_t &btTokenList,
                                       user_data_t *user) {
   order_list_t result;
   result.reserve(list.size());
   for (auto const &d : list) {
-    auto iter =
-        std::find_if(tokenList.cbegin(), tokenList.cend(),
-                     [tkID = d.tokenID](db_token_list_t::value_type const &a) {
-                       return a.tokenID == tkID;
-                     });
-    if (iter == tokenList.cend())
+    auto findIter = std::find_if(btTokenList.begin(), btTokenList.end(),
+                                 [d](token_data_list_t::value_type const &a) {
+                                   return utils::isCaseInsensitiveStringCompare(
+                                       a.name, d.symbol);
+                                 });
+    if (findIter == btTokenList.cend())
       continue;
     order_data_t data;
-    data.tokenName = iter->name;
+    data.token = &(*findIter);
     data.leverage = d.leverage;
     data.orderID = d.orderID;
     data.market = static_cast<trade_market_e>(d.market);
@@ -95,6 +79,7 @@ order_list_t dbOrderListToBtOrderList(db_user_order_list_t const &list,
     data.quantity = d.quantity;
     data.side = static_cast<trade_side_e>(d.side);
     data.type = static_cast<trade_type_e>(d.type);
+    data.status = static_cast<order_status_e>(d.status);
     data.user = user;
 
     result.push_back(std::move(data));
@@ -103,14 +88,16 @@ order_list_t dbOrderListToBtOrderList(db_user_order_list_t const &list,
 }
 
 trade_list_t dbTradeListToBtTradeList(db_trade_data_list_t const &list,
-                                      db_token_list_t const &tokenList) {
+                                      token_data_list_t const &tokenList) {
   trade_list_t result;
   result.reserve(list.size());
 
   for (auto const &d : list) {
-    auto iter = std::find_if(
-        tokenList.cbegin(), tokenList.cend(),
-        [tkID = d.tokenID](db_token_t const &a) { return a.tokenID == tkID; });
+    auto iter = std::find_if(tokenList.cbegin(), tokenList.cend(),
+                             [&d](token_data_list_t::value_type const &a) {
+                               return utils::isCaseInsensitiveStringCompare(
+                                   a.name, d.symbol);
+                             });
     if (iter == tokenList.cend())
       continue;
     trade_data_t data;
@@ -121,6 +108,8 @@ trade_list_t dbTradeListToBtTradeList(db_trade_data_list_t const &list,
     data.side = static_cast<trade_side_e>(d.side);
     data.tokenName = iter->name;
     data.tradeID = d.tradeID;
+    data.eventTime = d.eventTime;
+    data.status = static_cast<order_status_e>(d.status);
     result.push_back(std::move(data));
   }
   return result;

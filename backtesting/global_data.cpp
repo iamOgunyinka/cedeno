@@ -8,25 +8,36 @@ namespace backtesting {
 namespace adaptor {
 db_user_asset_list_t
 btUserAssetsToDbUserAssets(uint64_t const userID,
-                           user_asset_list_t const &userAssets,
-                           token_data_list_t const &tokenList);
+                           user_asset_list_t const &userAssets);
 }
 } // namespace backtesting
 #endif // BT_USE_WITH_DB
 
-bool global_data_t::newUser(backtesting::user_asset_list_t assets) {
+int64_t global_data_t::newUser(backtesting::user_asset_list_t assets) {
   auto user = std::make_unique<backtesting::user_data_t>();
-  user->assets = std::move(assets);
-
   auto &globalRtData = global_data_t::instance();
+  int64_t userID = -1;
+
+  using backtesting::utils::toUpperString;
+
+  auto &validSymbols = globalRtData.validSymbols;
+  for (auto &asset : assets) {
+    backtesting::utils::trim(asset.tokenName);
+    asset.tokenName = toUpperString(asset.tokenName);
+    if (!validSymbols.empty() && (validSymbols.find(asset.tokenName) ==
+                                  globalRtData.validSymbols.cend())) {
+      throw std::runtime_error("Invalid symbol");
+      return userID;
+    }
+  }
+  user->assets = std::move(assets);
 
 #ifdef BT_USE_WITH_DB
   auto databaseConnector =
       backtesting::database_connector_t::s_get_db_connector();
   if (!databaseConnector)
-    return false;
+    return userID;
 
-  int64_t userID = -1;
   do {
     auto const username = backtesting::utils::getRandomString(
         backtesting::utils::getRandomInteger());
@@ -35,9 +46,9 @@ bool global_data_t::newUser(backtesting::user_asset_list_t assets) {
 
   user->userID = (uint64_t)userID;
   if (!databaseConnector->addUserAssets(
-          backtesting::adaptor::btUserAssetsToDbUserAssets(
-              user->userID, user->assets, globalRtData.allTokens)))
-    return false;
+          backtesting::adaptor::btUserAssetsToDbUserAssets(user->userID,
+                                                           user->assets)))
+    return userID;
 #else
   {
     auto iter = globalRtData.allUserAccounts.cend();
@@ -55,7 +66,7 @@ bool global_data_t::newUser(backtesting::user_asset_list_t assets) {
 #endif
 
   globalRtData.allUserAccounts.push_back(std::move(user));
-  return true;
+  return userID;
 }
 
 global_data_t &global_data_t::instance() {

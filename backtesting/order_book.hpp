@@ -40,7 +40,7 @@ public:
   Gallant::Signal1<trade_list_t> NewTradesCreated;
   order_book_t(net::io_context &ioContext,
                data_streamer_t<depth_data_t> dataStreamer,
-               trade_type_e const t);
+               internal_token_data_t *symbol, trade_type_e const t);
   ~order_book_t();
   void run();
 
@@ -53,6 +53,15 @@ private:
   void setNextTimer();
   void shakeOrderBook();
   void updateOrderBook(depth_data_t &&newestData);
+  [[nodiscard]] trade_data_t getNewTrade(order_data_t const &order,
+                                         order_status_e const, double const qty,
+                                         double const amount);
+  [[nodiscard]] trade_list_t
+  getExecutedTradesFromOrders(details::order_meta_data_t &data,
+                              double quantityTraded, double const priceLevel);
+  [[nodiscard]] trade_list_t
+  marketMatcher(std::vector<details::order_meta_data_t> &list,
+                double &amountAvailableToSpend, order_data_t const &order);
 
 private:
   net::io_context &m_ioContext;
@@ -60,11 +69,13 @@ private:
   data_streamer_t<depth_data_t> m_dataStreamer;
   details::order_book_meta_t m_orderBook;
   depth_data_t m_nextData;
+  internal_token_data_t *m_symbol;
   time_t m_currentTimer;
   trade_type_e const m_tradeType;
 };
 
 details::order_meta_data_t
 orderMetaDataFromDepth(depth_data_t::depth_meta_t const &depth,
-                       trade_side_e const side, trade_type_e const tradeType);
+                       internal_token_data_t *token, trade_side_e const side,
+                       trade_type_e const tradeType);
 } // namespace backtesting

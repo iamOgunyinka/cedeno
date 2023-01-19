@@ -9,26 +9,26 @@
 namespace backtesting {
 
 otl_stream &operator>>(otl_stream &os, db_token_t &item) {
-  return os >> item.tokenID >> item.tradeType >> item.name >> item.baseAsset >>
-         item.quoteAsset;
+  return os >> item.tradeType >> item.name >> item.baseAsset >> item.quoteAsset;
 }
 
 otl_stream &operator>>(otl_stream &os, db_user_order_t &item) {
-  return os >> item.orderID >> item.tokenID >> item.userID >> item.quantity >>
-         item.priceLevel >> item.leverage >> item.side >> item.type >>
-         item.market;
+  return os >> item.orderID >> item.symbol >> item.userID >> item.side >>
+         item.type >> item.market >> item.status >> item.quantity >>
+         item.priceLevel >> item.leverage;
 }
 
 otl_stream &operator>>(otl_stream &os, db_trade_data_t &trade) {
-  return os >> trade.tradeID >> trade.orderID >> trade.userID >>
-         trade.quantityExec >> trade.amountPerPiece >> trade.tokenID >>
-         trade.side >> trade.tradeType;
+  int eventTime = 0;
+  os >> trade.symbol >> trade.tradeID >> trade.orderID >> trade.userID >>
+      trade.side >> trade.tradeType >> trade.status >> eventTime >>
+      trade.quantityExec >> trade.amountPerPiece;
+  trade.eventTime = eventTime;
+  return os;
 }
 
 otl_stream &operator>>(otl_stream &os, db_user_asset_t &asset) {
-  return os >> asset.databaseID >> asset.ownerID >> asset.tokenID >>
-         asset.base.amountInUse >> asset.base.amountAvailable >>
-         asset.quote.amountInUse >> asset.quote.amountAvailable;
+  return os >> asset.tokenName >> asset.amountInUse >> asset.amountAvailable;
 }
 
 otl_stream &operator>>(otl_stream &os, db_user_t &user) {
@@ -145,9 +145,8 @@ bool database_connector_t::connect() {
 db_user_asset_list_t
 database_connector_t::getAllAssetsByUser(int const userID) {
   auto const sqlStatement =
-      fmt::format("SELECT id, ownerID, tokenID, baseAmountInUse, "
-                  "baseAmountAvailable, quoteAmountInUse, quoteAmountAvailable "
-                  "FROM `bt_user_assets` WHERE ownerID={}",
+      fmt::format("SELECT id, tokenName, amountInUse, amountAvailable "
+                  "FROM `bt_user_assets` WHERE ownerID='{}'",
                   userID);
   db_user_asset_list_t assets;
   std::lock_guard<std::mutex> lockG(db_mutex_);
@@ -166,10 +165,10 @@ database_connector_t::getAllAssetsByUser(int const userID) {
 }
 
 db_user_order_list_t database_connector_t::getOrderForUser(int const userID) {
-  auto const sqlStatement =
-      fmt::format("SELECT id, tokenID, userID, quantity, priceLevel, leverage, "
-                  "side, orderType, market FROM `bt_orders` WHERE userID='{}'",
-                  userID);
+  auto const sqlStatement = fmt::format(
+      "SELECT orderID, tokenName, userID, side, orderType, market, status,"
+      "quantity, priceLevel, leverage FROM `bt_orders` WHERE userID='{}'",
+      userID);
   db_user_order_list_t result;
   std::lock_guard<std::mutex> lockG(db_mutex_);
   try {
@@ -188,9 +187,9 @@ db_user_order_list_t database_connector_t::getOrderForUser(int const userID) {
 
 db_trade_data_list_t database_connector_t::getTradesForUser(int const userID) {
   auto const sqlStatement =
-      fmt::format("SELECT id, orderID, userID, quantity, amount, "
-                  "tokenID, side, tradeType FROM `bt_trades` WHERE "
-                  "userID='{}'",
+      fmt::format("SELECT symbol, tradeID, orderID, userID, side, tradeType, "
+                  "status, eventTime, quantityExec, amountPerPiece FROM "
+                  "`bt_trades` WHERE userID='{}'",
                   userID);
   db_trade_data_list_t result;
   std::lock_guard<std::mutex> lockG(db_mutex_);
@@ -211,8 +210,9 @@ db_trade_data_list_t database_connector_t::getTradesForUser(int const userID) {
 db_trade_data_list_t
 database_connector_t::getTradesByOrderID(int const orderID) {
   auto const sqlStatement =
-      fmt::format("SELECT id, orderID, userID, quantity, amount, tokenID,"
-                  "side, tradeType FROM `bt_trades` WHERE orderID='{}'",
+      fmt::format("SELECT symbol, tradeID, orderID, userID, side, tradeType, "
+                  "status, eventTime, quantityExec, amountPerPiece FROM "
+                  "`bt_trades` WHERE orderID='{}'",
                   orderID);
   db_trade_data_list_t result;
   std::lock_guard<std::mutex> lockG(db_mutex_);
@@ -231,8 +231,9 @@ database_connector_t::getTradesByOrderID(int const orderID) {
 }
 
 db_token_list_t database_connector_t::getListOfAllTokens() {
-  auto const sqlStatement = "SELECT id, tradeType, tokenName, baseToken, "
-                            "quoteToken FROM `bt_tokens` ORDER BY tokenName";
+  auto const sqlStatement =
+      "SELECT tradeType, tokenName, baseToken, quoteToken FROM "
+      "`bt_symbols` ORDER BY tokenName";
   db_token_list_t result;
   std::lock_guard<std::mutex> lockG(db_mutex_);
   try {
@@ -269,12 +270,13 @@ std::vector<db_user_t> database_connector_t::getUserIDs() {
 
 bool database_connector_t::addTokenList(db_token_list_t const &list) {
   auto const sqlStatement =
-      "INSERT INTO `bt_tokens`(tradeType, tokenName, "
-      "baseToken, quoteToken) VALUES({}, '{}', '{}', '{}')";
+      "INSERT INTO `bt_symbols`(tradeType, tokenName, baseToken, quoteToken) "
+      "VALUES({}, '{}', '{}', '{}')";
   std::lock_guard<std::mutex> lock_g{db_mutex_};
   try {
     for (auto const &d : list) {
-      auto const command = fmt::format(sqlStatement, (int)d.tradeType, d.name);
+      auto const command = fmt::format(sqlStatement, d.tradeType, d.name,
+                                       d.baseAsset, d.quoteAsset);
       otl_cursor::direct_exec(otl_connector_, command.c_str(),
                               otl_exception::enabled);
     }
@@ -287,15 +289,13 @@ bool database_connector_t::addTokenList(db_token_list_t const &list) {
 
 bool database_connector_t::addUserAssets(db_user_asset_list_t const &list) {
   auto const sqlStatement =
-      "INSERT INTO `bt_user_assets`(tokenID, ownerID, baseAmountInUse,"
-      "baseAmountAvailable, quoteAmountInUse, quoteAmountAvailable) "
-      "VALUES({}, {}, {}, {}, {}, {})";
+      "INSERT INTO `bt_user_assets`(tokenName, ownerID, amountInUse,"
+      "amountAvailable) VALUES('{}', {}, {}, {})";
   std::lock_guard<std::mutex> lock_g{db_mutex_};
   try {
     for (auto const &d : list) {
-      auto const command = fmt::format(
-          sqlStatement, d.tokenID, d.ownerID, d.base.amountInUse,
-          d.base.amountAvailable, d.quote.amountInUse, d.quote.amountAvailable);
+      auto const command = fmt::format(sqlStatement, d.tokenName, d.ownerID,
+                                       d.amountInUse, d.amountAvailable);
       otl_cursor::direct_exec(otl_connector_, command.c_str(),
                               otl_exception::enabled);
     }
@@ -308,15 +308,15 @@ bool database_connector_t::addUserAssets(db_user_asset_list_t const &list) {
 
 bool database_connector_t::addOrderList(db_user_order_list_t const &list) {
   auto const sqlStatement =
-      "INSERT INTO `bt_orders`(tokenID, userID, quantity, priceLevel,"
-      "leverage, side, orderType, market) VALUES({}, {}, {}, {}, {},"
-      "{}, {}, {})";
+      "INSERT INTO `bt_orders`(tokenName, orderID, userID, side, orderType,"
+      "market, status, quantity, priceLevel, leverage) VALUES('{}', {}, "
+      "{}, {}, {}, {}, {}, {}, {}, {})";
   std::lock_guard<std::mutex> lock_g{db_mutex_};
   try {
     for (auto const &d : list) {
-      auto const command =
-          fmt::format(sqlStatement, d.tokenID, d.userID, d.quantity,
-                      d.priceLevel, d.leverage, d.side, d.type, d.market);
+      auto const command = fmt::format(
+          sqlStatement, d.symbol, d.orderID, d.userID, d.side, d.type, d.market,
+          d.status, d.quantity, d.priceLevel, d.leverage);
       otl_cursor::direct_exec(otl_connector_, command.c_str(),
                               otl_exception::enabled);
     }

@@ -20,45 +20,48 @@ class UserAsset(db.Model):
 	__tablename__ = 'bt_user_assets'
 	id= db.Column(db.Integer, primary_key=True, unique=True, index=True)
 	ownerID = db.Column(db.Integer, db.ForeignKey('bt_users.id'), nullable=False)
-	tokenID = db.Column(db.Integer, db.ForeignKey('bt_tokens.id'), nullable=False, unique=False)
-	baseAmountInUse = db.Column(db.Float, nullable=False, unique=False)
-	baseAmountAvailable = db.Column(db.Float, nullable=False, unique=False)
-	quoteAmountInUse = db.Column(db.Float, nullable=False, unique=False)
-	quoteAmountAvailable = db.Column(db.Float, nullable=False, unique=False)
+	tokenName = db.Column(db.String(16), nullable=False, unique=True)
+	amountInUse = db.Column(db.Float, default=0.0)
+	amountAvailable = db.Column(db.Float, default=0.0)
 
 
-class TokenPair(db.Model):
-	__tablename__ = 'bt_tokens'
+class Symbol(db.Model):
+	__tablename__ = 'bt_symbols'
 	id= db.Column(db.Integer, primary_key=True, unique=True, index=True)
-	tradeType = db.Column(db.SmallInteger, unique=False)
 	tokenName = db.Column(db.String(32), nullable=False, unique=False)
 	baseToken = db.Column(db.String(16), nullable=True, unique=False)
 	quoteToken = db.Column(db.String(16), nullable=True, unique=False)
-
+	tradeType = db.Column(db.Integer)
 
 class Order(db.Model):
 	__tablename__ = 'bt_orders'
-	id= db.Column(db.Integer, primary_key=True, unique=True, index=True)
-	tokenID = db.Column(db.Integer, db.ForeignKey('bt_tokens.id'), nullable=False)
+	id = db.Column(db.Integer, primary_key=True, unique=True, index=True)
+	tokenName = db.Column(db.String(16), nullable=False, unique=False)
+	orderID = db.Column(db.BigInteger, nullable=False)
 	userID = db.Column(db.Integer, db.ForeignKey('bt_users.id'), nullable=False)
-	quantity = db.Column(db.Float, nullable=False, unique=False)
-	priceLevel = db.Column(db.Float, nullable=False, default=0.0, unique=False)
-	leverage = db.Column(db.SmallInteger, nullable=False, default=1, unique=False)
 	side = db.Column(db.SmallInteger, nullable=False, unique=False)
 	orderType = db.Column(db.SmallInteger, nullable=False, unique=False)
 	market = db.Column(db.SmallInteger, nullable=False, unique=False)
+	status = db.Column(db.SmallInteger, nullable=False, unique=False)
+	quantity = db.Column(db.Float, nullable=False, unique=False)
+	priceLevel = db.Column(db.Float, nullable=False, default=0.0, unique=False)
+	leverage = db.Column(db.SmallInteger, nullable=False, default=1, unique=False)
 
 
 class Trade(db.Model):
 	__tablename__ = 'bt_trades'
 	id = db.Column(db.Integer, primary_key=True, unique=True, index=True)
-	orderID = db.Column(db.Integer, db.ForeignKey('bt_orders.id'), nullable=False)
+	symbol = db.Column(db.String(16), nullable=False)
+	tradeID = db.Column(db.BigInteger, nullable=False)
+	orderID = db.Column(db.Integer, nullable=False)
 	userID = db.Column(db.Integer, db.ForeignKey('bt_users.id'), nullable=False)
-	quantity = db.Column(db.Float, nullable=False, default=0.0, unique=False)
-	amount = db.Column(db.Float, nullable=False, default=0.0, unique=False)
-	tokenID = db.Column(db.Integer, db.ForeignKey('bt_tokens.id'), nullable=False)
 	side = db.Column(db.SmallInteger, nullable=False, unique=False)
 	tradeType = db.Column(db.SmallInteger, nullable=False, unique=False)
+	status = db.Column(db.SmallInteger, nullable=False, unique=False)
+	eventTime = db.Column(db.Integer, nullable=False, default=0, unique=False)
+	quantityExec = db.Column(db.Float, nullable=False, default=0.0, unique=False)
+	amountPerPiece = db.Column(db.Float, nullable=False, default=0.0, unique=False)
+
 
 
 def create_app(config_name):
