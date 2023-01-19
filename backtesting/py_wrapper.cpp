@@ -6,8 +6,22 @@ namespace py = pybind11;
 extern std::map<int, std::vector<backtesting::new_trades_callback_t>>
     registeredCallbacks;
 
+std::optional<backtesting::user_data_t> findUserByID(int64_t userID) {
+  if (userID < 0)
+    return std::nullopt;
+
+  auto const &users = global_data_t::instance().allUserAccounts;
+  auto iter =
+      std::find_if(users.cbegin(), users.cend(), [userID](auto const &user) {
+        return user->userID == userID;
+      });
+  if (iter == users.cend())
+    return std::nullopt;
+  return *(*iter);
+}
+
 PYBIND11_MODULE(jbacktest, m) {
-  using backtesting::token_data_t;
+  using backtesting::internal_token_data_t;
 
   py::enum_<backtesting::trade_type_e>(m, "TradeType")
       .value("none", backtesting::trade_type_e::none)
@@ -25,13 +39,17 @@ PYBIND11_MODULE(jbacktest, m) {
       .value("limit", backtesting::trade_market_e::limit)
       .value("market", backtesting::trade_market_e::market);
 
-  py::enum_<backtesting::order_result_e>(m, "OrderResult")
-      .value("accepted", backtesting::order_result_e::accepted)
-      .value("rejected", backtesting::order_result_e::rejected);
+  py::enum_<backtesting::order_status_e>(m, "OrderStatus")
+      .value("cancelled", backtesting::order_status_e::cancelled)
+      .value("expired", backtesting::order_status_e::expired)
+      .value("filled", backtesting::order_status_e::filled)
+      .value("new_order", backtesting::order_status_e::new_order)
+      .value("partiall_filled", backtesting::order_status_e::partially_filled)
+      .value("pending_cancel", backtesting::order_status_e::pending_cancel)
+      .value("rejected", backtesting::order_status_e::rejected);
 
   py::class_<backtesting::configuration_t>(m, "Configuration")
       .def(py::init<>())
-      .def_readwrite("streams", &backtesting::configuration_t::streams)
       .def_readwrite("trades", &backtesting::configuration_t::tradeTypes)
       .def_readwrite("symbols", &backtesting::configuration_t::tokenList)
       .def_readwrite("path", &backtesting::configuration_t::rootDir)
@@ -47,56 +65,63 @@ PYBIND11_MODULE(jbacktest, m) {
 
   py::class_<backtesting::user_asset_t>(m, "UserAsset")
       .def(py::init<>())
-      .def_property("baseBalance", &backtesting::user_asset_t::getBaseBalance,
-                    &backtesting::user_asset_t::setBaseBalance)
-      .def_property("quoteBalance", &backtesting::user_asset_t::getQuoteBalance,
-                    &backtesting::user_asset_t::setQuoteBalance)
-      .def_property("tokenName", &backtesting::user_asset_t::getTokenName,
+      .def_readonly("inUse", &backtesting::user_asset_t::amountInUse)
+      .def_property("available", &backtesting::user_asset_t::getAvailableAmount,
+                    &backtesting::user_asset_t::setAvailableAmount)
+      .def_property("symbolName", &backtesting::user_asset_t::getTokenName,
                     &backtesting::user_asset_t::setTokenName);
 
   py::class_<backtesting::order_data_t>(m, "OrderData")
       .def(py::init<>())
-      .def_readwrite("leverage", &backtesting::order_data_t::leverage)
-      .def_readwrite("market", &backtesting::order_data_t::market)
-      .def_readwrite("orderID", &backtesting::order_data_t::orderID)
-      .def_readwrite("price", &backtesting::order_data_t::priceLevel)
-      .def_readwrite("quantity", &backtesting::order_data_t::quantity)
-      .def_readwrite("side", &backtesting::order_data_t::side)
-      .def_readwrite("tokenName", &backtesting::order_data_t::tokenName)
-      .def_readwrite("type", &backtesting::order_data_t::type);
+      .def_readonly("leverage", &backtesting::order_data_t::leverage)
+      .def_readonly("market", &backtesting::order_data_t::market)
+      .def_readonly("orderID", &backtesting::order_data_t::orderID)
+      .def_readonly("price", &backtesting::order_data_t::priceLevel)
+      .def_readonly("quantity", &backtesting::order_data_t::quantity)
+      .def_readonly("side", &backtesting::order_data_t::side)
+      .def_readonly("type", &backtesting::order_data_t::type)
+      .def_readonly("status", &backtesting::order_data_t::status)
+      .def_property_readonly("symbolName", [](backtesting::order_data_t &a) {
+        return a.token != nullptr ? a.token->name : std::string{};
+      });
 
   py::class_<backtesting::trade_data_t>(m, "TradeData")
-      .def(py::init<>())
-      .def_readwrite("tokenName", &backtesting::trade_data_t::tokenName)
-      .def_readwrite("tradeID", &backtesting::trade_data_t::tradeID)
-      .def_readwrite("orderID", &backtesting::trade_data_t::orderID)
-      .def_readwrite("eventTime", &backtesting::trade_data_t::eventTime)
-      .def_readwrite("quantityExecuted",
-                     &backtesting::trade_data_t::quantityExecuted)
-      .def_readwrite("amountPerPiece",
-                     &backtesting::trade_data_t::amountPerPiece)
-      .def_readwrite("side", &backtesting::trade_data_t::side);
+      .def_readonly("symbolName", &backtesting::trade_data_t::tokenName)
+      .def_readonly("tradeID", &backtesting::trade_data_t::tradeID)
+      .def_readonly("orderID", &backtesting::trade_data_t::orderID)
+      .def_readonly("eventTime", &backtesting::trade_data_t::eventTime)
+      .def_readonly("type", &backtesting::trade_data_t::tradeType)
+      .def_readonly("quantityExecuted",
+                    &backtesting::trade_data_t::quantityExecuted)
+      .def_readonly("amountPerPiece",
+                    &backtesting::trade_data_t::amountPerPiece)
+      .def_readonly("side", &backtesting::trade_data_t::side);
 
   py::class_<backtesting::user_data_t>(m, "UserData")
-      .def(py::init<>())
-      .def_readwrite("userID", &backtesting::user_data_t::userID)
-      .def_readwrite("trades", &backtesting::user_data_t::trades)
-      .def_readwrite("orders", &backtesting::user_data_t::orders)
-      .def_readwrite("assets", &backtesting::user_data_t::assets)
-      .def("getLimitOrder", &backtesting::user_data_t::getLimitOrder)
-      .def("getMarketOrder", &backtesting::user_data_t::getMarketOrder)
-      .def("getUserID", &backtesting::user_data_t::getUserID)
-      .def("getOrders", &backtesting::user_data_t::getOrders)
-      .def("getTrades", &backtesting::user_data_t::getTrades)
-      .def("getAssets", &backtesting::user_data_t::getAssets);
-
-  py::class_<token_data_t>(m, "Token")
-      .def(py::init<>())
-      .def_readwrite("tokenID", &token_data_t::tokenID)
-      .def_readwrite("name", &token_data_t::name)
-      .def_readwrite("baseAsset", &token_data_t::baseAsset)
-      .def_readwrite("quoteAsset", &token_data_t::quoteAsset)
-      .def_readwrite("tradeType", &token_data_t::tradeType);
+      .def_readonly("userID", &backtesting::user_data_t::userID)
+      .def_readonly("trades", &backtesting::user_data_t::trades)
+      .def_readonly("orders", &backtesting::user_data_t::orders)
+      .def_readonly("assets", &backtesting::user_data_t::assets)
+      .def("createSpotLimitOrder",
+           static_cast<int64_t (backtesting::user_data_t::*)(
+               std::string const &, std::string const &, double const,
+               double const, backtesting::trade_side_e const)>(
+               &backtesting::user_data_t::createSpotLimitOrder))
+      .def("createSpotLimitOrder",
+           static_cast<int64_t (backtesting::user_data_t::*)(
+               std::string const &, double const, double const,
+               backtesting::trade_side_e const)>(
+               &backtesting::user_data_t::createSpotLimitOrder))
+      .def("createSpotMarketOrder",
+           static_cast<int64_t (backtesting::user_data_t::*)(
+               std::string const &, std::string const &, double const,
+               backtesting::trade_side_e const)>(
+               &backtesting::user_data_t::createSpotMarketOrder))
+      .def("createSpotMarketOrder",
+           static_cast<int64_t (backtesting::user_data_t::*)(
+               std::string const &, double const,
+               backtesting::trade_side_e const)>(
+               &backtesting::user_data_t::createSpotMarketOrder));
 
   py::class_<backtesting_t>(m, "Backtesting")
       .def_static("instance",
@@ -105,19 +130,11 @@ PYBIND11_MODULE(jbacktest, m) {
                   })
       .def("run", &backtesting_t::run);
 
-  m.def("allTokens", [] { return global_data_t::instance().allTokens; });
-  m.def("addUser", &global_data_t::newUser);
   m.def("sendOrder", &backtesting::initiateOrder);
-  m.def("findUser",
-        [](uint64_t userID) -> std::optional<backtesting::user_data_t> {
-          auto const &users = global_data_t::instance().allUserAccounts;
-          auto iter = std::find_if(
-              users.cbegin(), users.cend(),
-              [userID](auto const &user) { return user->userID == userID; });
-          if (iter == users.cend())
-            return std::nullopt;
-          return *(*iter);
-        });
+  m.def("findUserByID", &findUserByID);
+  m.def("addUser", [](backtesting::user_asset_list_t assets) {
+    return findUserByID(global_data_t::newUser(std::move(assets)));
+  });
   m.def("registerNewTradesCallback",
         [](backtesting::trade_type_e tt,
            backtesting::new_trades_callback_t callback) mutable {

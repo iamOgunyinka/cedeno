@@ -5,6 +5,8 @@
 #include "order_book.hpp"
 
 namespace backtesting {
+internal_token_data_t *getTokenWithName(std::string const &tokenName,
+                                        trade_type_e const tradeType);
 
 struct global_order_book_t {
   std::string tokenName;
@@ -31,17 +33,27 @@ void processDepthStream(net::io_context &ioContext, trade_map_td &tradeMap) {
     return std::nullopt;
   };
 
+  auto getTradeSymbol = [](std::string const &name, trade_type_e const tt) {
+    auto symbol = getTokenWithName(name, tt);
+    if (!symbol)
+      throw std::runtime_error("Invalid trade symbol");
+    return symbol;
+  };
   for (auto &[tokenName, value] : tradeMap) {
     global_order_book_t d;
-    d.tokenName = tokenName;
+    d.tokenName = utils::toUpperString(tokenName);
     if (auto spotStreamer = sorter(value, SPOT); spotStreamer.has_value()) {
-      d.spot.reset(new order_book_t(ioContext, std::move(*spotStreamer),
-                                    trade_type_e::spot));
+      auto const tradeType = trade_type_e::spot;
+      auto symbol = getTradeSymbol(tokenName, tradeType);
+      d.spot.reset(new order_book_t(ioContext, std::move(*spotStreamer), symbol,
+                                    tradeType));
     }
     if (auto futuresStreamer = sorter(value, FUTURES);
         futuresStreamer.has_value()) {
+      auto const tradeType = trade_type_e::futures;
+      auto symbol = getTradeSymbol(tokenName, tradeType);
       d.futures.reset(new order_book_t(ioContext, std::move(*futuresStreamer),
-                                       trade_type_e::futures));
+                                       symbol, tradeType));
     }
 
     if (d.futures || d.spot)
@@ -151,10 +163,13 @@ bool initiateOrder(order_data_t const &order) {
   if (order.priceLevel < 0.0 || order.quantity < 0.0 || order.leverage < 1.0)
     return false;
 
+  if (!order.token)
+    return false;
+
   auto iter = std::find_if(globalOrderBooks.begin(), globalOrderBooks.end(),
                            [&order](global_order_book_t &orderBook) {
                              return utils::isCaseInsensitiveStringCompare(
-                                 orderBook.tokenName, order.tokenName);
+                                 orderBook.tokenName, order.token->name);
                            });
   if (iter == globalOrderBooks.end())
     return false;

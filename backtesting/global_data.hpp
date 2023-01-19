@@ -2,6 +2,7 @@
 
 #include "common.hpp"
 #include "user_data.hpp"
+#include <set>
 
 struct global_data_t {
   global_data_t() {}
@@ -12,6 +13,7 @@ struct global_data_t {
   backtesting::token_data_list_t allTokens;
   backtesting::user_data_list_t allUserAccounts;
 
-  static bool newUser(backtesting::user_asset_list_t tokensOwned);
+  std::set<std::string> validSymbols;
+  static int64_t newUser(backtesting::user_asset_list_t tokensOwned);
   static global_data_t &instance();
 };
