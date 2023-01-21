@@ -31,8 +31,7 @@ PYBIND11_MODULE(jbacktest, m) {
   py::enum_<backtesting::trade_side_e>(m, "TradeSide")
       .value("none", backtesting::trade_side_e::none)
       .value("buy", backtesting::trade_side_e::buy)
-      .value("sell", backtesting::trade_side_e::sell)
-      .value("cancel", backtesting::trade_side_e::cancel);
+      .value("sell", backtesting::trade_side_e::sell);
 
   py::enum_<backtesting::trade_market_e>(m, "TradeMarket")
       .value("none", backtesting::trade_market_e::none)
@@ -63,13 +62,15 @@ PYBIND11_MODULE(jbacktest, m) {
 #endif
       ;
 
-  py::class_<backtesting::user_asset_t>(m, "UserAsset")
-      .def(py::init<>())
-      .def_readonly("inUse", &backtesting::user_asset_t::amountInUse)
-      .def_property("available", &backtesting::user_asset_t::getAvailableAmount,
-                    &backtesting::user_asset_t::setAvailableAmount)
-      .def_property("symbolName", &backtesting::user_asset_t::getTokenName,
-                    &backtesting::user_asset_t::setTokenName);
+  py::class_<backtesting::spot_wallet_asset_t>(m, "SpotWalletAsset")
+      .def(py::init<std::string const &, double const>())
+      .def_readonly("inUse", &backtesting::spot_wallet_asset_t::amountInUse)
+      .def_property("available",
+                    &backtesting::spot_wallet_asset_t::getAvailableAmount,
+                    &backtesting::spot_wallet_asset_t::setAvailableAmount)
+      .def_property("symbolName",
+                    &backtesting::spot_wallet_asset_t::getTokenName,
+                    &backtesting::spot_wallet_asset_t::setTokenName);
 
   py::class_<backtesting::order_data_t>(m, "OrderData")
       .def(py::init<>())
@@ -102,6 +103,7 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readonly("trades", &backtesting::user_data_t::trades)
       .def_readonly("orders", &backtesting::user_data_t::orders)
       .def_readonly("assets", &backtesting::user_data_t::assets)
+      .def("cancelOrder", &backtesting::user_data_t::cancelOrderWithID)
       .def("createSpotLimitOrder",
            static_cast<int64_t (backtesting::user_data_t::*)(
                std::string const &, std::string const &, double const,
@@ -132,7 +134,7 @@ PYBIND11_MODULE(jbacktest, m) {
 
   m.def("sendOrder", &backtesting::initiateOrder);
   m.def("findUserByID", &findUserByID);
-  m.def("addUser", [](backtesting::user_asset_list_t assets) {
+  m.def("addUser", [](backtesting::spot_wallet_asset_list_t assets) {
     return findUserByID(global_data_t::newUser(std::move(assets)));
   });
   m.def("registerNewTradesCallback",

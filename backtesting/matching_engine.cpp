@@ -8,9 +8,14 @@ std::map<int, std::vector<backtesting::new_trades_callback_t>>
 
 namespace matching_engine {
 
-void match_order(backtesting::order_book_t &orderBook,
-                 backtesting::order_data_t const &order) {
+void matchOrder(backtesting::order_book_t &orderBook,
+                backtesting::order_data_t const &order) {
   return orderBook.match(order);
+}
+
+void cancelOrder(backtesting::order_book_t &orderBook,
+                 backtesting::order_data_t const &order) {
+  return orderBook.cancel(order);
 }
 
 utils::waitable_container_t<backtesting::trade_list_t>

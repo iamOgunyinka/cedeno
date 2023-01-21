@@ -179,6 +179,36 @@ void order_book_t::run() {
   setNextTimer();
 }
 
+void order_book_t::cancel(order_data_t order) {
+  static auto findAndCancelOrder = [this](auto &sides, order_data_t &&order,
+                                          auto comparator) {
+    auto iter = std::lower_bound(sides.begin(), sides.end(), order.priceLevel,
+                                 comparator);
+    if (iter == sides.end() || iter->priceLevel != order.priceLevel)
+      return;
+    auto &allOrders = iter->orders;
+    auto findIter =
+        std::find_if(allOrders.begin(), allOrders.end(),
+                     [orderID = order.orderID](order_data_t const &a) {
+                       return a.orderID == orderID;
+                     });
+    if (findIter == allOrders.end())
+      return;
+    iter->totalQuantity -= findIter->quantity;
+    (void)getNewTrade(order, order_status_e::cancelled, findIter->quantity,
+                      order.priceLevel);
+    allOrders.erase(findIter);
+  };
+
+  if (order.side == trade_side_e::buy) {
+    return findAndCancelOrder(m_orderBook.bids, std::move(order),
+                              greaterComparator);
+  }
+
+  return findAndCancelOrder(m_orderBook.asks, std::move(order),
+                            lesserComparator);
+}
+
 void order_book_t::match(order_data_t order) {
   auto const isBuying = (order.side == trade_side_e::buy);
   auto &bids = m_orderBook.bids;

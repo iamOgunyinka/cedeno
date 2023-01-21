@@ -9,7 +9,9 @@ class order_book_t;
 }
 
 namespace matching_engine {
-void match_order(backtesting::order_book_t &orderBook,
+void matchOrder(backtesting::order_book_t &orderBook,
+                backtesting::order_data_t const &order);
+void cancelOrder(backtesting::order_book_t &orderBook,
                  backtesting::order_data_t const &order);
 
 struct trade_signal_handler_t {

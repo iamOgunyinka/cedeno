@@ -14,9 +14,11 @@ class order_book_t;
 }
 
 namespace matching_engine {
-void match_order(backtesting::order_book_t &orderBook,
+void matchOrder(backtesting::order_book_t &orderBook,
+                backtesting::order_data_t const &order);
+void cancelOrder(backtesting::order_book_t &orderBook,
                  backtesting::order_data_t const &order);
-}
+} // namespace matching_engine
 
 namespace backtesting {
 namespace details {
@@ -35,7 +37,10 @@ struct order_book_meta_t {
 class order_book_t {
 public:
   friend void
-  matching_engine::match_order(order_book_t &orderBook,
+  matching_engine::matchOrder(order_book_t &orderBook,
+                              backtesting::order_data_t const &order);
+  friend void
+  matching_engine::cancelOrder(backtesting::order_book_t &orderBook,
                                backtesting::order_data_t const &order);
   Gallant::Signal1<trade_list_t> NewTradesCreated;
   order_book_t(net::io_context &ioContext,
@@ -50,6 +55,7 @@ private:
 #endif
 
   void match(backtesting::order_data_t order);
+  void cancel(backtesting::order_data_t order);
   void setNextTimer();
   void shakeOrderBook();
   void updateOrderBook(depth_data_t &&newestData);
@@ -69,7 +75,7 @@ private:
   data_streamer_t<depth_data_t> m_dataStreamer;
   details::order_book_meta_t m_orderBook;
   depth_data_t m_nextData;
-  internal_token_data_t *m_symbol;
+  internal_token_data_t *m_symbol = nullptr;
   time_t m_currentTimer;
   trade_type_e const m_tradeType;
 };

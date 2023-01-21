@@ -19,13 +19,13 @@ internal_token_data_t *getTokenWithName(std::string const &tokenName,
   return nullptr;
 }
 
-void user_asset_t::setTokenName(std::string const &name) {
+void spot_wallet_asset_t::setTokenName(std::string const &name) {
   tokenName = utils::trim_copy(name);
   if (tokenName.empty())
     throw std::logic_error("invalid token name");
 }
 
-user_asset_t *user_data_t::getUserAsset(std::string const &name) {
+spot_wallet_asset_t *user_data_t::getUserAsset(std::string const &name) {
   for (auto &asset : assets)
     if (utils::isCaseInsensitiveStringCompare(asset.tokenName, name))
       return &asset;
@@ -45,23 +45,24 @@ void user_data_t::OnNewTrade(trade_data_t const &trade) {
     return;
 
   auto &order = *userOrderIter;
-  auto const cost = trade.quantityExecuted * trade.amountPerPiece;
+  auto const lot = trade.quantityExecuted * trade.amountPerPiece;
   order.status = trade.status;
 
-  if (order.side == trade_side_e::buy) {
-    auto userAsset = getUserAsset(order.token->quoteAsset);
-    if (!userAsset)
-      throw std::logic_error("asset spent is not available");
+  bool const isBuying = order.side == trade_side_e::buy;
+  auto const &asset =
+      isBuying ? order.token->quoteAsset : order.token->baseAsset;
+  auto userAsset = getUserAsset(order.token->quoteAsset);
+  if (!userAsset)
+    throw std::logic_error("asset spent is not available");
+
+  if (order.status == order_status_e::cancelled)
+    return issueCancelledRefund(*userAsset, order);
+  if (isBuying) {
     userAsset->amountAvailable += trade.quantityExecuted;
-    userAsset->amountInUse -= cost;
+    userAsset->amountInUse -= lot;
   } else if (order.side == trade_side_e::sell) {
-    auto userAsset = getUserAsset(order.token->baseAsset);
-    if (!userAsset)
-      throw std::logic_error("asset spent is not available");
-    userAsset->amountAvailable += cost;
+    userAsset->amountAvailable += lot;
     userAsset->amountInUse -= trade.quantityExecuted;
-  } else if (order.side == trade_side_e::cancel) {
-    // todo
   }
 }
 
@@ -82,6 +83,13 @@ bool user_data_t::hasTradableBalance(internal_token_data_t const *const token,
   asset->amountAvailable -= lot;
   asset->amountInUse += lot;
   return true;
+}
+
+void user_data_t::issueCancelledRefund(spot_wallet_asset_t &asset,
+                                       order_data_t const &order) {
+  auto const lot = order.priceLevel * order.quantity;
+  asset.amountAvailable += lot;
+  asset.amountInUse -= lot;
 }
 
 void user_data_t::issueRefund(order_data_t const &order) {
@@ -187,8 +195,21 @@ int64_t user_data_t::createSpotMarketOrder(std::string const &tokenName,
 }
 
 bool user_data_t::cancelOrderWithID(uint64_t const orderID) {
-  // to-do
-  return false;
+  order_list_t cancelledOrders;
+  auto iter = orders.end();
+  do {
+    iter = std::find_if(orders.begin(), orders.end(),
+                        [orderID](order_data_t const &order) {
+                          return order.orderID == orderID;
+                        });
+    if (orders.end() != iter) {
+      iter->status = order_status_e::pending_cancel;
+      cancelledOrders.push_back(*iter);
+    }
+  } while (iter != orders.end());
+  if (cancelledOrders.empty())
+    return false;
+  return cancelAllOrders(cancelledOrders);
 }
 
 } // namespace backtesting
