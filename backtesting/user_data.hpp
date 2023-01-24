@@ -17,7 +17,6 @@ enum class trade_side_e : int {
   none,
   sell, // short
   buy,  // long
-  cancel,
 };
 
 enum class trade_market_e : int {
@@ -45,18 +44,21 @@ struct internal_token_data_t {
 };
 using token_data_list_t = std::vector<internal_token_data_t>;
 
-struct user_asset_t {
+struct spot_wallet_asset_t {
   double amountInUse = 0.0;
   double amountAvailable = 0.0;
   std::string tokenName;
 
+  spot_wallet_asset_t() = default;
+  spot_wallet_asset_t(std::string const &name, double const amount)
+      : tokenName(name), amountAvailable(amount) {}
   double getAvailableAmount() const { return amountAvailable; }
   void setAvailableAmount(double const d) { amountAvailable = d; }
 
   std::string getTokenName() const { return tokenName; }
   void setTokenName(std::string const &name);
 };
-using user_asset_list_t = std::vector<user_asset_t>;
+using spot_wallet_asset_list_t = std::vector<spot_wallet_asset_t>;
 
 struct user_data_t;
 struct order_data_t {
@@ -90,7 +92,7 @@ struct user_data_t {
   uint64_t userID = 0;
   trade_list_t trades;
   order_list_t orders;
-  user_asset_list_t assets;
+  spot_wallet_asset_list_t assets;
 
   int64_t createSpotLimitOrder(std::string const &base,
                                std::string const &quote, double const price,
@@ -122,8 +124,10 @@ private:
   }
 
   void issueRefund(order_data_t const &order);
+  void issueCancelledRefund(spot_wallet_asset_t &asset,
+                            order_data_t const &order);
   int64_t sendOrderToBook(std::optional<order_data_t> &&order);
-  user_asset_t *getUserAsset(std::string const &name);
+  spot_wallet_asset_t *getUserAsset(std::string const &name);
   bool hasTradableBalance(internal_token_data_t const *const,
                           trade_side_e const side, double const quantity,
                           double const amount, double const leverage);
@@ -136,6 +140,9 @@ private:
 using user_data_list_t = std::vector<std::shared_ptr<user_data_t>>;
 using new_trades_callback_t = void (*)(backtesting::trade_list_t const &);
 bool initiateOrder(order_data_t const &order);
+bool cancelAllOrders(order_list_t const &orders);
 internal_token_data_t *getTokenWithName(std::string const &tokenName,
                                         trade_type_e const tradeType);
+void registerNewTradesCallback(trade_type_e const tt, new_trades_callback_t cb,
+                               bool const pushToFront = true);
 } // namespace backtesting

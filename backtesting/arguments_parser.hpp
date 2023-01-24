@@ -40,7 +40,7 @@ class backtesting_t {
 public:
   backtesting_t();
   backtesting_t(backtesting::configuration_t const &);
-  bool parse(size_t argc, char **argv);
+  bool parse(int argc, char **argv);
   bool prepareData();
   int run();
 

@@ -106,7 +106,7 @@ depth_data_t depth_data_t::depthFromCSVRow(csv::CSVRow const &row) {
 
   assert(row.size() == 8);
 
-  for (size_t i = 0; i < row.size(); ++i) {
+  for (int i = 0; i < row.size(); ++i) {
     auto const iter = (row.begin() + i);
     if (i == 0) {
       eventType = iter->get_sv();
@@ -179,9 +179,25 @@ bool initiateOrder(order_data_t const &order) {
   if ((isFutures && !orderBook.futures) || (!isFutures && !orderBook.spot))
     return false;
 
-  matching_engine::match_order(isFutures ? *orderBook.futures : *orderBook.spot,
-                               order);
+  matching_engine::matchOrder(isFutures ? *orderBook.futures : *orderBook.spot,
+                              order);
   return true;
 }
 
+bool cancelAllOrders(order_list_t const &orders) {
+  for (auto const &order : orders) {
+    auto iter = std::find_if(globalOrderBooks.begin(), globalOrderBooks.end(),
+                             [&order](global_order_book_t &orderBook) {
+                               return utils::isCaseInsensitiveStringCompare(
+                                   orderBook.tokenName, order.token->name);
+                             });
+    if (iter == globalOrderBooks.end())
+      return false;
+    auto &orderBook = *iter;
+    auto const isSpot = order.type == trade_type_e::spot;
+    matching_engine::cancelOrder(isSpot ? *orderBook.spot : *orderBook.futures,
+                                 order);
+  }
+  return true;
+}
 } // namespace backtesting

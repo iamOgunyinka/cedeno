@@ -13,7 +13,7 @@ btUserAssetsToDbUserAssets(uint64_t const userID,
 } // namespace backtesting
 #endif // BT_USE_WITH_DB
 
-int64_t global_data_t::newUser(backtesting::user_asset_list_t assets) {
+int64_t global_data_t::newUser(backtesting::spot_wallet_asset_list_t assets) {
   auto user = std::make_unique<backtesting::user_data_t>();
   auto &globalRtData = global_data_t::instance();
   int64_t userID = -1;

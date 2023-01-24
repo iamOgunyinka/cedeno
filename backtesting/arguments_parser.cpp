@@ -331,7 +331,7 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
   return m_argumentParsed;
 }
 
-bool backtesting_t::parse(size_t argc, char **argv) {
+bool backtesting_t::parse(int argc, char **argv) {
   m_argumentParsed = false;
 
   CLI::App app{"backtesting software for Creed & Bear LLC"};

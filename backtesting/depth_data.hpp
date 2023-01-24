@@ -24,7 +24,6 @@ struct depth_data_t {
 
   std::string tokenName;
   time_t eventTime = 0;
-  // time_t transactionTime = 0;
   uint64_t firstUpdateID = 0;
   uint64_t finalUpdateID = 0;
   uint64_t finalStreamUpdateID = 0;
