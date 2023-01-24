@@ -51,5 +51,23 @@ void trade_signal_handler_t::OnNewTradesImpl() {
     }
   }
 }
-
 } // namespace matching_engine
+
+namespace backtesting {
+void registerNewTradesCallback(backtesting::trade_type_e const tt,
+                               backtesting::new_trades_callback_t cb,
+                               bool const pushToFront) {
+  // this will be removed when the futures orderBook is implemented
+  if (tt != backtesting::trade_type_e::spot)
+    return;
+
+  auto &callbackList = registeredCallbacks[(int)tt];
+  auto iter = std::find(callbackList.cbegin(), callbackList.cend(), cb);
+  if (iter != callbackList.cend())
+    return;
+
+  if (!pushToFront)
+    return callbackList.push_back(cb);
+  callbackList.insert(callbackList.begin(), cb);
+}
+} // namespace backtesting

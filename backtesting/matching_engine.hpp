@@ -6,7 +6,7 @@
 
 namespace backtesting {
 class order_book_t;
-}
+} // namespace backtesting
 
 namespace matching_engine {
 void matchOrder(backtesting::order_book_t &orderBook,

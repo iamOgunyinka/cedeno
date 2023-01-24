@@ -3,9 +3,6 @@
 
 namespace py = pybind11;
 
-extern std::map<int, std::vector<backtesting::new_trades_callback_t>>
-    registeredCallbacks;
-
 std::optional<backtesting::user_data_t> findUserByID(int64_t userID) {
   if (userID < 0)
     return std::nullopt;
@@ -137,9 +134,8 @@ PYBIND11_MODULE(jbacktest, m) {
   m.def("addUser", [](backtesting::spot_wallet_asset_list_t assets) {
     return findUserByID(global_data_t::newUser(std::move(assets)));
   });
-  m.def("registerNewTradesCallback",
-        [](backtesting::trade_type_e tt,
-           backtesting::new_trades_callback_t callback) mutable {
-          registeredCallbacks[(int)tt].push_back(callback);
-        });
+  m.def("registerNewTradesCallback", [](backtesting::trade_type_e const tt,
+                                        backtesting::new_trades_callback_t cb) {
+    return backtesting::registerNewTradesCallback(tt, cb, false);
+  });
 }
