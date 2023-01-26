@@ -14,6 +14,7 @@ using indicators::indicators_e;
 
 static indicators::ind_db_t ind_db;
 static indicators::c_indicators<backtesting::trade_data_t> ind_mngr;
+static indicators::indicators_config_t ind_cfg;
 
 static void init_indicators(void){
     typedef void (*ind_hndlr_t)(indicators::indicators_list_t &, indicators::indicator_data_t &, const backtesting::trade_data_t &);
@@ -27,7 +28,7 @@ static void init_indicators(void){
     /*QTY_IN_OUT*/  indicators::qty_in_out,
     /*TICK_IN_OUT*/ indicators::ticks_in_out
     };
-    ind_mngr.init((uint64_t)indicators_e::SIZE, ind_handlers, &ind_db);  
+    ind_mngr.init((uint64_t)indicators_e::SIZE, ind_handlers, &ind_db, &ind_cfg);  
 }
 
 void enable_all_indicators(void){

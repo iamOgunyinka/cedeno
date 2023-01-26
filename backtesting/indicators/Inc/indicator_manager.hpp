@@ -13,11 +13,6 @@
 
 namespace indicators{
 
-enum class ind_mode_e{
-    STATIC,
-    DYNAMIC,
-};
-
 enum class ind_st_e{
     DISABLE,
     ENABLE,
@@ -29,9 +24,12 @@ using  ind_data_t = indicators::indicator_data_t;
 template <typename T>
 class c_indicators{
     private:
-        ind_mode_e ind_mode;
         uint64_t num_ind;
+        indicators_config_t *ind_cfg;
         indicators::ind_db_t *ind_db;
+        void (*(*ind_hndlr)[2])(ind_list_t &, ind_data_t &, const T &);
+        bool *ind_state;
+        
         static void indicator_disable_handler(  ind_list_t &ind_list, 
                                                 ind_data_t &new_data, 
                                                 const T &){std::cout<<"Disable"<<std::endl;}
@@ -41,22 +39,21 @@ class c_indicators{
         void set_indicator_states(bool *ind_state);
         void go_through_all_indicators_enable(ind_list_t &ind_list, ind_data_t &new_data, const T &tick);
 
-        void (*(*ind_hndlr)[2])(ind_list_t &, ind_data_t &, const T &);
-        bool *ind_state;
     public:
         c_indicators();
 
         c_indicators(   uint64_t num_ind, 
                         void (*ind_hndlr[])(ind_list_t &, ind_data_t &, const T &),
-                        indicators::ind_db_t *ind_db);
+                        indicators::ind_db_t *ind_db,
+                        indicators_config_t *ind_cfg);
 
-        void init(   uint64_t num_ind, 
-                void (*ind_hndlr[])(ind_list_t &, ind_data_t &, const T &),
-                indicators::ind_db_t *ind_db);
+        void init(  uint64_t num_ind, 
+                    void (*ind_hndlr[])(ind_list_t &, ind_data_t &, const T &),
+                    indicators::ind_db_t *ind_db,
+                    indicators_config_t *ind_cfg);
                         
         ~c_indicators();
         void process(const T &tick); 
-        void set_mode(const ind_mode_e &new_mode);
         void modify_indicator_state(const uint64_t &indicator, const ind_st_e &new_state);
 };
 
@@ -77,18 +74,17 @@ void c_indicators<T>::set_indicator_handlers(void (*ind_hndlr[])(ind_list_t &, i
 
 template <typename T>
 c_indicators<T>::c_indicators(){
-    ind_mode = ind_mode_e::STATIC;
-    
-    this->ind_state = new bool[num_ind];
-    memset(this->ind_state, (uint8_t)false, num_ind);
+    ind_state = nullptr;
+    ind_hndlr = nullptr;
 } 
 
 template <typename T>
 c_indicators<T>::c_indicators(  uint64_t num_ind, 
                                 void (*ind_hndlr[])(ind_list_t &, ind_data_t &, const T &),
-                                indicators::ind_db_t *ind_db
+                                indicators::ind_db_t *ind_db,
+                                indicators_config_t *ind_cfg
                                 ){
-    init(num_ind, ind_hndlr, ind_db);             
+    init(num_ind, ind_hndlr, ind_db, ind_cfg);             
 }
 
 template <typename T>
@@ -100,12 +96,13 @@ c_indicators<T>::~c_indicators(){
 template <typename T>
 void c_indicators<T>::init(uint64_t num_ind, 
                         void (*ind_hndlr[])(ind_list_t &, ind_data_t &, const T &),
-                        indicators::ind_db_t *ind_db){
+                        indicators::ind_db_t *ind_db,
+                        indicators_config_t *ind_cfg){
 
     typedef void (*ind_hndlr_ptr)(ind_list_t &, ind_data_t &, const T &);
 
+    this->ind_cfg = ind_cfg;
     this->num_ind = num_ind;
-    ind_mode = ind_mode_e::STATIC;
     this->ind_db = ind_db;
     
     this->ind_hndlr = new ind_hndlr_ptr[num_ind][2];
@@ -114,11 +111,6 @@ void c_indicators<T>::init(uint64_t num_ind,
     this->ind_state = new bool[num_ind];
     memset(this->ind_state, (uint8_t)false, num_ind);
 
-}
-
-template <typename T>
-void c_indicators<T>::set_mode(const ind_mode_e &new_mode){
-    ind_mode = new_mode;
 }
 
 template <typename T>
@@ -155,7 +147,7 @@ void c_indicators<T>::process(const T &tick){
         indicator_list = &itr->second;
     }
 
-    if(ind_mode == ind_mode_e::STATIC){
+    if(ind_cfg->ind_mode == ind_mode_e::STATIC){
         indicator_list->push(new_data);
     }else{
 
