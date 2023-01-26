@@ -108,7 +108,8 @@ set(SRC_FILES
   depth_data.cpp
   global_data.cpp
   matching_engine.cpp
-  order_book.cpp
+  futures_order_book.cpp
+  spot_order_book.cpp
   py_wrapper.cpp
   user_data.cpp
 )
@@ -128,7 +129,9 @@ set(HEADERS_FILES
   depth_data.hpp
   global_data.hpp
   matching_engine.hpp
-  order_book.hpp
+  futures_order_book.hpp
+  spot_order_book.hpp
+  order_book_base.hpp
   py_wrapper.hpp
   user_data.hpp
 )
