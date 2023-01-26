@@ -1,8 +1,9 @@
 #include <boost/asio/io_context.hpp>
 
 #include "depth_data.hpp"
+#include "futures_order_book.hpp"
 #include "matching_engine.hpp"
-#include "order_book.hpp"
+#include "spot_order_book.hpp"
 
 namespace backtesting {
 internal_token_data_t *getTokenWithName(std::string const &tokenName,
@@ -39,21 +40,20 @@ void processDepthStream(net::io_context &ioContext, trade_map_td &tradeMap) {
       throw std::runtime_error("Invalid trade symbol");
     return symbol;
   };
+
   for (auto &[tokenName, value] : tradeMap) {
     global_order_book_t d;
     d.tokenName = utils::toUpperString(tokenName);
     if (auto spotStreamer = sorter(value, SPOT); spotStreamer.has_value()) {
-      auto const tradeType = trade_type_e::spot;
-      auto symbol = getTradeSymbol(tokenName, tradeType);
-      d.spot.reset(new order_book_t(ioContext, std::move(*spotStreamer), symbol,
-                                    tradeType));
+      auto symbol = getTradeSymbol(tokenName, trade_type_e::spot);
+      d.spot.reset(
+          new spot_order_book_t(ioContext, std::move(*spotStreamer), symbol));
     }
     if (auto futuresStreamer = sorter(value, FUTURES);
         futuresStreamer.has_value()) {
-      auto const tradeType = trade_type_e::futures;
-      auto symbol = getTradeSymbol(tokenName, tradeType);
-      d.futures.reset(new order_book_t(ioContext, std::move(*futuresStreamer),
-                                       symbol, tradeType));
+      auto symbol = getTradeSymbol(tokenName, trade_type_e::futures);
+      d.futures.reset(new futures_order_book_t(
+          ioContext, std::move(*futuresStreamer), symbol));
     }
 
     if (d.futures || d.spot)

@@ -18,7 +18,7 @@
     <ClCompile Include="arg_parser_extension.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="order_book.cpp">
+    <ClCompile Include="spot_order_book.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="depth_data.cpp">
@@ -51,9 +51,12 @@
     <ClCompile Include="global_data.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="futures_order_book.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="order_book.hpp">
+    <ClInclude Include="spot_order_book.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="depth_data.hpp">
@@ -93,6 +96,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="container.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="futures_order_book.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="order_book_base.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
