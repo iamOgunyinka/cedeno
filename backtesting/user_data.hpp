@@ -143,4 +143,6 @@ bool initiateOrder(order_data_t const &order);
 bool cancelAllOrders(order_list_t const &orders);
 internal_token_data_t *getTokenWithName(std::string const &tokenName,
                                         trade_type_e const tradeType);
+void registerNewTradesCallback(trade_type_e const tt, new_trades_callback_t cb,
+                               bool const pushToFront = true);
 } // namespace backtesting
