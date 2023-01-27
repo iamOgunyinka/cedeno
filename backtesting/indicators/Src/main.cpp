@@ -28,16 +28,35 @@ static void init_indicators(void){
     /*TICK_IN_OUT*/ indicators::ticks_in_out
     };
 
-    void *ind_confg[(uint64_t)indicators_e::SIZE];
-    ind_confg[0] = new indicators::ind_confg_t;
+    void *ind_confg = new indicators::ind_BWFS_confg_t;
+    void *a_ind_confg[(uint64_t)indicators_e::SIZE] = {
+    /*TICK_IN*/     ind_confg,
+    /*TICK_OUT*/    ind_confg,
+    /*QTY_IN*/      ind_confg,
+    /*QTY_OUT*/     ind_confg,
+    /*AVRG_IN*/     ind_confg,
+    /*AVRG_OUT*/    ind_confg,
+    /*QTY_IN_OUT*/  ind_confg,
+    /*TICK_IN_OUT*/ ind_confg
+    };
 
-    uint64_t ind_confg_sz[(uint64_t)indicators_e::SIZE];
+    uint64_t *ind_confg_sz = new uint64_t(sizeof(indicators::ind_BWFS_confg_t));
+    uint64_t *a_ind_confg_sz[(uint64_t)indicators_e::SIZE] = {
+    /*TICK_IN*/     ind_confg_sz,
+    /*TICK_OUT*/    ind_confg_sz,
+    /*QTY_IN*/      ind_confg_sz,
+    /*QTY_OUT*/     ind_confg_sz,
+    /*AVRG_IN*/     ind_confg_sz,
+    /*AVRG_OUT*/    ind_confg_sz,
+    /*QTY_IN_OUT*/  ind_confg_sz,
+    /*TICK_IN_OUT*/ ind_confg_sz
+    };    
 
     ind_mngr.init(  (uint64_t)indicators_e::SIZE, 
                     ind_handlers, 
                     &ind_db, 
-                    ind_confg,
-                    ind_confg_sz);  
+                    a_ind_confg,
+                    a_ind_confg_sz);  
 }
 
 void enable_all_indicators(void){

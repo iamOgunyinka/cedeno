@@ -26,6 +26,7 @@ class ind_mngr_c{
         ind_hndlr_p (*m_ind_hndlr)[2];
 
         void *m_ind_confg;
+        uint64_t **m_ind_confg_sz;
 
         void set_indicator_handlers_(ind_hndlr_p ind_hndlr[]);
         void go_through_all_indicators_enable_(ind_list_t &ind_list, ind_data_t &new_data, const T &tick);
@@ -37,13 +38,13 @@ class ind_mngr_c{
                         ind_hndlr_p ind_hndlr[],
                         indicators::ind_db_t *ind_db,
                         void *ind_confg,
-                        uint64_t ind_confg_sz[]);
+                        uint64_t *ind_confg_sz[]);
 
         void init(  uint64_t num_ind, 
                     ind_hndlr_p ind_hndlr[],
                     indicators::ind_db_t *ind_db,
                     void *ind_confg,
-                    uint64_t ind_confg_sz[]);
+                    uint64_t *ind_confg_sz[]);
                         
         ~ind_mngr_c();
         void process(const T &tick); 
@@ -66,7 +67,7 @@ ind_mngr_c<T>::ind_mngr_c(  uint64_t num_ind,
                                 ind_hndlr_p ind_hndlr[],
                                 indicators::ind_db_t *ind_db,
                                 void *ind_confg,
-                                uint64_t ind_confg_sz[]
+                                uint64_t *ind_confg_sz[]
                                 ){
     init(num_ind, ind_hndlr, ind_db, ind_confg, ind_confg_sz);             
 }
@@ -80,12 +81,13 @@ void ind_mngr_c<T>::init(uint64_t num_ind,
                         ind_hndlr_p ind_hndlr[],
                         indicators::ind_db_t *ind_db,
                         void *ind_confg,
-                        uint64_t ind_confg_sz[]){
+                        uint64_t *ind_confg_sz[]){
 
     m_num_ind = num_ind;
     m_ind_db = ind_db;
 
-    // m_ind_confg = (void*)new uint8_t[]; 
+    m_ind_confg = ind_confg;
+    m_ind_confg_sz = ind_confg_sz;
     
     m_ind_hndlr = new ind_hndlr_p[num_ind][2];
     set_indicator_handlers_(ind_hndlr);

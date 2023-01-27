@@ -27,14 +27,16 @@ namespace indicators{
         DYNAMIC,
     };
  
-    typedef struct ind_confg_{
-        ind_confg_(){
-            candlestick_time = 0;
-            ind_mode = ind_mode_e::STATIC;
+    typedef struct ind_BWFS_confg_{
+        ind_BWFS_confg_(){
+            mode = ind_mode_e::STATIC;
+            time = 8;
+            limit = 0.0;
         }
-        uint64_t candlestick_time;
-        ind_mode_e ind_mode;
-    }ind_confg_t;
+        ind_mode_e mode;
+        uint64_t time;
+        double limit;
+    }ind_BWFS_confg_t;
 
     typedef struct ind_BWFS_{
         ind_BWFS_(){
