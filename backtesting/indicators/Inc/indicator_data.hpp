@@ -37,20 +37,20 @@ namespace indicators{
             ticks_out = 0;
             qty_in = 0.0;
             qty_out = 0.0;
-            avrg_in = 0;
-            avrg_out = 0;
+            avrg_in = 0.0;
+            avrg_out = 0.0;
             ticks_in_out = 0;
-            qty_in_out = 0;
+            qty_in_out = 0.0;
         }
 
         uint64_t ticks_in;
         uint64_t ticks_out;
         double qty_in;
         double qty_out;
-        uint64_t avrg_in;
-        uint64_t avrg_out;
-        uint64_t ticks_in_out;
-        uint64_t qty_in_out;
+        double avrg_in;
+        double avrg_out;
+        int64_t ticks_in_out;
+        double qty_in_out;
     }ind_creed_and_bear_t;
     
     typedef struct indictors_{
