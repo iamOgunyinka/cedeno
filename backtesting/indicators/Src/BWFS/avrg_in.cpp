@@ -1,4 +1,4 @@
-#include "creed_and_bear/avrg_in.hpp"
+#include "BWFS/avrg_in.hpp"
 
 namespace indicators{
 

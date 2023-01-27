@@ -28,7 +28,6 @@ class c_indicators{
         indicators_config_t *ind_cfg;
         indicators::ind_db_t *ind_db;
         void (*(*ind_hndlr)[2])(ind_list_t &, ind_data_t &, const T &);
-        bool *ind_state;
         
         static void indicator_disable_handler(  ind_list_t &ind_list, 
                                                 ind_data_t &new_data, 
@@ -67,14 +66,13 @@ void c_indicators<T>::set_indicator_states(bool *ind_state){
 template <typename T>
 void c_indicators<T>::set_indicator_handlers(void (*ind_hndlr[])(ind_list_t &, ind_data_t &, const T &)){
     for(uint64_t index = 0; index < num_ind; index++){
-        this->ind_hndlr[index][0] = c_indicators::indicator_disable_handler;
+        this->ind_hndlr[index][0] = nullptr;
         this->ind_hndlr[index][1] = ind_hndlr[index];
     }
 }
 
 template <typename T>
 c_indicators<T>::c_indicators(){
-    ind_state = nullptr;
     ind_hndlr = nullptr;
 } 
 
@@ -89,8 +87,6 @@ c_indicators<T>::c_indicators(  uint64_t num_ind,
 
 template <typename T>
 c_indicators<T>::~c_indicators(){
-    // delete indicator_handler;
-    // delete indicator_state;
 }
 
 template <typename T>
@@ -108,9 +104,6 @@ void c_indicators<T>::init(uint64_t num_ind,
     this->ind_hndlr = new ind_hndlr_ptr[num_ind][2];
     set_indicator_handlers(ind_hndlr);
 
-    this->ind_state = new bool[num_ind];
-    memset(this->ind_state, (uint8_t)false, num_ind);
-
 }
 
 template <typename T>
@@ -118,14 +111,19 @@ void c_indicators<T>::modify_indicator_state(const uint64_t &ind, const ind_st_e
     if(ind >= num_ind ){
         throw std::runtime_error("Wrong indicator number passed to enable");    
     }
-    ind_state[ind] = (bool)new_state;
+    if(new_state == ind_st_e::DISABLE){
+        ind_hndlr[ind][0] == nullptr;    
+    }else{
+        ind_hndlr[ind][0] = ind_hndlr[ind][1];  
+    }
 }
 
 template <typename T>
 void c_indicators<T>::go_through_all_indicators_enable(ind_list_t &ind_list, ind_data_t &new_data, const T &tick){
     for(uint64_t index = 0; index < num_ind; index++){
-        bool state = ind_state[index]; 
-        (*ind_hndlr[index][(uint8_t)state])(ind_list, new_data, tick);
+        if(ind_hndlr[index][0] != nullptr){
+            (*ind_hndlr[index][0])(ind_list, new_data, tick);
+        }
     }
 }
 template <typename T>

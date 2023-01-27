@@ -1,14 +1,14 @@
 #include <iostream>
 #include "indicator_manager.hpp"
 
-#include "creed_and_bear/ticks_in.hpp"
-#include "creed_and_bear/ticks_out.hpp"
-#include "creed_and_bear/qty_in.hpp"
-#include "creed_and_bear/qty_out.hpp"
-#include "creed_and_bear/avrg_in.hpp"
-#include "creed_and_bear/avrg_out.hpp"
-#include "creed_and_bear/qty_in_out.hpp"
-#include "creed_and_bear/ticks_in_out.hpp"
+#include "BWFS/ticks_in.hpp"
+#include "BWFS/ticks_out.hpp"
+#include "BWFS/qty_in.hpp"
+#include "BWFS/qty_out.hpp"
+#include "BWFS/avrg_in.hpp"
+#include "BWFS/avrg_out.hpp"
+#include "BWFS/qty_in_out.hpp"
+#include "BWFS/ticks_in_out.hpp"
 
 using indicators::indicators_e;
 
