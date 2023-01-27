@@ -16,23 +16,28 @@ namespace indicators{
         TICK_IN_OUT,
         SIZE,
     };
+    
+    enum class ind_st_e{
+        DISABLE,
+        ENABLE,
+    };
 
     enum class ind_mode_e{
         STATIC,
         DYNAMIC,
     };
  
-    typedef struct indicators_config_{
-        indicators_config_(){
+    typedef struct ind_confg_{
+        ind_confg_(){
             candlestick_time = 0;
             ind_mode = ind_mode_e::STATIC;
         }
         uint64_t candlestick_time;
         ind_mode_e ind_mode;
-    }indicators_config_t;
+    }ind_confg_t;
 
-    typedef struct creed_and_bear_{
-        creed_and_bear_(){
+    typedef struct ind_BWFS_{
+        ind_BWFS_(){
             ticks_in = 0;
             ticks_out = 0;
             qty_in = 0.0;
@@ -51,10 +56,10 @@ namespace indicators{
         double avrg_out;
         int64_t ticks_in_out;
         double qty_in_out;
-    }ind_creed_and_bear_t;
+    }ind_BWFS_t;
     
     typedef struct indictors_{
-        ind_creed_and_bear_t cab; 
+        ind_BWFS_t cab; 
     }indicator_data_t;
 
     using indicators_list_t = std::queue<indicator_data_t>; 
