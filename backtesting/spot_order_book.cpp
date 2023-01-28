@@ -1,10 +1,11 @@
-#include "order_book.hpp"
+#include "spot_order_book.hpp"
 #include <mutex>
 #include <spdlog/spdlog.h>
 
 namespace backtesting {
-using simple_sort_callback_t = bool (*)(details::order_meta_data_t const &,
-                                        details::order_meta_data_t const &);
+using simple_sort_callback_t =
+    bool (*)(details::spot_order_meta_data_t const &,
+             details::spot_order_meta_data_t const &);
 
 int64_t getOrderNumber() {
   static int64_t orderNumber = 0x0'100'120'000;
@@ -16,33 +17,37 @@ int64_t getOrderNumber() {
   return orderNumber++;
 }
 
-bool isGreater(details::order_meta_data_t const &a,
-               details::order_meta_data_t const &b) {
+bool isGreater(details::spot_order_meta_data_t const &a,
+               details::spot_order_meta_data_t const &b) {
   return a.priceLevel > b.priceLevel;
 }
 
-bool isLesser(details::order_meta_data_t const &a,
-              details::order_meta_data_t const &b) {
+bool isLesser(details::spot_order_meta_data_t const &a,
+              details::spot_order_meta_data_t const &b) {
   return a.priceLevel < b.priceLevel;
 }
 
 struct lesser_comparator_t {
-  bool operator()(double const a, details::order_meta_data_t const &b) const {
+  bool operator()(double const a,
+                  details::spot_order_meta_data_t const &b) const {
     return a < b.priceLevel;
   }
 
-  bool operator()(details::order_meta_data_t const &a, double const b) const {
+  bool operator()(details::spot_order_meta_data_t const &a,
+                  double const b) const {
     return a.priceLevel < b;
   }
 };
 static lesser_comparator_t lesserComparator{};
 
 struct greater_comparator_t {
-  bool operator()(double const a, details::order_meta_data_t const &b) const {
+  bool operator()(double const a,
+                  details::spot_order_meta_data_t const &b) const {
     return a > b.priceLevel;
   }
 
-  bool operator()(details::order_meta_data_t const &a, double const b) const {
+  bool operator()(details::spot_order_meta_data_t const &a,
+                  double const b) const {
     return a.priceLevel > b;
   }
 };
@@ -50,7 +55,7 @@ static greater_comparator_t greaterComparator{};
 
 template <typename Comparator>
 void updateSidesWithNewOrder(order_data_t const &order,
-                             std::vector<details::order_meta_data_t> &dest,
+                             std::vector<details::spot_order_meta_data_t> &dest,
                              Comparator comparator) {
   auto iter =
       std::lower_bound(dest.begin(), dest.end(), order.priceLevel, comparator);
@@ -62,7 +67,7 @@ void updateSidesWithNewOrder(order_data_t const &order,
       iter->orders.push_back(order);
     }
   } else {
-    details::order_meta_data_t newInsert{};
+    details::spot_order_meta_data_t newInsert{};
     newInsert.orders.push_back(std::move(order));
     newInsert.priceLevel = order.priceLevel;
     newInsert.totalQuantity = order.quantity;
@@ -72,7 +77,7 @@ void updateSidesWithNewOrder(order_data_t const &order,
 
 template <typename Func>
 void updateSidesWithNewOrder(order_list_t const &src,
-                             std::vector<details::order_meta_data_t> &dest,
+                             std::vector<details::spot_order_meta_data_t> &dest,
                              Func comparator) {
   for (auto const &d : src)
     updateSidesWithNewOrder(d, dest, comparator);
@@ -84,7 +89,7 @@ void updateSidesWithNewOrder(order_list_t const &src,
 
 template <typename Comparator>
 void updateSidesWithNewDepth(std::vector<depth_data_t::depth_meta_t> const &src,
-                             std::vector<details::order_meta_data_t> &dest,
+                             std::vector<details::spot_order_meta_data_t> &dest,
                              trade_side_e const side,
                              trade_type_e const tradeType,
                              internal_token_data_t *token,
@@ -114,17 +119,17 @@ void updateSidesWithNewDepth(std::vector<depth_data_t::depth_meta_t> const &src,
   }
 
   dest.erase(std::remove_if(dest.begin(), dest.end(),
-                            [](details::order_meta_data_t const &a) {
+                            [](details::spot_order_meta_data_t const &a) {
                               return a.totalQuantity == 0.0;
                             }),
              dest.end());
 }
 
-details::order_meta_data_t
+details::spot_order_meta_data_t
 orderMetaDataFromDepth(depth_data_t::depth_meta_t const &depth,
                        internal_token_data_t *token, trade_side_e const side,
                        trade_type_e const tradeType) {
-  details::order_meta_data_t d;
+  details::spot_order_meta_data_t d;
   d.totalQuantity += depth.quantity;
   d.priceLevel = depth.priceLevel;
 
@@ -141,7 +146,7 @@ orderMetaDataFromDepth(depth_data_t::depth_meta_t const &depth,
 }
 
 void insertAndSort(std::vector<depth_data_t::depth_meta_t> const &depthList,
-                   std::vector<details::order_meta_data_t> &dst,
+                   std::vector<details::spot_order_meta_data_t> &dst,
                    trade_side_e const side, trade_type_e const tradeType,
                    internal_token_data_t *token,
                    simple_sort_callback_t comparator) {
@@ -151,12 +156,12 @@ void insertAndSort(std::vector<depth_data_t::depth_meta_t> const &depthList,
   std::sort(dst.begin(), dst.end(), comparator);
 }
 
-order_book_t::order_book_t(net::io_context &ioContext,
-                           data_streamer_t<depth_data_t> dataStreamer,
-                           internal_token_data_t *symbol,
-                           trade_type_e const tradeType)
-    : m_ioContext(ioContext), m_dataStreamer(std::move(dataStreamer)),
-      m_symbol(symbol), m_currentTimer(0), m_tradeType(tradeType) {
+spot_order_book_t::spot_order_book_t(net::io_context &ioContext,
+                                     data_streamer_t<depth_data_t> dataStreamer,
+                                     internal_token_data_t *symbol)
+    : order_book_t(ioContext, std::move(dataStreamer), symbol,
+                   trade_type_e::spot),
+      m_currentTimer(0) {
   auto firstData = m_dataStreamer.getNextData();
   insertAndSort(firstData.bids, m_orderBook.bids, trade_side_e::buy,
                 m_tradeType, symbol, isGreater);
@@ -165,21 +170,21 @@ order_book_t::order_book_t(net::io_context &ioContext,
   m_currentTimer = firstData.eventTime;
 }
 
-order_book_t::~order_book_t() {
+spot_order_book_t::~spot_order_book_t() {
   if (m_periodicTimer) {
     m_periodicTimer->cancel();
     m_periodicTimer.reset();
   }
 }
 
-void order_book_t::run() {
+void spot_order_book_t::run() {
   if (m_periodicTimer) // already running
     return;
 
   setNextTimer();
 }
 
-void order_book_t::cancel(order_data_t order) {
+void spot_order_book_t::cancel(order_data_t order) {
   static auto findAndCancelOrder = [this](auto &sides, order_data_t &&order,
                                           auto comparator) {
     auto iter = std::lower_bound(sides.begin(), sides.end(), order.priceLevel,
@@ -209,7 +214,7 @@ void order_book_t::cancel(order_data_t order) {
                             lesserComparator);
 }
 
-void order_book_t::match(order_data_t order) {
+void spot_order_book_t::match(order_data_t order) {
   auto const isBuying = (order.side == trade_side_e::buy);
   auto &bids = m_orderBook.bids;
   auto &asks = m_orderBook.asks;
@@ -321,10 +326,9 @@ void order_book_t::match(order_data_t order) {
   return broadcastTradeSignal(std::move(result));
 }
 
-trade_list_t
-order_book_t::getExecutedTradesFromOrders(details::order_meta_data_t &data,
-                                          double quantityTraded,
-                                          double const priceLevel) {
+trade_list_t spot_order_book_t::getExecutedTradesFromOrders(
+    details::spot_order_meta_data_t &data, double quantityTraded,
+    double const priceLevel) {
   trade_list_t trades;
   while (quantityTraded > 0.0) {
     if (data.orders.empty())
@@ -345,9 +349,10 @@ order_book_t::getExecutedTradesFromOrders(details::order_meta_data_t &data,
   return trades;
 }
 
-trade_data_t order_book_t::getNewTrade(order_data_t const &order,
-                                       order_status_e const status,
-                                       double const qty, double const amount) {
+trade_data_t spot_order_book_t::getNewTrade(order_data_t const &order,
+                                            order_status_e const status,
+                                            double const qty,
+                                            double const amount) {
   static int64_t tradeNumber = 0x0'000'320'012;
 
   trade_data_t trade;
@@ -366,10 +371,9 @@ trade_data_t order_book_t::getNewTrade(order_data_t const &order,
   return trade;
 }
 
-trade_list_t
-order_book_t::marketMatcher(std::vector<details::order_meta_data_t> &list,
-                            double &amountAvailableToSpend,
-                            order_data_t const &order) {
+trade_list_t spot_order_book_t::marketMatcher(
+    std::vector<details::spot_order_meta_data_t> &list,
+    double &amountAvailableToSpend, order_data_t const &order) {
   trade_list_t result;
   if (list.empty())
     return result;
@@ -417,7 +421,7 @@ Asks
 Bids
 */
 
-void order_book_t::shakeOrderBook() {
+void spot_order_book_t::shakeOrderBook() {
   auto &bids = m_orderBook.bids;
   auto &asks = m_orderBook.asks;
 
@@ -453,7 +457,7 @@ void order_book_t::shakeOrderBook() {
   NewTradesCreated(std::move(result));
 }
 
-void order_book_t::setNextTimer() {
+void spot_order_book_t::setNextTimer() {
   if (!m_periodicTimer)
     m_periodicTimer.reset(new net::deadline_timer(m_ioContext));
 
@@ -482,7 +486,7 @@ void order_book_t::setNextTimer() {
 }
 
 #ifdef _DEBUG
-void order_book_t::printOrderBook() {
+void spot_order_book_t::printOrderBook() {
   for (auto const &ask : m_orderBook.asks)
     spdlog::debug("{} -> {}", ask.priceLevel, ask.totalQuantity);
 
@@ -494,7 +498,7 @@ void order_book_t::printOrderBook() {
 }
 #endif
 
-void order_book_t::updateOrderBook(depth_data_t &&newestData) {
+void spot_order_book_t::updateOrderBook(depth_data_t &&newestData) {
   updateSidesWithNewDepth(newestData.asks, m_orderBook.asks, trade_side_e::sell,
                           m_tradeType, m_symbol, lesserComparator);
   updateSidesWithNewDepth(newestData.bids, m_orderBook.bids, trade_side_e::buy,
