@@ -134,8 +134,8 @@ PYBIND11_MODULE(jbacktest, m) {
   m.def("addUser", [](backtesting::spot_wallet_asset_list_t assets) {
     return findUserByID(global_data_t::newUser(std::move(assets)));
   });
-  m.def("registerNewTradesCallback", [](backtesting::trade_type_e const tt,
-                                        backtesting::new_trades_callback_t cb) {
-    return backtesting::registerNewTradesCallback(tt, cb, false);
+  m.def("registerTradesCallback", [](backtesting::trade_type_e const tt,
+                                     backtesting::trades_event_callback_t cb) {
+    return backtesting::registerTradesCallback(tt, cb, false);
   });
 }

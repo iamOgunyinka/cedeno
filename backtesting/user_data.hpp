@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace backtesting {
@@ -88,6 +89,18 @@ struct trade_data_t {
 };
 using trade_list_t = std::vector<trade_data_t>;
 
+struct agg_trade_data_t {
+  std::string tokenName;
+  uint64_t aggTradeID = 0;
+  uint64_t orderID = 0;
+  uint64_t eventTime = 0;
+  uint64_t firstTradeID = 0;
+  uint64_t lastTradeID = 0;
+  double price = 0.0;
+  double quantity = 0.0;
+  trade_type_e tradeType = trade_type_e::none;
+};
+
 struct user_data_t {
   uint64_t userID = 0;
   trade_list_t trades;
@@ -138,11 +151,16 @@ private:
 };
 
 using user_data_list_t = std::vector<std::shared_ptr<user_data_t>>;
-using new_trades_callback_t = void (*)(backtesting::trade_list_t const &);
+using recent_trades_callback_t = void (*)(backtesting::trade_list_t const &);
+using aggregate_trades_callback_t =
+    void (*)(backtesting::agg_trade_data_t const &);
+using trades_event_callback_t =
+    std::variant<recent_trades_callback_t, aggregate_trades_callback_t>;
+
 bool initiateOrder(order_data_t const &order);
 bool cancelAllOrders(order_list_t const &orders);
 internal_token_data_t *getTokenWithName(std::string const &tokenName,
                                         trade_type_e const tradeType);
-void registerNewTradesCallback(trade_type_e const tt, new_trades_callback_t cb,
-                               bool const pushToFront = true);
+void registerTradesCallback(trade_type_e const tt, trades_event_callback_t cb,
+                            bool const pushToFront = true);
 } // namespace backtesting
