@@ -5,8 +5,15 @@
 
 namespace indicators{
 
-void qty_in( indicators::indicators_list_t &ind_list, indicator_data_t &new_data, const backtesting::trade_data_t &trade_data);    
+struct qty_in_t{
+    qty_in_t(indicators::indicator_data_t &common_db_){
+        common_db = &common_db_;
+    } 
+    void config(const indicators::ind_BWFS_confg_t &config_);
+    indicators::indicator_data_t *common_db;
+    indicators::ind_BWFS_confg_t configuration;
+};
 
+void qty_in_callback(const backtesting::trade_data_t &trade_data, void *handler_);
 }
-
 #endif

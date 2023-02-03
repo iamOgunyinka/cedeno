@@ -2,12 +2,16 @@
 
 namespace indicators{
 
-
-void avrg_in( indicators::indicators_list_t &ind_list, indicator_data_t &new_data, const backtesting::trade_data_t &trade_data){
+void avrg_in_callback( const backtesting::trade_data_t &trade_data, void *handler_){
+    avrg_in_t *handler = (avrg_in_t*)handler_;
     std::cout<<__func__<<std::endl;
     if(trade_data.side == backtesting::trade_side_e::buy){
-        new_data.cab.avrg_in = new_data.cab.qty_in/new_data.cab.ticks_in;
-    }
+        handler->common_db->cab.avrg_in = handler->common_db->cab.qty_in/handler->common_db->cab.ticks_in;
+    }  
+}
+
+void avrg_in_t::config(const indicators::ind_BWFS_confg_t &config_){
+    configuration = config_;
 }
 
 }
