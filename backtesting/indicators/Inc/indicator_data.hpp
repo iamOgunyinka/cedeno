@@ -26,6 +26,7 @@ namespace indicators{
         AVRG_OUT,
         QTY_IN_OUT,
         TICK_IN_OUT,
+        BWFS_HANDLER,
         SIZE,
     };
     

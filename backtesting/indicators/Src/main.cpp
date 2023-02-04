@@ -10,7 +10,8 @@ void enable_all_indicators(indicators::indicators_c &indicators){
 int main(void){
     indicators::indicators_c indcs;
     std::vector<std::vector<std::string>> indcs_confg{
-        {"qty_in","qty_out","tick_in","tick_out","avrg_out","avrg_in","tick_in_out","qty_in_out","static", "2", "3"},
+        // {"qty_in","qty_out","tick_in","tick_out","avrg_out","avrg_in","tick_in_out","qty_in_out","static", "2", "3"},
+        {"qty_in","static", "2", "3"},
     };
     indcs.set(indcs_confg);
     backtesting::trade_list_t trade_list;
