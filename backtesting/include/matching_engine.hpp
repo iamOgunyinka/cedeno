@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Signals/Delegate.h"
-#include "container.hpp"
 #include "user_data.hpp"
 
 namespace backtesting {
@@ -14,14 +12,4 @@ void matchOrder(backtesting::order_book_t &orderBook,
 void cancelOrder(backtesting::order_book_t &orderBook,
                  backtesting::order_data_t const &order);
 
-struct trade_signal_handler_t {
-  using TradesDelegate = Gallant::Delegate1<backtesting::trade_list_t>;
-  static utils::waitable_container_t<backtesting::trade_list_t> tradeList;
-  static utils::mutexed_list_t<backtesting::trade_list_t> aggTradeList;
-
-  static void onNewTrades(backtesting::trade_list_t);
-  static void aggregateTradesImpl();
-  static void onNewTradesImpl();
-  static TradesDelegate &GetTradesDelegate();
-};
 } // namespace matching_engine

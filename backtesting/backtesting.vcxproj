@@ -148,7 +148,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\adaptor.hpp" />
+    <ClInclude Include="include\aggregate_trade.hpp" />
     <ClInclude Include="include\arguments_parser.hpp" />
+    <ClInclude Include="include\callbacks.hpp" />
     <ClInclude Include="include\candlestick_data.hpp" />
     <ClInclude Include="include\common.hpp" />
     <ClInclude Include="include\container.hpp" />
@@ -162,12 +164,15 @@
     <ClInclude Include="include\order_book_base.hpp" />
     <ClInclude Include="include\py_wrapper.hpp" />
     <ClInclude Include="include\spot_order_book.hpp" />
+    <ClInclude Include="include\trades_data.hpp" />
     <ClInclude Include="include\user_data.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\adaptor.cpp" />
+    <ClCompile Include="src\aggregate_trade.cpp" />
     <ClCompile Include="src\arguments_parser.cpp" />
     <ClCompile Include="src\arg_parser_extension.cpp" />
+    <ClCompile Include="src\callbacks.cpp" />
     <ClCompile Include="src\candlestick_data.cpp" />
     <ClCompile Include="src\common.cpp" />
     <ClCompile Include="src\database_connector.cpp" />
@@ -177,6 +182,7 @@
     <ClCompile Include="src\matching_engine.cpp" />
     <ClCompile Include="src\py_wrapper.cpp" />
     <ClCompile Include="src\spot_order_book.cpp" />
+    <ClCompile Include="src\trades_data.cpp" />
     <ClCompile Include="src\user_data.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

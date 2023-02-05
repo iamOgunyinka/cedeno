@@ -101,17 +101,20 @@ endif()
 # Source Files
 set(SRC_FILES
   src/adaptor.cpp
+  src/aggregate_trade.cpp
   src/arg_parser_extension.cpp
   src/arguments_parser.cpp
+  src/callbacks.cpp
   src/candlestick_data.cpp
   src/common.cpp
   src/database_connector.cpp
   src/depth_data.cpp
+  src/futures_order_book.cpp
   src/global_data.cpp
   src/matching_engine.cpp
-  src/futures_order_book.cpp
   src/spot_order_book.cpp
   src/py_wrapper.cpp
+  src/trades_data.cpp
   src/user_data.cpp
 )
 
@@ -120,7 +123,9 @@ source_group("Sources" FILES ${SRC_FILES})
 # Header Files
 set(HEADERS_FILES
   include/adaptor.hpp
+  include/aggregate_trade.hpp
   include/arguments_parser.hpp
+  include/callbacks.hpp
   include/candlestick_data.hpp
   include/common.hpp
   include/container.hpp
@@ -134,6 +139,7 @@ set(HEADERS_FILES
   include/spot_order_book.hpp
   include/order_book_base.hpp
   include/py_wrapper.hpp
+  include/trades_data.hpp
   include/user_data.hpp
 )
 
