@@ -27,7 +27,7 @@ public:
   waitable_container_t &operator=(waitable_container_t const &) = delete;
 
   void clear() {
-    std::lock_guard<std::mutex> lock_{m_mutex};
+    std::lock_guard<std::mutex> lock_g{m_mutex};
     m_container.clear();
   }
 
@@ -42,7 +42,7 @@ public:
   }
 
   template <typename U> void append(U &&data) {
-    std::lock_guard<std::mutex> lock_{m_mutex};
+    std::lock_guard<std::mutex> lock_g{m_mutex};
     m_container.push_back(std::forward<U>(data));
     m_cv.notify_all();
   }
@@ -57,21 +57,21 @@ public:
   using value_type = T;
   mutexed_list_t() = default;
   template <typename U> void append(U &&data) {
-    std::lock_guard<std::mutex> lock_{m_mutex};
+    std::lock_guard<std::mutex> lock_g{m_mutex};
     m_list.emplace_back(std::forward<U>(data));
   }
   T get() {
     if (isEmpty())
       throw std::runtime_error("container is empty");
 
-    std::lock_guard<std::mutex> lock_{m_mutex};
+    std::lock_guard<std::mutex> lock_g{m_mutex};
     T value{m_list.front()};
     m_list.pop_front();
     return value;
   }
 
   bool isEmpty() {
-    std::lock_guard<std::mutex> lock_{m_mutex};
+    std::lock_guard<std::mutex> lock_g{m_mutex};
     return m_list.empty();
   }
 };

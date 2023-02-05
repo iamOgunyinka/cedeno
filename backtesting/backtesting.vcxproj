@@ -119,7 +119,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Visual Studio Projects\cedeno\third-party\pybind11\include;D:\Visual Studio Projects\cedeno\third-party\spdlog\include;D:\Visual Studio Projects\cedeno\third-party\csv-parser\single_include;D:\Visual Studio Projects\cedeno\third-party;D:\boost_1_78\include;D:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories);C:\Users\ADMINI~1\AppData\Local\Programs\Python\Python310\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Visual Studio Projects\cedeno\backtesting\include;D:\Visual Studio Projects\cedeno\third-party\pybind11\include;D:\Visual Studio Projects\cedeno\third-party\spdlog\include;D:\Visual Studio Projects\cedeno\third-party\csv-parser\single_include;D:\Visual Studio Projects\cedeno\third-party;D:\boost_1_78\include;D:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories);C:\Users\ADMINI~1\AppData\Local\Programs\Python\Python310\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,37 +147,37 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="adaptor.cpp" />
-    <ClCompile Include="arguments_parser.cpp" />
-    <ClCompile Include="database_connector.cpp" />
-    <ClCompile Include="arg_parser_extension.cpp" />
-    <ClCompile Include="candlestick_data.cpp" />
-    <ClCompile Include="common.cpp" />
-    <ClCompile Include="depth_data.cpp" />
-    <ClCompile Include="futures_order_book.cpp" />
-    <ClCompile Include="global_data.cpp" />
-    <ClCompile Include="matching_engine.cpp" />
-    <ClCompile Include="spot_order_book.cpp" />
-    <ClCompile Include="py_wrapper.cpp" />
-    <ClCompile Include="user_data.cpp" />
+    <ClInclude Include="include\adaptor.hpp" />
+    <ClInclude Include="include\arguments_parser.hpp" />
+    <ClInclude Include="include\candlestick_data.hpp" />
+    <ClInclude Include="include\common.hpp" />
+    <ClInclude Include="include\container.hpp" />
+    <ClInclude Include="include\database_connector.hpp" />
+    <ClInclude Include="include\database_types.hpp" />
+    <ClInclude Include="include\data_streamer.hpp" />
+    <ClInclude Include="include\depth_data.hpp" />
+    <ClInclude Include="include\futures_order_book.hpp" />
+    <ClInclude Include="include\global_data.hpp" />
+    <ClInclude Include="include\matching_engine.hpp" />
+    <ClInclude Include="include\order_book_base.hpp" />
+    <ClInclude Include="include\py_wrapper.hpp" />
+    <ClInclude Include="include\spot_order_book.hpp" />
+    <ClInclude Include="include\user_data.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="adaptor.hpp" />
-    <ClInclude Include="arguments_parser.hpp" />
-    <ClInclude Include="candlestick_data.hpp" />
-    <ClInclude Include="common.hpp" />
-    <ClInclude Include="container.hpp" />
-    <ClInclude Include="database_connector.hpp" />
-    <ClInclude Include="database_types.hpp" />
-    <ClInclude Include="data_streamer.hpp" />
-    <ClInclude Include="depth_data.hpp" />
-    <ClInclude Include="futures_order_book.hpp" />
-    <ClInclude Include="global_data.hpp" />
-    <ClInclude Include="matching_engine.hpp" />
-    <ClInclude Include="order_book_base.hpp" />
-    <ClInclude Include="spot_order_book.hpp" />
-    <ClInclude Include="py_wrapper.hpp" />
-    <ClInclude Include="user_data.hpp" />
+    <ClCompile Include="src\adaptor.cpp" />
+    <ClCompile Include="src\arguments_parser.cpp" />
+    <ClCompile Include="src\arg_parser_extension.cpp" />
+    <ClCompile Include="src\candlestick_data.cpp" />
+    <ClCompile Include="src\common.cpp" />
+    <ClCompile Include="src\database_connector.cpp" />
+    <ClCompile Include="src\depth_data.cpp" />
+    <ClCompile Include="src\futures_order_book.cpp" />
+    <ClCompile Include="src\global_data.cpp" />
+    <ClCompile Include="src\matching_engine.cpp" />
+    <ClCompile Include="src\py_wrapper.cpp" />
+    <ClCompile Include="src\spot_order_book.cpp" />
+    <ClCompile Include="src\user_data.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
