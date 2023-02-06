@@ -14,7 +14,7 @@ struct avrg_out_t{
     indicators::ind_BWFS_confg_t configuration;
 };
 
-void avrg_out_callback( const backtesting::trade_data_t &trade_data, void *handler);
+void avrg_out_callback( const backtesting::trade_data_t &trade_data, indicator_data_t &handler_);
 
 }
 

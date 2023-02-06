@@ -14,6 +14,6 @@ struct qty_in_t{
     indicators::ind_BWFS_confg_t configuration;
 };
 
-void qty_in_callback(const backtesting::trade_data_t &trade_data, void *handler_);
+void qty_in_callback(const backtesting::trade_data_t &trade_data, indicator_data_t &handler_);
 }
 #endif

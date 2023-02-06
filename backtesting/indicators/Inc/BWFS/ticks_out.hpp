@@ -14,7 +14,7 @@ struct ticks_out_t{
     indicators::ind_BWFS_confg_t configuration;
 };
 
-void ticks_out_callback(const backtesting::trade_data_t &trade_data, void* handler_);
+void ticks_out_callback(const backtesting::trade_data_t &trade_data, indicator_data_t &handler_);
 
 }
 

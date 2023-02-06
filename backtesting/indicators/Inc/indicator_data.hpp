@@ -3,8 +3,22 @@
 #include <iostream>
 #include <queue>
 #include <unordered_map>
+#include <memory>
+
+
 
 namespace indicators{
+
+    struct ticks_in_t;
+    struct ticks_out_t;
+    struct qty_in_t;
+    struct qty_out_t;
+    struct avrg_in_t;
+    struct avrg_out_t;
+    struct qty_in_out_t;
+    struct ticks_in_out_t;
+    struct bwfs_hndlr_t;
+
     enum class bwfs_inds_e{
         TICK_IN,
         TICK_OUT,
@@ -41,42 +55,48 @@ namespace indicators{
     };
  
     typedef struct ind_BWFS_confg_{
-        ind_BWFS_confg_(){
-            mode = ind_mode_e::STATIC;
-            time = 8;
-            limit = 0.0;
-        }
-        ind_mode_e mode;
-        uint64_t time;
-        double limit;
+        ind_mode_e mode = ind_mode_e::STATIC;
+        uint64_t time = 8;
+        double limit = 0.0;
     }ind_BWFS_confg_t;
 
-    typedef struct ind_BWFS_{
-        ind_BWFS_(){
-            ticks_in = 0;
-            ticks_out = 0;
-            qty_in = 0.0;
-            qty_out = 0.0;
-            avrg_in = 0.0;
-            avrg_out = 0.0;
-            ticks_in_out = 0;
-            qty_in_out = 0.0;
-        }
-        
-        uint64_t ticks_in;
-        uint64_t ticks_out;
-        double qty_in;
-        double qty_out;
-        double avrg_in;
-        double avrg_out;
-        int64_t ticks_in_out;
-        double qty_in_out;
-    }ind_BWFS_t;
+    struct ind_BWFS_t{
+        uint64_t ticks_in = 0;
+        uint64_t ticks_out = 0;
+        double qty_in = 0.0;
+        double qty_out = 0.0;
+        double avrg_in = 0.0;
+        double avrg_out = 0.0;
+        int64_t ticks_in_out = 0;
+        double qty_in_out = 0.0;
+    };
     
-    typedef struct indictors_{
-        ind_BWFS_t cab; 
-    }indicator_data_t;
+    struct indicator_data_t{
+            ind_BWFS_t cab; 
+
+            std::unique_ptr<ticks_in_t> ticks_in_vars = nullptr; 
+            std::unique_ptr<ticks_out_t> ticks_out_vars = nullptr; 
+            std::unique_ptr<qty_in_t> qtys_in_vars = nullptr; 
+            std::unique_ptr<qty_out_t> qty_out_vars = nullptr; 
+            std::unique_ptr<avrg_in_t> avrg_in_vars = nullptr; 
+            std::unique_ptr<avrg_out_t> avrg_out_vars = nullptr; 
+            std::unique_ptr<qty_in_out_t> qty_in_out_vars = nullptr; 
+            std::unique_ptr<ticks_in_out_t> ticks_in_out_vars = nullptr; 
+            std::unique_ptr<bwfs_hndlr_t> bwfs_hndlr_vars = nullptr;
+    };
 
     using indicators_list_t = std::queue<indicator_data_t>; 
 }
+
+#include "BWFS/ticks_in.hpp"
+#include "BWFS/ticks_out.hpp"
+#include "BWFS/qty_in.hpp"
+#include "BWFS/qty_out.hpp"
+#include "BWFS/avrg_in.hpp"
+#include "BWFS/avrg_out.hpp"
+#include "BWFS/qty_in_out.hpp"
+#include "BWFS/ticks_in_out.hpp"
+#include "BWFS/bwfs_hndlr.hpp"
+
+
 #endif
