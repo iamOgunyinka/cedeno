@@ -4,7 +4,7 @@
 
 namespace backtesting {
 
-struct candlestick_data_t {
+struct binance_candlestick_data_t {
   std::chrono::seconds intervalInSeconds;
   uint64_t eventTime;
   uint64_t startTime;
@@ -22,7 +22,7 @@ struct candlestick_data_t {
   size_t numberOfTrades;
   size_t klineIsClosed;
 
-  static candlestick_data_t dataFromCSVLine(std::string const &str);
+  static binance_candlestick_data_t dataFromCSVLine(std::string const &str);
 };
 
 void processCandlestickStream(trade_map_td const &tradeMap);

@@ -1,10 +1,12 @@
 #include "candlestick_data.hpp"
-#include "common.hpp"
+#include "container.hpp"
+#include "trades_data.hpp"
 
 namespace backtesting {
-candlestick_data_t candlestick_data_t::dataFromCSVLine(std::string const &str) {
+binance_candlestick_data_t
+binance_candlestick_data_t::dataFromCSVLine(std::string const &str) {
   auto splittedString = backtesting::utils::splitString(str, ",");
-  candlestick_data_t result;
+  binance_candlestick_data_t result;
 
   if (splittedString.size() != 16) {
     result.eventTime = 0;
@@ -31,4 +33,13 @@ candlestick_data_t candlestick_data_t::dataFromCSVLine(std::string const &str) {
 }
 
 void processCandlestickStream(trade_map_td const &tradeMap) {}
+
+::utils::mutexed_list_t<trade_list_t> candleStickTrades{};
+
+void candlestickTradesImpl() {
+  while (true) {
+    //
+  }
+}
+
 } // namespace backtesting
