@@ -1,4 +1,4 @@
-#include "BWFS/qty_out.hpp"
+#include "bwfs/qty_out.hpp"
 
 namespace indicators{
 

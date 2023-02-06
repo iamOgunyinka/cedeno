@@ -1,8 +1,8 @@
-#ifndef INDICATOR_MANAGER_HPP_
-#define INDICATOR_MANAGER_HPP_
+#ifndef INDC_MNGR_HPP_
+#define INDC_MNGR_HPP_
 
 #include "user_data.hpp"
-#include "indicator_data.hpp"
+#include "indc_data.hpp"
 
 #include <unordered_map>
 #include <iostream>
@@ -11,7 +11,8 @@
 #include <algorithm> 
 #include <unordered_map> 
 #include <bits/stdc++.h>
-#include "BWFS/qty_in.hpp"
+
+#include "bwfs/qty_in.hpp"
 
 
 namespace indicators{

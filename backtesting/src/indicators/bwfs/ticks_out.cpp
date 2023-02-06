@@ -1,4 +1,4 @@
-#include "BWFS/ticks_out.hpp"
+#include "bwfs/ticks_out.hpp"
 
 namespace indicators{
 

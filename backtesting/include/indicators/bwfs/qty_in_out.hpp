@@ -1,7 +1,8 @@
 #ifndef QTY_IN_OUT_HPP_
 #define QTY_IN_OUT_HPP_
+
+#include "indc_data.hpp"
 #include "user_data.hpp"
-#include "indicator_data.hpp"
 
 namespace indicators{
 

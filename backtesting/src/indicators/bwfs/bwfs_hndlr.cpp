@@ -1,4 +1,4 @@
-#include "BWFS/bwfs_hndlr.hpp"
+#include "bwfs/bwfs_hndlr.hpp"
 
 namespace indicators{
 

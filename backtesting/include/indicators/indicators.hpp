@@ -1,6 +1,7 @@
 #ifndef INDICATORS_HPP_
 #define INDICATORS_HPP_
-#include "indicator_manager.hpp"
+#include "indc_mngr.hpp"
+
 #include <ctime>
 #include <vector>
 #include <memory>
@@ -17,7 +18,6 @@ enum class data_types{
 class indicators_c{
     private:
         indicators::ind_BWFS_confg_t m_BWFS_config;
-
 
         std::unordered_map<std::string, uint64_t> m_indc_list;
 

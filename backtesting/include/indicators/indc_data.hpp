@@ -1,11 +1,10 @@
-#ifndef INDICATOR_DATA_HPP_
-#define INDICATOR_DATA_HPP_
+#ifndef INDC_DATA_HPP_
+#define INDC_DATA_HPP_
+
 #include <iostream>
 #include <queue>
 #include <unordered_map>
 #include <memory>
-
-
 
 namespace indicators{
 
@@ -88,15 +87,15 @@ namespace indicators{
     using indicators_list_t = std::queue<indicator_data_t>; 
 }
 
-#include "BWFS/ticks_in.hpp"
-#include "BWFS/ticks_out.hpp"
-#include "BWFS/qty_in.hpp"
-#include "BWFS/qty_out.hpp"
-#include "BWFS/avrg_in.hpp"
-#include "BWFS/avrg_out.hpp"
-#include "BWFS/qty_in_out.hpp"
-#include "BWFS/ticks_in_out.hpp"
-#include "BWFS/bwfs_hndlr.hpp"
+#include "bwfs/ticks_in.hpp"
+#include "bwfs/ticks_out.hpp"
+#include "bwfs/qty_in.hpp"
+#include "bwfs/qty_out.hpp"
+#include "bwfs/avrg_in.hpp"
+#include "bwfs/avrg_out.hpp"
+#include "bwfs/qty_in_out.hpp"
+#include "bwfs/ticks_in_out.hpp"
+#include "bwfs/bwfs_hndlr.hpp"
 
 
 #endif

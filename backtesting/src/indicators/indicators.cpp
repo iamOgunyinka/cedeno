@@ -82,10 +82,19 @@ void indicators_c::get_BWFS_indicators_state_( const std::vector<std::string> &i
     }
 }
 
+// std::string get_config_( const std::string &string_one,const std::string &string_two){
+//     std::string result;
+//     size_t idx = string_one.find_last_of(string_two, string_two.size()); 
+//     if( idx != std::string::npos && string_one[idx+1] == ':'){
+//         return "yes";
+//     }
+//     return "no";
+// }
+
 indicators::ind_BWFS_confg_t indicators_c::get_BWFS_config_( const std::vector<std::string> &itr, 
                                                              const uint64_t &indx){
     indicators::ind_BWFS_confg_t config;
-
+    // std::cout<<get_config_("hello:chao", "hello");
     if(itr[indx] == "static"){
         config.mode = ind_mode_e::STATIC;
     }else if(itr[indx] == "dynamic"){

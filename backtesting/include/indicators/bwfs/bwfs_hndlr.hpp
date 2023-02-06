@@ -1,6 +1,7 @@
 #ifndef BWFS_HNDLR_HPP_
 #define BWFS_HNDLR_HPP_
-#include "indicator_data.hpp"
+
+#include "indc_data.hpp"
 #include "user_data.hpp"
 
 namespace indicators{

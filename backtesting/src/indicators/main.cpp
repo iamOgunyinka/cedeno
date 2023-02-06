@@ -1,5 +1,6 @@
-#include <iostream>
 #include "indicators.hpp"
+
+#include <iostream>
 #include <chrono>
 #include <vector>
 #include <string>

@@ -1,7 +1,9 @@
 #ifndef AVRG_IN_HPP_
 #define AVRG_IN_HPP_
+
+#include "indc_data.hpp"
 #include "user_data.hpp"
-#include "indicator_data.hpp"
+
 
 namespace indicators{
 

@@ -1,12 +1,13 @@
-#ifndef TICKS_IN_HPP_
-#define TICKS_IN_HPP_
+#ifndef QTY_IN_HPP_
+#define QTY_IN_HPP_
+
+#include "indc_data.hpp"
 #include "user_data.hpp"
-#include "indicator_data.hpp"
 
 namespace indicators{
 
-struct ticks_in_t{
-    ticks_in_t(indicators::indicator_data_t &common_db_){
+struct qty_in_t{
+    qty_in_t(indicators::indicator_data_t &common_db_){
         common_db = &common_db_;
     } 
     void config(const indicators::ind_BWFS_confg_t &config_);
@@ -14,7 +15,6 @@ struct ticks_in_t{
     indicators::ind_BWFS_confg_t configuration;
 };
 
-void ticks_in_callback(const backtesting::trade_data_t &trade_data, indicator_data_t &handler_);
-
+void qty_in_callback(const backtesting::trade_data_t &trade_data, indicator_data_t &handler_);
 }
 #endif
