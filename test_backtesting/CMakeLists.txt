@@ -36,7 +36,7 @@ else()
 endif()
 
 
-include_directories(${PROJECT_DIR}/../backtesting)
+include_directories(${PROJECT_DIR}/../backtesting/include)
 
 if(WIN32)
   # set stuff for windows

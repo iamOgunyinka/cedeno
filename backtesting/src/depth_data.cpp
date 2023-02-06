@@ -1,5 +1,6 @@
 #include <boost/asio/io_context.hpp>
 
+#include "callbacks.hpp"
 #include "depth_data.hpp"
 #include "futures_order_book.hpp"
 #include "matching_engine.hpp"
@@ -60,8 +61,7 @@ void processDepthStream(net::io_context &ioContext, trade_map_td &tradeMap) {
       globalOrderBooks.push_back(std::move(d));
   }
 
-  auto &newTradesDelegate =
-      matching_engine::trade_signal_handler_t::GetTradesDelegate();
+  auto &newTradesDelegate = trade_signal_handler_t::GetTradesDelegate();
   for (auto &orderBook : globalOrderBooks) {
     if (orderBook.futures) {
       orderBook.futures->NewTradesCreated.Connect(newTradesDelegate);
