@@ -191,15 +191,15 @@ void indicators_c::set(const std::vector<std::vector<std::string>> &indcs){
 }
 
 void indicators_c::init_all_indicators_vars_(indicators::indicator_data_t &indcs){
-    indcs.ticks_in_vars = std::make_unique<indicators::ticks_in_t>(indcs); 
-    indcs.ticks_out_vars = std::make_unique<indicators::ticks_out_t>(indcs); 
-    indcs.qtys_in_vars = std::make_unique<indicators::qty_in_t>(indcs); 
-    indcs.qty_out_vars = std::make_unique<indicators::qty_out_t>(indcs); 
-    indcs.avrg_in_vars = std::make_unique<indicators::avrg_in_t>(indcs); 
-    indcs.avrg_out_vars = std::make_unique<indicators::avrg_out_t>(indcs); 
-    indcs.qty_in_out_vars = std::make_unique<indicators::qty_in_out_t>(indcs); 
-    indcs.ticks_in_out_vars = std::make_unique<indicators::ticks_in_out_t>(indcs); 
-    indcs.bwfs_hndlr_vars = std::make_unique<indicators::bwfs_hndlr_t>(indcs); 
+    indcs.indcs_var.ticks_in_vars = std::make_unique<indicators::ticks_in_t>(indcs); 
+    indcs.indcs_var.ticks_out_vars = std::make_unique<indicators::ticks_out_t>(indcs); 
+    indcs.indcs_var.qtys_in_vars = std::make_unique<indicators::qty_in_t>(indcs); 
+    indcs.indcs_var.qty_out_vars = std::make_unique<indicators::qty_out_t>(indcs); 
+    indcs.indcs_var.avrg_in_vars = std::make_unique<indicators::avrg_in_t>(indcs); 
+    indcs.indcs_var.avrg_out_vars = std::make_unique<indicators::avrg_out_t>(indcs); 
+    indcs.indcs_var.qty_in_out_vars = std::make_unique<indicators::qty_in_out_t>(indcs); 
+    indcs.indcs_var.ticks_in_out_vars = std::make_unique<indicators::ticks_in_out_t>(indcs); 
+    indcs.indcs_var.bwfs_hndlr_vars = std::make_unique<indicators::bwfs_hndlr_t>(indcs); 
 }
 
 auto indicators_c::init_new_symbol_(const std::string symbol){

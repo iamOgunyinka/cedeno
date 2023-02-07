@@ -21,7 +21,7 @@ static uint64_t calculate_time_threshold(const uint64_t &timestamp){
 
 void bwfs_hndlr_callback( const backtesting::trade_data_t &trade_data, 
                           indicator_data_t &handler_){
-    bwfs_hndlr_t &handler = *handler_.bwfs_hndlr_vars;
+    bwfs_hndlr_t &handler = *handler_.indcs_var.bwfs_hndlr_vars;
     std::cout<<__func__<<std::endl;
 
     // ind_db_itr_t itr = m_bwfs_ind_hndlr->process(trade_data, new_data);

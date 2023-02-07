@@ -69,19 +69,22 @@ namespace indicators{
         int64_t ticks_in_out = 0;
         double qty_in_out = 0.0;
     };
+
+    struct indcs_vars_t{
+        std::unique_ptr<ticks_in_t> ticks_in_vars = nullptr; 
+        std::unique_ptr<ticks_out_t> ticks_out_vars = nullptr; 
+        std::unique_ptr<qty_in_t> qtys_in_vars = nullptr; 
+        std::unique_ptr<qty_out_t> qty_out_vars = nullptr; 
+        std::unique_ptr<avrg_in_t> avrg_in_vars = nullptr; 
+        std::unique_ptr<avrg_out_t> avrg_out_vars = nullptr; 
+        std::unique_ptr<qty_in_out_t> qty_in_out_vars = nullptr; 
+        std::unique_ptr<ticks_in_out_t> ticks_in_out_vars = nullptr; 
+        std::unique_ptr<bwfs_hndlr_t> bwfs_hndlr_vars = nullptr;
+    };
     
     struct indicator_data_t{
-            ind_BWFS_t cab; 
-
-            std::unique_ptr<ticks_in_t> ticks_in_vars = nullptr; 
-            std::unique_ptr<ticks_out_t> ticks_out_vars = nullptr; 
-            std::unique_ptr<qty_in_t> qtys_in_vars = nullptr; 
-            std::unique_ptr<qty_out_t> qty_out_vars = nullptr; 
-            std::unique_ptr<avrg_in_t> avrg_in_vars = nullptr; 
-            std::unique_ptr<avrg_out_t> avrg_out_vars = nullptr; 
-            std::unique_ptr<qty_in_out_t> qty_in_out_vars = nullptr; 
-            std::unique_ptr<ticks_in_out_t> ticks_in_out_vars = nullptr; 
-            std::unique_ptr<bwfs_hndlr_t> bwfs_hndlr_vars = nullptr;
+        ind_BWFS_t cab; 
+        indcs_vars_t indcs_var;
     };
 
     using indicators_list_t = std::queue<indicator_data_t>; 
