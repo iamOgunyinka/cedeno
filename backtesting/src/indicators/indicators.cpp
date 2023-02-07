@@ -3,26 +3,13 @@
 #include <time.h>
 #include <bits/stdc++.h>
 #include <stdio.h>
+#include <memory>
 
 namespace indicators{
 
 #define MAX_BWFS_PARAMS_SZ 3
 
-indicators_c::indicators_c():
-                                m_ticks_in(m_global_indicator_data),
-                                m_ticks_out(m_global_indicator_data),
-                                m_qty_in(m_global_indicator_data),
-                                m_qty_out(m_global_indicator_data),
-                                m_avrg_in(m_global_indicator_data),
-                                m_avrg_out(m_global_indicator_data),
-                                m_qty_in_out(m_global_indicator_data),
-                                m_ticks_in_out(m_global_indicator_data),
-                                m_bwfs_hndlr(m_global_indicator_data)
-                            {
-    m_BWFS_vars = {
-        .set_threshold = true,
-        .time_threshold = 0
-    };
+indicators_c::indicators_c(){
     m_indcs_trade_mngr = new indicators::ind_mngr_c<backtesting::trade_data_t>;
     init_indicators_();
 }
@@ -48,40 +35,31 @@ void indicators_c::delete_current_indicators_(void){
 
 void indicators_c::set_indicators_callbacks_(const std::array<bool, (uint64_t)inds_e::SIZE> &indcs){
     if(indcs[(uint64_t)inds_e::TICK_IN] == true){
-        m_ticks_in.config(m_BWFS_config);
-        m_indcs_trade_mngr->add_indicator(ticks_in_callback,(intptr_t)&m_ticks_in);
+        m_indcs_trade_mngr->add_indicator(ticks_in_callback);
     }
     if(indcs[(uint64_t)inds_e::TICK_OUT] == true){
-        m_ticks_out.config(m_BWFS_config);
-        m_indcs_trade_mngr->add_indicator(ticks_out_callback,(intptr_t)&m_ticks_out);
+        m_indcs_trade_mngr->add_indicator(ticks_out_callback);
     }
     if(indcs[(uint64_t)inds_e::QTY_IN] == true){
-        m_qty_in.config(m_BWFS_config);
-        m_indcs_trade_mngr->add_indicator(qty_in_callback,(intptr_t)&m_qty_in);
+        m_indcs_trade_mngr->add_indicator(qty_in_callback);
     }
     if(indcs[(uint64_t)inds_e::QTY_OUT] == true){
-        m_qty_out.config(m_BWFS_config);
-        m_indcs_trade_mngr->add_indicator(qty_out_callback,(intptr_t)&m_qty_out);
+        m_indcs_trade_mngr->add_indicator(qty_out_callback);
     }
     if(indcs[(uint64_t)inds_e::AVRG_IN] == true){
-        m_avrg_in.config(m_BWFS_config);
-        m_indcs_trade_mngr->add_indicator(avrg_in_callback,(intptr_t)&m_avrg_in);
+        m_indcs_trade_mngr->add_indicator(avrg_in_callback);
     }
     if(indcs[(uint64_t)inds_e::AVRG_OUT] == true){
-        m_avrg_out.config(m_BWFS_config);
-        m_indcs_trade_mngr->add_indicator(avrg_out_callback,(intptr_t)&m_avrg_out);
+        m_indcs_trade_mngr->add_indicator(avrg_out_callback);
     }
     if(indcs[(uint64_t)inds_e::QTY_IN_OUT] == true){
-        m_qty_in_out.config(m_BWFS_config);
-        m_indcs_trade_mngr->add_indicator(qty_in_out_callback,(intptr_t)&m_qty_in_out);
+        m_indcs_trade_mngr->add_indicator(qty_in_out_callback);
     }
     if(indcs[(uint64_t)inds_e::TICK_IN_OUT] == true){
-        m_ticks_in_out.config(m_BWFS_config);
-        m_indcs_trade_mngr->add_indicator(ticks_in_out_callback,(intptr_t)&m_ticks_in_out);
+        m_indcs_trade_mngr->add_indicator(ticks_in_out_callback);
     }
     if(indcs[(uint64_t)inds_e::BWFS_HANDLER] == true){
-        m_bwfs_hndlr.config(m_BWFS_config);
-        m_indcs_trade_mngr->add_indicator(bwfs_hndlr_callback,(intptr_t)&m_bwfs_hndlr);
+        m_indcs_trade_mngr->add_indicator(bwfs_hndlr_callback);
     }
 }
 
@@ -104,10 +82,19 @@ void indicators_c::get_BWFS_indicators_state_( const std::vector<std::string> &i
     }
 }
 
+// std::string get_config_( const std::string &string_one,const std::string &string_two){
+//     std::string result;
+//     size_t idx = string_one.find_last_of(string_two, string_two.size()); 
+//     if( idx != std::string::npos && string_one[idx+1] == ':'){
+//         return "yes";
+//     }
+//     return "no";
+// }
+
 indicators::ind_BWFS_confg_t indicators_c::get_BWFS_config_( const std::vector<std::string> &itr, 
                                                              const uint64_t &indx){
     indicators::ind_BWFS_confg_t config;
-
+    // std::cout<<get_config_("hello:chao", "hello");
     if(itr[indx] == "static"){
         config.mode = ind_mode_e::STATIC;
     }else if(itr[indx] == "dynamic"){
@@ -179,15 +166,36 @@ void indicators_c::set(const std::vector<std::vector<std::string>> &indcs){
     m_indcs_trade_mngr = new indicators::ind_mngr_c<backtesting::trade_data_t>(
                                         num_of_indcs_per_mngr[(uint64_t)data_types::TRADE]
                                         );
-    std::cout<<"trade size: "<<num_of_indcs_per_mngr[(uint64_t)data_types::TRADE]<<std::endl;
     set_indicators_callbacks_(indcs_state);
+}
+
+void indicators_c::init_all_indicators_vars_(indicators::indicator_data_t &indcs){
+    indcs.ticks_in_vars = std::make_unique<indicators::ticks_in_t>(indcs); 
+    indcs.ticks_out_vars = std::make_unique<indicators::ticks_out_t>(indcs); 
+    indcs.qtys_in_vars = std::make_unique<indicators::qty_in_t>(indcs); 
+    indcs.qty_out_vars = std::make_unique<indicators::qty_out_t>(indcs); 
+    indcs.avrg_in_vars = std::make_unique<indicators::avrg_in_t>(indcs); 
+    indcs.avrg_out_vars = std::make_unique<indicators::avrg_out_t>(indcs); 
+    indcs.qty_in_out_vars = std::make_unique<indicators::qty_in_out_t>(indcs); 
+    indcs.ticks_in_out_vars = std::make_unique<indicators::ticks_in_out_t>(indcs); 
+    indcs.bwfs_hndlr_vars = std::make_unique<indicators::bwfs_hndlr_t>(indcs); 
+}
+
+auto indicators_c::init_new_symbol_(const std::string symbol){
+    auto itr = m_symbol_list.emplace(symbol, indicators::indicator_data_t());
+    init_all_indicators_vars_(itr.first->second);
+    return itr;
 }
 
 void indicators_c::process(const backtesting::trade_list_t &trade_list){
     const backtesting::trade_data_t &trade_data = trade_list.back(); 
-    m_indcs_trade_mngr->process(trade_data);
-
+    auto itr = m_symbol_list.find(trade_data.tokenName);
+    if(itr == m_symbol_list.end()){
+        auto new_symbol = init_new_symbol_(trade_data.tokenName);
+        m_indcs_trade_mngr->process(trade_data, new_symbol.first->second);
+    }else{
+        m_indcs_trade_mngr->process(trade_data, itr->second);
+    }   
 }
-
 
 }

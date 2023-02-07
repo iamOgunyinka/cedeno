@@ -1,3 +1,0 @@
-* Implement buyller vs seller.
-* Fix the way to enable BWFS indicators, because when we enable a specific indicator might be neccesary to enable other indicator.
-* Implement new paramter in indicator callbacks. Is it neccessary to pass the data base?

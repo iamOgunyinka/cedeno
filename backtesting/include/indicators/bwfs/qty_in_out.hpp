@@ -1,7 +1,8 @@
 #ifndef QTY_IN_OUT_HPP_
 #define QTY_IN_OUT_HPP_
+
+#include "indc_data.hpp"
 #include "user_data.hpp"
-#include "indicator_data.hpp"
 
 namespace indicators{
 
@@ -14,7 +15,9 @@ struct qty_in_out_t{
     indicators::ind_BWFS_confg_t configuration;
 };
 
-void qty_in_out_callback( const backtesting::trade_data_t &trade_data, void *handler);
+
+
+void qty_in_out_callback( const backtesting::trade_data_t &trade_data, indicator_data_t &handler_);
 
 }
 

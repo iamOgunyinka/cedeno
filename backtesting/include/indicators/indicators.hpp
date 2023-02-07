@@ -1,21 +1,12 @@
 #ifndef INDICATORS_HPP_
 #define INDICATORS_HPP_
-#include "indicator_manager.hpp"
+#include "indc_mngr.hpp"
+
 #include <ctime>
 #include <vector>
 #include <memory>
 #include <array>
 #include <unordered_map>
-
-#include "BWFS/ticks_in.hpp"
-#include "BWFS/ticks_out.hpp"
-#include "BWFS/qty_in.hpp"
-#include "BWFS/qty_out.hpp"
-#include "BWFS/avrg_in.hpp"
-#include "BWFS/avrg_out.hpp"
-#include "BWFS/qty_in_out.hpp"
-#include "BWFS/ticks_in_out.hpp"
-#include "BWFS/bwfs_hndlr.hpp"
 
 namespace indicators{
 
@@ -28,27 +19,10 @@ class indicators_c{
     private:
         indicators::ind_BWFS_confg_t m_BWFS_config;
 
-        ticks_in_t      m_ticks_in; 
-        ticks_out_t     m_ticks_out; 
-        qty_in_t        m_qty_in; 
-        qty_out_t       m_qty_out; 
-        avrg_in_t       m_avrg_in; 
-        avrg_out_t      m_avrg_out; 
-        qty_in_out_t    m_qty_in_out; 
-        ticks_in_out_t  m_ticks_in_out; 
-        bwfs_hndlr_t    m_bwfs_hndlr; 
-
-        indicators::indicator_data_t m_global_indicator_data;
-        struct{
-            bool set_threshold;
-            uint64_t time_threshold;
-            indicators::ind_BWFS_confg_t *confg;
-        }m_BWFS_vars;
-
         std::unordered_map<std::string, uint64_t> m_indc_list;
 
-        
         indicators::ind_mngr_c<backtesting::trade_data_t> *m_indcs_trade_mngr;
+        std::unordered_map<std::string, indicators::indicator_data_t> m_symbol_list;
 
         void init_indicators_(void);
         void delete_current_indicators_(void);
@@ -75,6 +49,9 @@ class indicators_c{
         void get_indicators_to_activing_( const std::vector<std::vector<std::string>> &indcs,
                                           std::array<bool, (uint64_t)inds_e::SIZE> &indcs_state,
                                           std::array<uint64_t, (uint64_t)data_types::SIZE> &num_of_indcs_per_mnger);
+
+        void init_all_indicators_vars_(indicators::indicator_data_t &indcs);
+        auto init_new_symbol_(const std::string symbol); 
     public:
         indicators_c();
         ~indicators_c();
