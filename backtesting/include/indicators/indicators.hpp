@@ -1,6 +1,6 @@
 #ifndef INDICATORS_HPP_
 #define INDICATORS_HPP_
-#include "indc_mngr.hpp"
+#include "cllbck_iterator.hpp"
 
 #include <ctime>
 #include <vector>
@@ -55,6 +55,8 @@ class indicators_c{
     public:
         indicators_c();
         ~indicators_c();
+
+        indicators::indicator_data_t get_indicator_data(const std::string &symbol);
 
         void set(const std::vector<std::vector<std::string>> &indcs);
 

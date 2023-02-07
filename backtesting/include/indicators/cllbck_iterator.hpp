@@ -1,5 +1,5 @@
-#ifndef INDC_MNGR_HPP_
-#define INDC_MNGR_HPP_
+#ifndef CLLBCK_ITERATOR_HPP_
+#define CLLBCK_ITERATOR_HPP_
 
 #include "user_data.hpp"
 #include "indc_data.hpp"

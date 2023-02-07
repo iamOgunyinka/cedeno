@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 
+indicators::indicators_c indcs;
 void process_data(indicators::indicators_c &indcs){
     backtesting::trade_list_t trade_list;
     backtesting::trade_data_t trade_data; 
@@ -18,7 +19,6 @@ void process_data(indicators::indicators_c &indcs){
 }
 
 int main(void){
-    indicators::indicators_c indcs;
     std::vector<std::vector<std::string>> indcs_confg{
         // {"qty_in","tick_out","tick_out","avrg_in","tick_in_out","static", "2", "3"},
         // {"qty_in","static", "2", "3"},

@@ -208,6 +208,12 @@ auto indicators_c::init_new_symbol_(const std::string symbol){
     return itr;
 }
 
+indicators::indicator_data_t indicators_c::get_indicator_data(const std::string &symbol){
+    indicators::indicator_data_t indicator_data;
+    indicator_data.cab = m_symbol_list[symbol].cab;
+    return indicator_data;
+}
+
 void indicators_c::process(const backtesting::trade_list_t &trade_list){
     const backtesting::trade_data_t &trade_data = trade_list.back(); 
     auto itr = m_symbol_list.find(trade_data.tokenName);
