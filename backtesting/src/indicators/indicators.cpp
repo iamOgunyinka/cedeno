@@ -103,7 +103,7 @@ indicators::ind_BWFS_confg_t indicators_c::get_BWFS_config_( const std::vector<s
             }else if(config_pair.first == "time"){
                 config.time = strtoul(config_pair.second.c_str(), nullptr, 10);
             }else if(config_pair.first == "limit"){
-                config.limit = strtoul(config_pair.second.c_str(), nullptr, 10);
+                config.client_confirmation = strtoul(config_pair.second.c_str(), nullptr, 10);
             }else{
                 std::__throw_runtime_error("Wrong BWFS config parameter");
             }
@@ -157,7 +157,7 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
                 }
                 std::cout<<"BWFS Config: "<<std::endl<<"time: "<<m_BWFS_config.time<<std::endl; 
                 std::cout<<"mode: "<<(int)m_BWFS_config.mode<<std::endl; 
-                std::cout<<"limit: "<<m_BWFS_config.limit<<std::endl;
+                std::cout<<"limit: "<<m_BWFS_config.client_confirmation<<std::endl;
                 indcs_status[(uint64_t)inds_e::BWFS_HANDLER] = true;
                 break;
             }
