@@ -22,7 +22,7 @@ class indicators_c{
         std::unordered_map<std::string, uint64_t> m_indc_list;
 
         indicators::ind_mngr_c<backtesting::trade_data_t> *m_indcs_trade_mngr;
-        std::unordered_map<std::string, indicators::indicator_data_t> m_symbol_list;
+        std::unordered_map<std::string, indicators::indicator_t> m_symbol_list;
 
         void init_indicators_(void);
         void delete_current_indicators_(void);
@@ -50,13 +50,13 @@ class indicators_c{
                                           std::array<bool, (uint64_t)inds_e::SIZE> &indcs_state,
                                           std::array<uint64_t, (uint64_t)data_types::SIZE> &num_of_indcs_per_mnger);
 
-        void init_all_indicators_vars_(indicators::indicator_data_t &indcs);
+        void init_all_indicators_vars_(indicators::indicator_t &indcs);
         auto init_new_symbol_(const std::string symbol); 
     public:
         indicators_c();
         ~indicators_c();
 
-        indicators::indicator_data_t get_indicator_data(const std::string &symbol);
+        indicators::indicator_info_t get(const std::string &symbol);
 
         void set(const std::vector<std::vector<std::string>> &indcs);
 

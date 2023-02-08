@@ -3,46 +3,46 @@
 namespace indicators{
 
 
-static uint64_t calculate_time_threshold(const uint64_t &timestamp){
-    // time_t time_in_sec = timestamp/1000;
-    // if(m_BWFS_vars.confg->mode == indicators::ind_mode_e::STATIC){
-    //     return (time_in_sec + m_BWFS_vars.confg->time*60)*1000;
-    // }else{
-    //     struct tm time = *localtime(&time_in_sec);
-    //     uint64_t counter = 0;
-    //     while(counter < time.tm_min){
-    //         counter += m_BWFS_vars.confg->time;
-    //     }
-    //     uint64_t dif_secs = (counter - time.tm_min)*60;
-    //     return (time_in_sec + dif_secs)*1000;
-    // }
-    return 0;
+static uint64_t calculate_time_threshold(const indicators::ind_BWFS_confg_t &config, const uint64_t &timestamp){
+    time_t time_now = timestamp/1000;
+    uint64_t config_time = config.time*60;
+    uint64_t start = time_now - time_now%config_time;
+    return (start + config_time)*1000;
+}
+
+static void reset_indicator_datas_queue(bwfs_hndlr_t &handler){
+    indicators::indicator_info_lis_t empty_list;
+    std::swap(handler.indc_data_q, empty_list);
+    (*handler.global_data).indc_info.cab = indicators::ind_BWFS_t();
 }
 
 void bwfs_hndlr_callback( const backtesting::trade_data_t &trade_data, 
-                          indicator_data_t &handler_){
+                          indicator_t &handler_){
     bwfs_hndlr_t &handler = *handler_.indcs_var.bwfs_hndlr_vars;
-    std::cout<<__func__<<std::endl;
+    //std::cout<<__func__<<std::endl;
 
-    // ind_db_itr_t itr = m_bwfs_ind_hndlr->process(trade_data, new_data);
-    // if(m_BWFS_vars.set_threshold == true){
-    //     m_BWFS_vars.time_threshold = calculate_time_threshold_(trade_data.eventTime);
-    //     m_BWFS_vars.set_threshold = false;
-    // }else{
-    //     if(trade_data.eventTime > m_BWFS_vars.time_threshold){
-    //         if(m_BWFS_vars.confg->mode == indicators::ind_mode_e::STATIC){
-    //             {
-    //                 indicators::indicators_list_t empty_list;
-    //                 std::swap(itr->second, empty_list);
-    //             }
-    //             itr->second.push(new_data);
-    //             m_BWFS_vars.time_threshold += m_BWFS_vars.confg->time*60*1000;
-    //         }else{
-    //             itr->second.pop();
-    //             itr->second.push(new_data);
-    //         }
-    //     }
-    // }
+    if(handler.last_time_threshold != handler.configuration.time){
+        handler.time_threshold = calculate_time_threshold(handler.configuration, trade_data.eventTime);
+        // reset_indicator_datas_queue(handler);
+        handler.indc_data_q.push((*handler.global_data).indc_info);
+        handler.last_time_threshold =handler.configuration.time;
+    }else{
+        if(trade_data.eventTime > handler.time_threshold){
+            if(handler.configuration.mode == indicators::ind_mode_e::STATIC){
+                reset_indicator_datas_queue(handler);
+                handler.indc_data_q.push((*handler.global_data).indc_info);
+                handler.time_threshold = calculate_time_threshold(handler.configuration, trade_data.eventTime);
+            }else{
+                handler.indc_data_q.pop();
+                handler.indc_data_q.push((*handler.global_data).indc_info);
+            }
+        }else{
+            ///DELETE/////////////////
+            if(handler.configuration.mode == indicators::ind_mode_e::STATIC){
+                handler.indc_data_q.push((*handler.global_data).indc_info);
+            }
+        }
+    }
 }
  
 void bwfs_hndlr_t::config(const indicators::ind_BWFS_confg_t &config_){

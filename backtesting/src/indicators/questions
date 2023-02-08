@@ -1,2 +1,4 @@
 * Do I need a queue for bwfs static mode?
 * Do I need to recalculate dynamic time threshold when the time is reached?
+* default bwfs config 
+* When there is a new bwfs time config is it neccessary to reset the bwfs variables?

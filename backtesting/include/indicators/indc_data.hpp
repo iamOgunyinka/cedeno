@@ -82,12 +82,16 @@ namespace indicators{
         std::unique_ptr<bwfs_hndlr_t> bwfs_hndlr_vars = nullptr;
     };
     
-    struct indicator_data_t{
+    struct indicator_info_t{
         ind_BWFS_t cab; 
+    };
+    
+    struct indicator_t{
+        indicator_info_t indc_info;
         indcs_vars_t indcs_var;
     };
 
-    using indicators_list_t = std::queue<indicator_data_t>; 
+    using indicator_info_lis_t = std::queue<indicator_info_t>; 
 }
 
 #include "bwfs/ticks_in.hpp"

@@ -87,7 +87,7 @@ void indicators_c::get_BWFS_indicator_states_( const std::vector<std::string> &i
 std::pair<std::string, std::string> get_config_(const std::string &config){
     size_t colon_idx = config.find(":");
     if(colon_idx == std::string::npos)
-        std::__throw_runtime_error("Wrong config structure");
+        std::__throw_runtime_error("Wrong indicator or config structure");
     return std::pair<std::string, std::string>(
             config.substr(0,colon_idx),
             config.substr( colon_idx + 1, config.size() - (colon_idx + 1))
@@ -163,7 +163,7 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
                     check_indc_confg_params_(itr, bwfs_config_idx, MAX_BWFS_PARAMS_SZ, "BWFS");
                     m_BWFS_config = get_BWFS_config_(itr, bwfs_config_idx);
                 }
-                std::cout<<"time: "<<m_BWFS_config.time<<std::endl; 
+                std::cout<<"BWFS Config: "<<std::endl<<"time: "<<m_BWFS_config.time<<std::endl; 
                 std::cout<<"mode: "<<(int)m_BWFS_config.mode<<std::endl; 
                 std::cout<<"limit: "<<m_BWFS_config.limit<<std::endl;
                 indcs_status[(uint64_t)inds_e::BWFS_HANDLER] = true;
@@ -190,7 +190,7 @@ void indicators_c::set(const std::vector<std::vector<std::string>> &indcs){
     set_indicators_callbacks_(indcs_state);
 }
 
-void indicators_c::init_all_indicators_vars_(indicators::indicator_data_t &indcs){
+void indicators_c::init_all_indicators_vars_(indicators::indicator_t &indcs){
     indcs.indcs_var.ticks_in_vars = std::make_unique<indicators::ticks_in_t>(indcs); 
     indcs.indcs_var.ticks_out_vars = std::make_unique<indicators::ticks_out_t>(indcs); 
     indcs.indcs_var.qtys_in_vars = std::make_unique<indicators::qty_in_t>(indcs); 
@@ -203,15 +203,13 @@ void indicators_c::init_all_indicators_vars_(indicators::indicator_data_t &indcs
 }
 
 auto indicators_c::init_new_symbol_(const std::string symbol){
-    auto itr = m_symbol_list.emplace(symbol, indicators::indicator_data_t());
+    auto itr = m_symbol_list.emplace(symbol, indicators::indicator_t());
     init_all_indicators_vars_(itr.first->second);
     return itr;
 }
 
-indicators::indicator_data_t indicators_c::get_indicator_data(const std::string &symbol){
-    indicators::indicator_data_t indicator_data;
-    indicator_data.cab = m_symbol_list[symbol].cab;
-    return indicator_data;
+indicators::indicator_info_t indicators_c::get(const std::string &symbol){
+    return m_symbol_list[symbol].indc_info;
 }
 
 void indicators_c::process(const backtesting::trade_list_t &trade_list){

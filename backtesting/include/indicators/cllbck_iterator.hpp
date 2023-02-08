@@ -20,9 +20,8 @@ namespace indicators{
 template <typename T>
 class ind_mngr_c{
     private:
-        using  ind_list_t = indicators::indicators_list_t;
-        using  ind_data_t = indicators::indicator_data_t; 
-        using indc_cllbck_p = void (*)(const T &, indicators::indicator_data_t &);
+        using  ind_data_t = indicators::indicator_t; 
+        using indc_cllbck_p = void (*)(const T &, indicators::indicator_t &);
 
         uint64_t m_sz_indcs_set = 0;
         uint64_t m_sz_indcs;
@@ -37,7 +36,7 @@ class ind_mngr_c{
         void add_indicator(indc_cllbck_p indc_callback);
                         
         ~ind_mngr_c();
-        void process(const T &tick, indicator_data_t &indc_data);  
+        void process(const T &tick, indicator_t &indc_data);  
 };
 
 
@@ -76,7 +75,7 @@ void ind_mngr_c<T>::add_indicator(indc_cllbck_p ind_hndlr){
 }
 
 template <typename T>
-void ind_mngr_c<T>::process(const T &data, indicator_data_t &indc_data){
+void ind_mngr_c<T>::process(const T &data, indicator_t &indc_data){
     for(uint64_t index = 0; index < m_sz_indcs_set; index++){
         (*m_cllbcks[index])(data, indc_data);
     }
