@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include <memory>
 
-#include "bwfs/bwfs_hndlr.hpp"
+#include "indicators/bwfs/bwfs_hndlr.hpp"
+#include "indicators/helpers/indcs_utils.hpp"
 
 namespace indicators{
 
@@ -84,22 +85,13 @@ void indicators_c::get_BWFS_indicator_states_( const std::vector<std::string> &i
     }
 }
 
-std::pair<std::string, std::string> get_config_(const std::string &config){
-    size_t colon_idx = config.find(":");
-    if(colon_idx == std::string::npos)
-        std::__throw_runtime_error("Wrong indicator or config structure");
-    return std::pair<std::string, std::string>(
-            config.substr(0,colon_idx),
-            config.substr( colon_idx + 1, config.size() - (colon_idx + 1))
-    );
-}
 
 indicators::ind_BWFS_confg_t indicators_c::get_BWFS_config_( const std::vector<std::string> &config_vector, 
                                                              const uint64_t &indx){
     indicators::ind_BWFS_confg_t config;
 
     std::for_each(config_vector.begin() + indx, config_vector.end(), [&](const std::string &config_str){
-            auto config_pair = get_config_(config_str); 
+            auto config_pair = indicators::indcs_utils::split_string(config_str, ":"); 
             if(config_pair.first == "mode"){
                 if(config_pair.second == "static"){
                     config.mode = ind_mode_e::STATIC;

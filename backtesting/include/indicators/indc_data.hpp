@@ -94,15 +94,14 @@ namespace indicators{
     using indicator_info_lis_t = std::queue<indicator_info_t>; 
 }
 
-#include "bwfs/ticks_in.hpp"
-#include "bwfs/ticks_out.hpp"
-#include "bwfs/qty_in.hpp"
-#include "bwfs/qty_out.hpp"
-#include "bwfs/avrg_in.hpp"
-#include "bwfs/avrg_out.hpp"
-#include "bwfs/qty_in_out.hpp"
-#include "bwfs/ticks_in_out.hpp"
-#include "bwfs/bwfs_hndlr.hpp"
-
+#include "indicators/bwfs/ticks_in.hpp"
+#include "indicators/bwfs/ticks_out.hpp"
+#include "indicators/bwfs/qty_in.hpp"
+#include "indicators/bwfs/qty_out.hpp"
+#include "indicators/bwfs/avrg_in.hpp"
+#include "indicators/bwfs/avrg_out.hpp"
+#include "indicators/bwfs/qty_in_out.hpp"
+#include "indicators/bwfs/ticks_in_out.hpp"
+#include "indicators/bwfs/bwfs_hndlr.hpp"
 
 #endif

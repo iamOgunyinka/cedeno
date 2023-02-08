@@ -1,4 +1,4 @@
-#include "bwfs/avrg_out.hpp"
+#include "indicators/bwfs/avrg_out.hpp"
 
 namespace indicators{
 
