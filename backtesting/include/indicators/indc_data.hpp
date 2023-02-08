@@ -55,7 +55,7 @@ namespace indicators{
  
     typedef struct ind_BWFS_confg_{
         ind_mode_e mode = ind_mode_e::STATIC;
-        uint64_t time = 8;
+        uint64_t time = 1;
         double limit = 0.0;
     }ind_BWFS_confg_t;
 

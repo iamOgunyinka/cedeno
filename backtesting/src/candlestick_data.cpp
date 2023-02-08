@@ -59,7 +59,7 @@ optional_kline_list_t getDiscreteKlineData(kline_config_t &&config) {
     config.endTime = std::time(nullptr);
   if (config.startTime == 0)
     config.startTime = config.endTime - 3'600;
-  config.limit = std::clamp(config.limit, 0ULL, 1'000ULL);
+  config.limit = std::clamp(config.limit, (int16_t)0, (int16_t)1'000);
 
   kline_data_list_t result;
 

@@ -69,7 +69,7 @@ struct kline_config_t {
   trade_type_e tradeType;
   time_t startTime = 0;
   time_t endTime = 0;
-  uint64_t limit = 500; // max 1000
+  int16_t limit = 500; // max 1000
   // only available for continuous data, not discrete
   kline_callback_t callback = nullptr;
 };

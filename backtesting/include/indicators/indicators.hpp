@@ -28,7 +28,7 @@ class indicators_c{
         void delete_current_indicators_(void);
         uint64_t calculate_time_threshold_( const uint64_t &timestamp);
 
-        void get_BWFS_indicators_state_( const std::vector<std::string> &itr, 
+        void get_BWFS_indicator_states_( const std::vector<std::string> &itr, 
                                          std::array<bool, (uint64_t)inds_e::SIZE> &indcs,
                                          uint64_t &trade_sz, 
                                          uint64_t &config_idx);

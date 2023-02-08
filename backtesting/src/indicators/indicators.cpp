@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <memory>
 
+#include "bwfs/bwfs_hndlr.hpp"
+
 namespace indicators{
 
 #define MAX_BWFS_PARAMS_SZ 3
@@ -63,47 +65,58 @@ void indicators_c::set_indicators_callbacks_(const std::array<bool, (uint64_t)in
     }
 }
 
-void indicators_c::get_BWFS_indicators_state_( const std::vector<std::string> &itr, 
-                                               std::array<bool, (uint64_t)inds_e::SIZE> &indcs,
+void indicators_c::get_BWFS_indicator_states_( const std::vector<std::string> &itr, 
+                                               std::array<bool, (uint64_t)inds_e::SIZE> &indc_states,
                                                uint64_t &trade_sz, 
                                                uint64_t &config_idx){
     config_idx = 0;
     for(auto &itr_: itr){
         auto item = m_indc_list.find(itr_);
         if( item != m_indc_list.end()){
-            indcs[item->second] = true;
+            indc_states[item->second] = true;
             config_idx++;
             trade_sz++;
         }
     }
     if(config_idx > 0){
-        indcs[(uint64_t)inds_e::BWFS_HANDLER] = true;
+        indc_states[(uint64_t)inds_e::BWFS_HANDLER] = true;
         trade_sz++;
     }
 }
 
-// std::string get_config_( const std::string &string_one,const std::string &string_two){
-//     std::string result;
-//     size_t idx = string_one.find_last_of(string_two, string_two.size()); 
-//     if( idx != std::string::npos && string_one[idx+1] == ':'){
-//         return "yes";
-//     }
-//     return "no";
-// }
+std::pair<std::string, std::string> get_config_(const std::string &config){
+    size_t colon_idx = config.find(":");
+    if(colon_idx == std::string::npos)
+        std::__throw_runtime_error("Wrong config structure");
+    return std::pair<std::string, std::string>(
+            config.substr(0,colon_idx),
+            config.substr( colon_idx + 1, config.size() - (colon_idx + 1))
+    );
+}
 
-indicators::ind_BWFS_confg_t indicators_c::get_BWFS_config_( const std::vector<std::string> &itr, 
+indicators::ind_BWFS_confg_t indicators_c::get_BWFS_config_( const std::vector<std::string> &config_vector, 
                                                              const uint64_t &indx){
     indicators::ind_BWFS_confg_t config;
-    // std::cout<<get_config_("hello:chao", "hello");
-    if(itr[indx] == "static"){
-        config.mode = ind_mode_e::STATIC;
-    }else if(itr[indx] == "dynamic"){
-        config.mode = ind_mode_e::DYNAMIC;
-    }else{
-        std::__throw_runtime_error("Wrong BWFS mode");
-    }
-    config.time = strtoul(itr[indx + 1].c_str(), nullptr, 10);
-    config.limit = strtoul(itr[indx + 2].c_str(), nullptr, 10);
+
+    std::for_each(config_vector.begin() + indx, config_vector.end(), [&](const std::string &config_str){
+            auto config_pair = get_config_(config_str); 
+            if(config_pair.first == "mode"){
+                if(config_pair.second == "static"){
+                    config.mode = ind_mode_e::STATIC;
+                }else if(config_pair.second == "dynamic"){
+                    config.mode = ind_mode_e::DYNAMIC;
+                }else{
+                    std::__throw_runtime_error("Wrong BWFS-mode");
+                }
+            }else if(config_pair.first == "time"){
+                config.time = strtoul(config_pair.second.c_str(), nullptr, 10);
+            }else if(config_pair.first == "limit"){
+                config.limit = strtoul(config_pair.second.c_str(), nullptr, 10);
+            }else{
+                std::__throw_runtime_error("Wrong BWFS config parameter");
+            }
+        }
+    );
     return config;
 }
 
@@ -112,8 +125,8 @@ void indicators_c::check_indc_confg_params_( const std::vector<std::string> &itr
                                              const uint64_t &max_params_sz, 
                                              const std::string &indc_type){
     int item_left_in_vector = itr.size() - config_idx;
-    if(item_left_in_vector != max_params_sz){
-        const std::string error_message =   "Wrong number of " + 
+    if(item_left_in_vector > max_params_sz){
+        const std::string error_message =   "So many " + 
                                             indc_type + 
                                             " config indicator parameters"; 
         std::__throw_runtime_error(error_message.c_str());
@@ -140,16 +153,24 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
                 if(indcs_status[(uint64_t)inds_e::BWFS_HANDLER] == true)
                     std::__throw_runtime_error("You are setting BWFS indicator twice");
                 uint64_t bwfs_config_idx = 0;
-                get_BWFS_indicators_state_( itr, 
+                get_BWFS_indicator_states_( itr, 
                                             indcs_state, 
                                             num_of_indcs_per_mnger[(uint64_t)data_types::TRADE], 
                                             bwfs_config_idx);
-                check_indc_confg_params_(itr, bwfs_config_idx, MAX_BWFS_PARAMS_SZ, "BWFS");
-                m_BWFS_config = get_BWFS_config_(itr, bwfs_config_idx);
+                if((bwfs_config_idx + 1) > itr.size()){
+                    m_BWFS_config = ind_BWFS_confg_t(); 
+                }else{
+                    check_indc_confg_params_(itr, bwfs_config_idx, MAX_BWFS_PARAMS_SZ, "BWFS");
+                    m_BWFS_config = get_BWFS_config_(itr, bwfs_config_idx);
+                }
+                std::cout<<"time: "<<m_BWFS_config.time<<std::endl; 
+                std::cout<<"mode: "<<(int)m_BWFS_config.mode<<std::endl; 
+                std::cout<<"limit: "<<m_BWFS_config.limit<<std::endl;
                 indcs_status[(uint64_t)inds_e::BWFS_HANDLER] = true;
                 break;
             }
             default:
+                std::__throw_runtime_error("Indicator does not exist");
                 break;
         }
     }

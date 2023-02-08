@@ -22,8 +22,9 @@ int main(void){
     std::vector<std::vector<std::string>> indcs_confg{
         // {"qty_in","tick_out","tick_out","avrg_in","tick_in_out","static", "2", "3"},
         // {"qty_in","static", "2", "3"},
-        // {"qty_in","static", "2"},
-        {"qty_in","qty_out","tick_in","tick_out","avrg_out","avrg_in","tick_in_out","qty_in_out","static", "2", "3"},
+        // {"qty_in","mode:static", "2"},
+        // {"qty_in","qty_out","tick_in","tick_out","avrg_out","avrg_in","tick_in_out","qty_in_out"},
+        {"qty_in","qty_out","tick_in","tick_out","avrg_out","avrg_in","tick_in_out","qty_in_out", "limit:909","time:4"},
     };
     indcs.set(indcs_confg);
     process_data(indcs);
