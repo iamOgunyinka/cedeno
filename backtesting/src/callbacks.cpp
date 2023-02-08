@@ -11,17 +11,14 @@ namespace backtesting {
 extern trades_callback_map_t recentTradesCallbacks;
 extern agg_callback_map_t aggTradesCallbacks;
 
-extern ::utils::mutexed_list_t<trade_list_t> candleStickTrades;
 extern utils::waitable_container_t<trade_list_t> allNewTradeList;
 extern utils::mutexed_list_t<trade_list_t> aggTradeList;
 
 void onNewTradesImpl();
 void aggregateTradesImpl();
-void candlestickTradesImpl();
 
 void trade_signal_handler_t::onNewTrades(trade_list_t trades) {
   aggTradeList.append(trades);
-  candleStickTrades.append(trades);
   allNewTradeList.append(std::move(trades));
 }
 
@@ -34,7 +31,6 @@ trade_signal_handler_t::GetTradesDelegate() {
 
     std::thread{[] { onNewTradesImpl(); }}.detach();
     std::thread{[] { aggregateTradesImpl(); }}.detach();
-    std::thread{[] { candlestickTradesImpl(); }}.detach();
   }
   return *delegate_;
 }

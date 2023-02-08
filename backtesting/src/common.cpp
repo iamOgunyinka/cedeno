@@ -92,17 +92,25 @@ bool listContains(std::vector<std::string> const &container,
       return true;
   return false;
 }
-
 std::optional<std::time_t> stringToTimeT(std::string const &s) {
-  std::tm tm;
-  std::istringstream ss(s);
-  ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
-  if (ss.fail())
+  time_t tStart;
+
+  int yy, month, dd, hh, mm, ss;
+  struct tm whenStart;
+  char const *zStart = s.c_str();
+
+  if (sscanf(zStart, "%d-%d-%d %d:%d:%d", &yy, &month, &dd, &hh, &mm, &ss) < 0)
     return std::nullopt;
-  std::time_t const time = mktime(&tm);
-  if (time == -1)
-    return std::nullopt;
-  return time;
+  whenStart.tm_year = yy - 1'900;
+  whenStart.tm_mon = month - 1;
+  whenStart.tm_mday = dd;
+  whenStart.tm_hour = hh;
+  whenStart.tm_min = mm;
+  whenStart.tm_sec = ss;
+  whenStart.tm_isdst = -1;
+
+  tStart = mktime(&whenStart);
+  return tStart;
 }
 
 std::string toUpperString(std::string const &s) {

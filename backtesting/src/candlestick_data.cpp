@@ -1,6 +1,8 @@
 #include "candlestick_data.hpp"
-#include "container.hpp"
+#include "global_data.hpp"
 #include "trades_data.hpp"
+#include <algorithm>
+#include <filesystem>
 
 namespace backtesting {
 binance_candlestick_data_t
@@ -32,14 +34,61 @@ binance_candlestick_data_t::dataFromCSVLine(std::string const &str) {
   return result;
 }
 
-void processCandlestickStream(trade_map_td const &tradeMap) {}
+optional_kline_list_t getDiscreteKlineData(kline_config_t &&config) {
+  if (config.interval < data_interval_e::one_second ||
+      config.interval > data_interval_e::one_month)
+    return std::nullopt;
+  auto &allTradableTokens = global_data_t::instance().allTokens;
+  config.symbol = utils::toUpperString(config.symbol);
+  auto iter =
+      std::lower_bound(allTradableTokens.begin(), allTradableTokens.end(),
+                       config, [](auto const &a, auto const &b) {
+                         using T = std::remove_cv_t<std::decay_t<decltype(a)>>;
+                         if constexpr (std::is_same_v<T, kline_config_t>) {
+                           return std::make_tuple(a.symbol, a.tradeType) <
+                                  std::make_tuple(b.name, b.tradeType);
+                         } else {
+                           return std::make_tuple(a.name, a.tradeType) <
+                                  std::make_tuple(b.symbol, b.tradeType);
+                         }
+                       });
+  if (iter == allTradableTokens.end() ||
+      !utils::isCaseInsensitiveStringCompare(iter->name, config.symbol))
+    return std::nullopt;
+  if (config.endTime == 0)
+    config.endTime = std::time(nullptr);
+  if (config.startTime == 0)
+    config.startTime = config.endTime - 3'600;
+  config.limit = std::clamp(config.limit, 0ULL, 1'000ULL);
 
-::utils::mutexed_list_t<trade_list_t> candleStickTrades{};
+  kline_data_list_t result;
 
-void candlestickTradesImpl() {
-  while (true) {
-    //
+  std::filesystem::path const rootPath(global_data_t::instance().rootPath);
+  std::vector<std::time_t> intervals =
+      utils::intervalsBetweenDates(config.startTime, config.endTime);
+  if (intervals.empty())
+    return result;
+
+  if (intervals.back() < config.endTime)
+    intervals.push_back(config.endTime);
+
+  auto const tradeType = iter->tradeType == trade_type_e::spot ? SPOT : FUTURES;
+  std::vector<std::filesystem::path> filePaths;
+  filePaths.reserve(intervals.size());
+
+  for (auto const &interval : intervals) {
+    auto const date = utils::currentTimeToString(interval, "_").value();
+    auto const path = rootPath / config.symbol / date / CANDLESTICK / tradeType;
+    if (!std::filesystem::exists(path))
+      continue;
+    filePaths.push_back(path);
   }
+  return result;
+}
+
+bool getContinuousKlineData(kline_config_t &&config) {
+  //
+  return false;
 }
 
 } // namespace backtesting

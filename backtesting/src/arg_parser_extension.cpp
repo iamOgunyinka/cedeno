@@ -6,7 +6,6 @@
 namespace net = boost::asio;
 
 namespace backtesting {
-void processCandlestickStream(trade_map_td const &tradeMap);
 void processDepthStream(net::io_context &, trade_map_td &tradeMap);
 void processBookTickerStream(trade_map_td const &tradeMap) {
   // todo
@@ -36,13 +35,14 @@ int backtesting_t::run() {
       backtesting::processTickerStream(tickerInfo);
     }}.detach();
   }
-
+  /*
   if (auto const iter = csvFilenames.find(CANDLESTICK);
       iter != csvFilenames.cend()) {
     std::thread{[csData = iter->second] {
       backtesting::processCandlestickStream(csData);
     }}.detach();
   }
+  */
 
   boost::asio::io_context ioContext;
   if (auto iter = csvFilenames.find(DEPTH); iter != csvFilenames.end()) {
