@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <memory>
 
-#include "indicators/bwfs/bwfs_hndlr.hpp"
 #include "indicators/helpers/indcs_utils.hpp"
 
 namespace indicators{
@@ -30,6 +29,7 @@ void indicators_c::init_indicators_(void){
     m_indc_list["avrg_out"]     = (uint64_t)inds_e::AVRG_OUT;
     m_indc_list["qty_in_out"]   = (uint64_t)inds_e::QTY_IN_OUT;
     m_indc_list["tick_in_out"]  = (uint64_t)inds_e::TICK_IN_OUT;
+    m_indc_list["buy_vs_sell"]  = (uint64_t)inds_e::BUY_VS_SELL;
 }
 
 void indicators_c::delete_current_indicators_(void){
@@ -37,6 +37,9 @@ void indicators_c::delete_current_indicators_(void){
 }
 
 void indicators_c::set_indicators_callbacks_(const std::array<bool, (uint64_t)inds_e::SIZE> &indcs){
+    if(indcs[(uint64_t)inds_e::BUY_VS_SELL] == true){
+        m_indcs_trade_mngr->add_indicator(buy_vs_sell_callback);
+    }
     if(indcs[(uint64_t)inds_e::TICK_IN] == true){
         m_indcs_trade_mngr->add_indicator(ticks_in_callback);
     }
@@ -61,9 +64,6 @@ void indicators_c::set_indicators_callbacks_(const std::array<bool, (uint64_t)in
     if(indcs[(uint64_t)inds_e::TICK_IN_OUT] == true){
         m_indcs_trade_mngr->add_indicator(ticks_in_out_callback);
     }
-    if(indcs[(uint64_t)inds_e::BWFS_HANDLER] == true){
-        m_indcs_trade_mngr->add_indicator(bwfs_hndlr_callback);
-    }
 }
 
 void indicators_c::get_BWFS_indicator_states_( const std::vector<std::string> &itr, 
@@ -79,12 +79,7 @@ void indicators_c::get_BWFS_indicator_states_( const std::vector<std::string> &i
             trade_sz++;
         }
     }
-    if(config_idx > 0){
-        indc_states[(uint64_t)inds_e::BWFS_HANDLER] = true;
-        trade_sz++;
-    }
 }
-
 
 indicators::ind_BWFS_confg_t indicators_c::get_BWFS_config_( const std::vector<std::string> &config_vector, 
                                                              const uint64_t &indx){
@@ -102,7 +97,7 @@ indicators::ind_BWFS_confg_t indicators_c::get_BWFS_config_( const std::vector<s
                 }
             }else if(config_pair.first == "time"){
                 config.time = strtoul(config_pair.second.c_str(), nullptr, 10);
-            }else if(config_pair.first == "limit"){
+            }else if(config_pair.first == "client_confirmation"){
                 config.client_confirmation = strtoul(config_pair.second.c_str(), nullptr, 10);
             }else{
                 std::__throw_runtime_error("Wrong BWFS config parameter");
@@ -124,7 +119,6 @@ void indicators_c::check_indc_confg_params_( const std::vector<std::string> &itr
         std::__throw_runtime_error(error_message.c_str());
     }
 }
-
 
 void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<std::string>> &indcs,
                                                 std::array<bool, (uint64_t)inds_e::SIZE> &indcs_state,
@@ -191,7 +185,7 @@ void indicators_c::init_all_indicators_vars_(indicators::indicator_t &indcs){
     indcs.indcs_var.avrg_out_vars = std::make_unique<indicators::avrg_out_t>(indcs); 
     indcs.indcs_var.qty_in_out_vars = std::make_unique<indicators::qty_in_out_t>(indcs); 
     indcs.indcs_var.ticks_in_out_vars = std::make_unique<indicators::ticks_in_out_t>(indcs); 
-    indcs.indcs_var.bwfs_hndlr_vars = std::make_unique<indicators::bwfs_hndlr_t>(indcs); 
+    indcs.indcs_var.buy_vs_sell_vars = std::make_unique<indicators::buy_vs_sell_t>(indcs); 
 }
 
 auto indicators_c::init_new_symbol_(const std::string symbol){

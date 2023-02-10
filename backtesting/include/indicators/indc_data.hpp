@@ -17,6 +17,7 @@ namespace indicators{
     struct qty_in_out_t;
     struct ticks_in_out_t;
     struct bwfs_hndlr_t;
+    struct buy_vs_sell_t;
 
     enum class bwfs_inds_e{
         TICK_IN,
@@ -39,6 +40,7 @@ namespace indicators{
         AVRG_OUT,
         QTY_IN_OUT,
         TICK_IN_OUT,
+        BUY_VS_SELL,
         BWFS_HANDLER,
         SIZE,
     };
@@ -68,6 +70,7 @@ namespace indicators{
         double avrg_out = 0.0;
         int64_t ticks_in_out = 0;
         double qty_in_out = 0.0;
+        double buyer_vs_seller = 0.0;
     };
 
     struct indcs_vars_t{
@@ -79,7 +82,7 @@ namespace indicators{
         std::unique_ptr<avrg_out_t> avrg_out_vars = nullptr; 
         std::unique_ptr<qty_in_out_t> qty_in_out_vars = nullptr; 
         std::unique_ptr<ticks_in_out_t> ticks_in_out_vars = nullptr; 
-        std::unique_ptr<bwfs_hndlr_t> bwfs_hndlr_vars = nullptr;
+        std::unique_ptr<buy_vs_sell_t> buy_vs_sell_vars = nullptr;
     };
     
     struct indicator_info_t{
@@ -102,6 +105,6 @@ namespace indicators{
 #include "indicators/bwfs/avrg_out.hpp"
 #include "indicators/bwfs/qty_in_out.hpp"
 #include "indicators/bwfs/ticks_in_out.hpp"
-#include "indicators/bwfs/bwfs_hndlr.hpp"
+#include "indicators/bwfs/buy_vs_sell.hpp"
 
 #endif

@@ -3,6 +3,7 @@
         "*.css": "css",
         "unordered_map": "cpp",
         "memory_resource": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "variant": "cpp"
     }
 }
