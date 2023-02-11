@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.hpp"
+#include "candlestick_data.hpp"
 
 namespace backtesting {
 enum class trade_type_e;
@@ -20,6 +20,7 @@ struct configuration_t {
   std::string dateToStr;
   std::string rootDir;
 
+  std::optional<kline_config_t> klineConfig = std::nullopt;
 #ifdef BT_USE_WITH_DB
   std::string dbConfigFilename = getDatabaseConfigPath();
   std::string dbLaunchType = "development";

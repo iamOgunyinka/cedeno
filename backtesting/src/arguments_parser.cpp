@@ -29,8 +29,8 @@
   return ERROR_PARSE();
 
 using backtesting::utils::currentTimeToString;
+using backtesting::utils::dateStringToTimeT;
 using backtesting::utils::listContains;
-using backtesting::utils::stringToTimeT;
 
 bool verbose =
 #ifdef _DEBUG
@@ -277,17 +277,27 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     PRINT_INFO("End-date not specified, will use '{}'", config.dateToStr)
   }
 
+  if (config.klineConfig) {
+    using backtesting::getContinuousKlineData;
+
+    auto &klineConfig = *config.klineConfig;
+    if (!(klineConfig.callback &&
+          getContinuousKlineData(std::move(klineConfig)))) {
+      ERROR_EXIT("There was a problem setting the kline config");
+    }
+  }
+
   auto &globalRtData = global_data_t::instance();
   globalRtData.rootPath = config.rootDir;
 
-  if (auto const optStartTime = stringToTimeT(config.dateFromStr);
+  if (auto const optStartTime = dateStringToTimeT(config.dateFromStr);
       optStartTime.has_value()) {
     globalRtData.startTime = *optStartTime;
   } else {
     ERROR_EXIT("Unable to calculate the start date from user input");
   }
 
-  if (auto const optEndTime = stringToTimeT(config.dateToStr);
+  if (auto const optEndTime = dateStringToTimeT(config.dateToStr);
       optEndTime.has_value()) {
     globalRtData.endTime = *optEndTime;
   } else {

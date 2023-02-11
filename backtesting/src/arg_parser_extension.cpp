@@ -1,6 +1,8 @@
+#include <boost/asio/io_context.hpp>
+
 #include "arguments_parser.hpp"
 #include "global_data.hpp"
-#include <boost/asio/io_context.hpp>
+
 #include <thread>
 
 namespace net = boost::asio;
@@ -14,6 +16,9 @@ void processBookTickerStream(trade_map_td const &tradeMap) {
 void processTickerStream(trade_map_td const &tradeMap) {
   // todo
 }
+
+void aggregateTradesImpl();
+void candlestickProcessingImpl();
 } // namespace backtesting
 
 int backtesting_t::run() {
@@ -22,28 +27,10 @@ int backtesting_t::run() {
 
   auto &globalRtData = global_data_t::instance();
   auto &csvFilenames = globalRtData.listOfFiles;
-  if (auto const iter = csvFilenames.find(BTICKER);
-      iter != csvFilenames.cend()) {
-    std::thread{[bookTickerInfo = iter->second] {
-      backtesting::processBookTickerStream(bookTickerInfo);
-    }}.detach();
-  }
 
-  if (auto const iter = csvFilenames.find(TICKER);
-      iter != csvFilenames.cend()) {
-    std::thread{[tickerInfo = iter->second] {
-      backtesting::processTickerStream(tickerInfo);
-    }}.detach();
-  }
-  /*
-  if (auto const iter = csvFilenames.find(CANDLESTICK);
-      iter != csvFilenames.cend()) {
-    std::thread{[csData = iter->second] {
-      backtesting::processCandlestickStream(csData);
-    }}.detach();
-  }
-  */
-
+  std::thread{[] { backtesting::aggregateTradesImpl(); }}.detach();
+  std::thread{[] { backtesting::candlestickProcessingImpl(); }}.detach();
+  
   boost::asio::io_context ioContext;
   if (auto iter = csvFilenames.find(DEPTH); iter != csvFilenames.end()) {
     std::thread{[csData = iter->second, &ioContext]() mutable {
@@ -51,7 +38,7 @@ int backtesting_t::run() {
     }}.detach();
   }
 
-  std::this_thread::sleep_for(std::chrono::seconds(20));
+  std::this_thread::sleep_for(std::chrono::seconds(10));
   ioContext.run();
   return 0;
 }

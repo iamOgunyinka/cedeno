@@ -14,13 +14,12 @@ extern agg_callback_map_t aggTradesCallbacks;
 extern utils::waitable_container_t<trade_list_t> allNewTradeList;
 extern utils::mutexed_list_t<trade_list_t> aggTradeList;
 
-void onNewTradesImpl();
-void aggregateTradesImpl();
-
 void trade_signal_handler_t::onNewTrades(trade_list_t trades) {
   aggTradeList.append(trades);
   allNewTradeList.append(std::move(trades));
 }
+
+void onNewTradesImpl();
 
 trade_signal_handler_t::TradesDelegate &
 trade_signal_handler_t::GetTradesDelegate() {
@@ -30,7 +29,6 @@ trade_signal_handler_t::GetTradesDelegate() {
     delegate_->Bind(trade_signal_handler_t::onNewTrades);
 
     std::thread{[] { onNewTradesImpl(); }}.detach();
-    std::thread{[] { aggregateTradesImpl(); }}.detach();
   }
   return *delegate_;
 }
