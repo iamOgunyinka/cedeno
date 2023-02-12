@@ -4,6 +4,7 @@
 #include "container.hpp"
 #include "data_streamer.hpp"
 #include <array>
+#include <functional>
 
 namespace backtesting {
 
@@ -38,7 +39,7 @@ struct bktick_data_t {
 };
 
 using bktick_list_t = std::vector<bktick_data_t>;
-using bktick_callback_t = void (*)(bktick_data_t const &);
+using bktick_callback_t = std::function<void(bktick_data_t const &)>;
 
 struct bktick_config_t {
   std::vector<std::string> symbols;
@@ -52,10 +53,11 @@ struct bktick_config_t {
   // globalBkTickerRecord[1] == futures
   static std::array<std::vector<bktick_data_t>, 2> globalBkTickerRecord;
   static std::mutex globalBkTickerMutex;
-
 };
 
+bool checkAndValidateBookTickerRequestHelper(bktick_config_t &config);
 bool checkAndValidateBookTickerRequest(bktick_config_t &config);
+bool getContinuousBTickerData(bktick_config_t &&config);
 bktick_list_t getDiscreteBTickerData(bktick_config_t &&config);
 void bookTickerProcessingThreadImpl(bktick_config_t &&config);
 void insertNewestData(bktick_data_t const &, bktick_config_t const &);

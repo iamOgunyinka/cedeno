@@ -287,6 +287,15 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     }
   }
 
+  if (config.bookTickerConfig) {
+    using backtesting::getContinuousBTickerData;
+
+    auto &bookTickerConfig = *config.bookTickerConfig;
+    if (!bookTickerConfig.callback &&
+        getContinuousBTickerData(std::move(bookTickerConfig))) {
+      ERROR_EXIT("There was a problem setting the book ticker config");
+    }
+  }
   auto &globalRtData = global_data_t::instance();
   globalRtData.rootPath = config.rootDir;
 

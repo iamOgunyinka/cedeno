@@ -40,8 +40,9 @@ binance_bktick_data_t::bookTickerFromCSVRow(csv::CSVRow const &row) {
   data.bestBidQty = getNumber<double>(++iter);
   data.bestAskPrice = getNumber<double>(++iter);
   data.bestAskQty = getNumber<double>(++iter);
-  data.eventTimeInMs = getNumber<uint64_t>(++iter);
-  data.transactionTimeInMs = getNumber<uint64_t>(++iter);
+  data.eventTimeInMs = (std::max)(getNumber<uint64_t>(++iter), (uint64_t)1'000);
+  data.transactionTimeInMs =
+      (std::max)(getNumber<uint64_t>(++iter), (uint64_t)1'000);
   return data;
 }
 
@@ -137,7 +138,7 @@ bool requiresNewInsertion(uint64_t const &fresh, uint64_t const &old,
   return false;
 }
 
-bool checkAndValidateBookTickerRequest(bktick_config_t &config) {
+bool checkAndValidateBookTickerRequestHelper(bktick_config_t &config) {
   auto &allTradableTokens = global_data_t::instance().allTokens;
   config.symbols[0] = utils::toUpperString(config.symbols[0]);
   auto iter =
@@ -166,6 +167,19 @@ bool checkAndValidateBookTickerRequest(bktick_config_t &config) {
   return true;
 }
 
+bool checkAndValidateBookTickerRequest(bktick_config_t &config) {
+  auto const size = config.symbols.size();
+  if (size == 0)
+    return false;
+  for (auto const &c : config.symbols) {
+    auto newConfig = config;
+    newConfig.symbols = {c};
+    if (!checkAndValidateBookTickerRequestHelper(newConfig))
+      return false;
+  }
+  return true;
+}
+
 void insertNewestData(bktick_data_t const &data,
                       bktick_config_t const &config) {
   size_t const index = config.tradeType == trade_type_e::spot ? 0 : 1;
@@ -188,16 +202,21 @@ void insertNewestData(bktick_data_t const &data,
   dataList.push_back(data);
 }
 
-bktick_list_t getDiscreteBTickerData(bktick_config_t &&config) {
-  auto const size = config.symbols.size();
-  if (size == 0)
-    return {};
+bool getContinuousBTickerData(bktick_config_t &&config) {
+  if (!checkAndValidateBookTickerRequest(config))
+    return false;
+
   for (auto const &c : config.symbols) {
     auto newConfig = config;
     newConfig.symbols = {c};
-    if (!checkAndValidateBookTickerRequest(newConfig))
-      return {};
+    bktick_config_t::bookTickerConfigs.append(std::move(newConfig));
   }
+  return true;
+}
+
+bktick_list_t getDiscreteBTickerData(bktick_config_t &&config) {
+  if (!checkAndValidateBookTickerRequest(config))
+    return {};
 
   size_t const index = config.tradeType == trade_type_e::spot ? 0 : 1;
   bktick_list_t result;
@@ -233,7 +252,9 @@ void bookTickerChildThreadImpl(bktick_config_t &&config) {
 
     auto const lastTime = data.eventTimeInMs;
     data = dataStream.getNextData();
-    auto const timeToWait = data.eventTimeInMs - lastTime;
+    auto timeToWait = data.eventTimeInMs - lastTime;
+    if (timeToWait == 0)
+      timeToWait = 1'000;
     std::this_thread::sleep_for(std::chrono::milliseconds(timeToWait));
   }
 }

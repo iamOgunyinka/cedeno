@@ -4,6 +4,7 @@
 #include "container.hpp"
 #include "data_streamer.hpp"
 #include "enumerations.hpp"
+#include <functional>
 
 namespace backtesting {
 
@@ -56,7 +57,7 @@ struct kline_data_t {
 };
 using kline_data_list_t = std::vector<kline_data_t>;
 using optional_kline_list_t = std::optional<kline_data_list_t>;
-using kline_callback_t = void (*)(kline_data_list_t const &);
+using kline_callback_t = std::function<void(kline_data_list_t const &)>;
 
 struct kline_config_t {
   std::string symbol;

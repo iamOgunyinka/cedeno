@@ -79,6 +79,7 @@ kline_data_t binanceKlineToLocalKline(binance_candlestick_data_t const &data) {
   result.closePrice = data.closePrice;
   result.baseVolume = data.baseAssetVolume;
   result.quoteVolume = data.quoteAssetVolume;
+  result.ntrades = data.numberOfTrades;
   return result;
 }
 
@@ -183,15 +184,24 @@ bool getContinuousKlineData(kline_config_t &&config) {
 
 void candlestickProcessingImpl() {
   int threadsAtWork = 0;
+  std::condition_variable cv{};
+  std::mutex taskWaitMutex{};
+
   while (true) {
     auto task = kline_task_t::klineScheduledTasks.get();
-    if (threadsAtWork > 4) // ignore
-      continue;
+    if (threadsAtWork > 4) {
+      std::unique_lock<std::mutex> uLock{taskWaitMutex};
+      cv.wait(uLock, [threadsAtWork] { return threadsAtWork < 4; });
+      if (threadsAtWork >= 4) // ignore and continue -> an error
+        continue;
+    }
 
     ++threadsAtWork;
-    std::thread([t = std::move(task), &threadsAtWork]() mutable {
+    std::thread([&, t = std::move(task)]() mutable {
       klineChildThreadImpl(std::move(t));
+      std::lock_guard<std::mutex> myLock(taskWaitMutex);
       --threadsAtWork;
+      cv.notify_one();
     }).detach();
   }
 }

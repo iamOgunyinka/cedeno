@@ -9,11 +9,6 @@ namespace net = boost::asio;
 
 namespace backtesting {
 void processDepthStream(net::io_context &, trade_map_td &tradeMap);
-
-void processTickerStream(trade_map_td const &tradeMap) {
-  // todo
-}
-
 void aggregateTradesImpl();
 void candlestickProcessingImpl();
 void bookTickerProcessingThreadImpl();

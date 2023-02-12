@@ -5,20 +5,10 @@
 
 #include <thread>
 
-int main() {
+int main(int argc, char **argv) {
   data_extractor_t extractor;
-  int argc = 3;
+  bool const result = extractor.run(argc, argv);
 
-  std::vector<const char *> a{"./test_data_extractor",
-                              "--trade-type",
-                              "futures",
-                              "spot",
-                              "--streams",
-                              "bookticker",
-                              "-r",
-                              "120"};
-
-  bool const result = extractor.run(a.size(), const_cast<char **>(&a[0]));
   assert(result == 0);
   std::cout << "Done running" << std::endl;
   return 0;
