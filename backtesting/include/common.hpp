@@ -6,14 +6,7 @@
 #include <string>
 #include <vector>
 
-#define CANDLESTICK "kline"
-#define BTICKER "bookTicker"
-#define TICKER "ticker"
-#define TRADE "trade"
-#define DEPTH "depth"
-
-#define SPOT "spot"
-#define FUTURES "futures"
+#include "enumerations.hpp"
 
 namespace backtesting {
 using fs_list_t = std::vector<std::filesystem::path>;

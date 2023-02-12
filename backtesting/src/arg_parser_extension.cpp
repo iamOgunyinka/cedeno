@@ -9,9 +9,6 @@ namespace net = boost::asio;
 
 namespace backtesting {
 void processDepthStream(net::io_context &, trade_map_td &tradeMap);
-void processBookTickerStream(trade_map_td const &tradeMap) {
-  // todo
-}
 
 void processTickerStream(trade_map_td const &tradeMap) {
   // todo
@@ -19,6 +16,7 @@ void processTickerStream(trade_map_td const &tradeMap) {
 
 void aggregateTradesImpl();
 void candlestickProcessingImpl();
+void bookTickerProcessingThreadImpl();
 } // namespace backtesting
 
 int backtesting_t::run() {
@@ -30,7 +28,8 @@ int backtesting_t::run() {
 
   std::thread{[] { backtesting::aggregateTradesImpl(); }}.detach();
   std::thread{[] { backtesting::candlestickProcessingImpl(); }}.detach();
-  
+  std::thread{[] { backtesting::bookTickerProcessingThreadImpl(); }}.detach();
+
   boost::asio::io_context ioContext;
   if (auto iter = csvFilenames.find(DEPTH); iter != csvFilenames.end()) {
     std::thread{[csData = iter->second, &ioContext]() mutable {

@@ -100,44 +100,6 @@ kline_data_t &kline_data_t::operator+=(kline_data_t const &data) {
   return *this;
 }
 
-bool requiresNewInsertion(kline_data_t const &fresh, kline_data_t const &old,
-                          data_interval_e const interval) {
-  uint64_t const diff = std::abs((double)old.ts - (double)fresh.ts);
-  switch (interval) {
-  case data_interval_e::one_second:
-    return diff > 1'000;
-  case data_interval_e::one_minute:
-    return diff > 60'000;
-  case data_interval_e::three_minutes:
-    return diff > 180'000;
-  case data_interval_e::five_minutes:
-    return diff > 300'000;
-  case data_interval_e::fifteen_minutes:
-    return diff > (60'000 * 15);
-  case data_interval_e::thirty_minutes:
-    return diff > (60'000 * 30);
-  case data_interval_e::one_hour:
-    return diff > (360'000);
-  case data_interval_e::two_hours:
-    return diff > (720'000);
-  case data_interval_e::four_hours:
-    return diff > (360'000 * 4);
-  case data_interval_e::six_hours:
-    return diff > (360'000 * 6);
-  case data_interval_e::twelve_hours:
-    return diff > (360'000 * 12);
-  case data_interval_e::one_day:
-    return diff > (360'000 * 24);
-  case data_interval_e::three_days:
-    return diff > (360'000 * 24 * 3);
-  case data_interval_e::one_week:
-    return diff > (360'000 * 24 * 7);
-  case data_interval_e::one_month:
-    return diff > (360'000 * 24 * 28);
-  }
-  return false;
-}
-
 bool checkAndValidateKlineRequest(kline_config_t &config) {
   if (config.interval < data_interval_e::one_second ||
       config.interval > data_interval_e::one_month)
@@ -192,7 +154,8 @@ optional_kline_list_t getDiscreteKlineData(kline_config_t &&config) {
 
     auto newData = binanceKlineToLocalKline(temp);
     auto &lastData = result.back();
-    if (requiresNewInsertion(newData, lastData, config.interval)) {
+    if (requiresNewInsertion(newData.ts, lastData.ts, config.interval,
+                             time_duration_e::seconds)) {
       result.push_back(std::move(newData));
     } else {
       lastData += newData;

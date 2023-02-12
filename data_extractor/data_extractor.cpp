@@ -13,7 +13,7 @@
 #include <spdlog/spdlog.h>
 
 #define CANDLESTICK "kline"
-#define BTICKER "bookTicker"
+#define BTICKER "bookticker"
 #define TICKER "ticker"
 #define TRADE "trade"
 #define DEPTH "depth"

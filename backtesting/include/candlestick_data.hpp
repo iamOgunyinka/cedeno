@@ -3,6 +3,7 @@
 #include "common.hpp"
 #include "container.hpp"
 #include "data_streamer.hpp"
+#include "enumerations.hpp"
 
 namespace backtesting {
 
@@ -40,27 +41,6 @@ private:
   static bool isExpectedRowCount(size_t const r) { return r == 16; }
   static binance_candlestick_data_t klineFromCSVRow(csv::CSVRow const &row);
 };
-
-enum class data_interval_e : uint32_t { // as defined by Binance
-  one_second,                           // 1s
-  one_minute,                           // 1m
-  three_minutes,                        // 3m
-  five_minutes,                         // 5m
-  fifteen_minutes,                      // 15m
-  thirty_minutes,                       // 30m
-  one_hour,                             // 1h
-  two_hours,                            // 2h
-  four_hours,                           // 4h
-  six_hours,                            // 6h
-  twelve_hours,                         // 12h
-  one_day,                              // 1d
-  three_days,                           // 3d
-  one_week,                             // 1w
-  one_month                             // 1M
-};
-
-// forward declaration
-enum class trade_type_e;
 
 struct kline_data_t {
   uint64_t ts = 0; // Event time
