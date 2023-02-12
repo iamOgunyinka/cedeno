@@ -45,6 +45,7 @@ else()
   include_directories(${OPENSSL_INCLUDE_DIR})
 endif()
 
+include_directories(${PROJECT_DIR}/include)
 include_directories(${PROJECT_DIR}/../third-party)
 include_directories(${PROJECT_DIR}/../third-party/pybind11/include)
 include_directories(${PROJECT_DIR}/../third-party/spdlog/include)
@@ -99,41 +100,49 @@ endif()
 
 # Source Files
 set(SRC_FILES
-  adaptor.cpp
-  arg_parser_extension.cpp
-  arguments_parser.cpp
-  candlestick_data.cpp
-  common.cpp
-  database_connector.cpp
-  depth_data.cpp
-  global_data.cpp
-  matching_engine.cpp
-  futures_order_book.cpp
-  spot_order_book.cpp
-  py_wrapper.cpp
-  user_data.cpp
+  src/adaptor.cpp
+  src/aggregate_trade.cpp
+  src/arg_parser_extension.cpp
+  src/arguments_parser.cpp
+  src/bookticker.cpp
+  src/callbacks.cpp
+  src/candlestick_data.cpp
+  src/common.cpp
+  src/database_connector.cpp
+  src/depth_data.cpp
+  src/futures_order_book.cpp
+  src/global_data.cpp
+  src/matching_engine.cpp
+  src/spot_order_book.cpp
+  src/py_wrapper.cpp
+  src/trades_data.cpp
+  src/user_data.cpp
 )
 
 source_group("Sources" FILES ${SRC_FILES})
 
 # Header Files
 set(HEADERS_FILES
-  adaptor.hpp
-  arguments_parser.hpp
-  candlestick_data.hpp
-  common.hpp
-  container.hpp
-  data_streamer.hpp
-  database_connector.hpp
-  database_types.hpp
-  depth_data.hpp
-  global_data.hpp
-  matching_engine.hpp
-  futures_order_book.hpp
-  spot_order_book.hpp
-  order_book_base.hpp
-  py_wrapper.hpp
-  user_data.hpp
+  include/adaptor.hpp
+  include/aggregate_trade.hpp
+  include/arguments_parser.hpp
+  include/bookticker.hpp
+  include/callbacks.hpp
+  include/candlestick_data.hpp
+  include/common.hpp
+  include/container.hpp
+  include/data_streamer.hpp
+  include/database_connector.hpp
+  include/database_types.hpp
+  include/depth_data.hpp
+  include/global_data.hpp
+  include/matching_engine.hpp
+  include/futures_order_book.hpp
+  include/spot_order_book.hpp
+  include/order_book_base.hpp
+  include/py_wrapper.hpp
+  include/trades_data.hpp
+  include/user_data.hpp
 )
 
 source_group("Headers" FILES ${HEADERS_FILES})

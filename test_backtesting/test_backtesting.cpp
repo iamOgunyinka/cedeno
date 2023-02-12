@@ -1,4 +1,4 @@
-#include "../backtesting/arguments_parser.hpp"
+#include "arguments_parser.hpp"
 
 int main(int argc, char **argv) {
 

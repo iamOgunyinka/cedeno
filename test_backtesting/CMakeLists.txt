@@ -36,7 +36,8 @@ else()
 endif()
 
 
-include_directories(${PROJECT_DIR}/../backtesting)
+include_directories(${PROJECT_DIR}/../backtesting/include)
+include_directories(${PROJECT_DIR}/../third-party/csv-parser/single_include)
 
 if(WIN32)
   # set stuff for windows
