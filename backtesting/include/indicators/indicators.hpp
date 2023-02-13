@@ -1,6 +1,8 @@
 #ifndef INDICATORS_HPP_
 #define INDICATORS_HPP_
 #include "helpers/cllbck_iterator.hpp"
+#include "indicators/bwfs/bwfs.hpp"
+
 
 #include <ctime>
 #include <vector>
@@ -28,23 +30,10 @@ class indicators_c{
         void delete_current_indicators_(void);
         uint64_t calculate_time_threshold_( const uint64_t &timestamp);
 
-        void get_BWFS_indicator_states_( const std::vector<std::string> &itr, 
-                                         std::array<bool, (uint64_t)inds_e::SIZE> &indcs,
-                                         uint64_t &trade_sz, 
-                                         uint64_t &config_idx);
-
-        void check_indc_confg_params_( const std::vector<std::string> &itr, 
-                                       const uint64_t &config_idx, 
-                                       const uint64_t &max_params_sz, 
-                                       const std::string &indc_type);
-
         void set_indicators_callbacks_( const std::array<bool, 
                                         (uint64_t)inds_e::SIZE> &indcs);
 
         void init_BWFS_indicators_(const std::vector<std::string> &itr);
-
-        indicators::ind_BWFS_confg_t get_BWFS_config_( const std::vector<std::string> &itr, 
-                                                       const uint64_t &indx);
 
         void get_indicators_to_activing_( const std::vector<std::vector<std::string>> &indcs,
                                           std::array<bool, (uint64_t)inds_e::SIZE> &indcs_state,

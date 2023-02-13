@@ -9,8 +9,4 @@ void qty_in_out_callback( const backtesting::trade_data_t &trade_data, indicator
     handler.common_db->indc_info.cab.qty_in_out = handler.common_db->indc_info.cab.qty_in - handler.common_db->indc_info.cab.qty_out;
 }
 
-void qty_in_out_t::config(const indicators::ind_BWFS_confg_t &config_){
-    configuration = config_;
-}
-
 }

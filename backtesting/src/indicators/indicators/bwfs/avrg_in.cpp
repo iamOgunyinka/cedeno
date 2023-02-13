@@ -10,8 +10,4 @@ void avrg_in_callback( const backtesting::trade_data_t &trade_data, indicator_t 
     }  
 }
 
-void avrg_in_t::config(const indicators::ind_BWFS_confg_t &config_){
-    configuration = config_;
-}
-
 }

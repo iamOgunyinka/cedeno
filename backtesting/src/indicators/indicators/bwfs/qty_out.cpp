@@ -10,8 +10,4 @@ void qty_out_callback(const backtesting::trade_data_t &trade_data, indicator_t &
     }
 }
 
-void qty_out_t::config(const indicators::ind_BWFS_confg_t &config_){
-    configuration = config_;
-}
-
 }

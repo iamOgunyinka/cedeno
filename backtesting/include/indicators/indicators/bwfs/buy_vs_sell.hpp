@@ -20,12 +20,12 @@ struct buy_vs_sell_q_t{
 };
 
 struct buy_vs_sell_t{
-    buy_vs_sell_t(indicators::indicator_t &global_data_){
-        global_data = &global_data_;
+    buy_vs_sell_t(indicators::indicator_t &common_db_, indicators::ind_BWFS_confg_t &configuration_){
+        common_db = &common_db_;
+        configuration = &configuration_; 
     } 
-    void config(const indicators::ind_BWFS_confg_t &config_);
-    indicators::indicator_t *global_data;
-    indicators::ind_BWFS_confg_t configuration;
+    indicators::indicator_t *common_db;
+    indicators::ind_BWFS_confg_t *configuration;
 
     uint64_t time_threshold = 0;
     uint64_t last_time_threshold = 0;

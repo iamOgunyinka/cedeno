@@ -7,12 +7,12 @@
 namespace indicators{
 
 struct avrg_out_t{
-    avrg_out_t(indicators::indicator_t &common_db_){
+    avrg_out_t(indicators::indicator_t &common_db_, indicators::ind_BWFS_confg_t &configuration_){
         common_db = &common_db_;
+        configuration = &configuration_; 
     } 
-    void config(const indicators::ind_BWFS_confg_t &config_);
     indicators::indicator_t *common_db;
-    indicators::ind_BWFS_confg_t configuration;
+    indicators::ind_BWFS_confg_t *configuration;
 };
 
 void avrg_out_callback( const backtesting::trade_data_t &trade_data, indicator_t &handler_);

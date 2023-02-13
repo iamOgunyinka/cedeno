@@ -66,60 +66,6 @@ void indicators_c::set_indicators_callbacks_(const std::array<bool, (uint64_t)in
     }
 }
 
-void indicators_c::get_BWFS_indicator_states_( const std::vector<std::string> &itr, 
-                                               std::array<bool, (uint64_t)inds_e::SIZE> &indc_states,
-                                               uint64_t &trade_sz, 
-                                               uint64_t &config_idx){
-    config_idx = 0;
-    for(auto &itr_: itr){
-        auto item = m_indc_list.find(itr_);
-        if( item != m_indc_list.end()){
-            indc_states[item->second] = true;
-            config_idx++;
-            trade_sz++;
-        }
-    }
-}
-
-indicators::ind_BWFS_confg_t indicators_c::get_BWFS_config_( const std::vector<std::string> &config_vector, 
-                                                             const uint64_t &indx){
-    indicators::ind_BWFS_confg_t config;
-
-    std::for_each(config_vector.begin() + indx, config_vector.end(), [&](const std::string &config_str){
-            auto config_pair = indicators::indcs_utils::split_string(config_str, ":"); 
-            if(config_pair.first == "mode"){
-                if(config_pair.second == "static"){
-                    config.mode = ind_mode_e::STATIC;
-                }else if(config_pair.second == "dynamic"){
-                    config.mode = ind_mode_e::DYNAMIC;
-                }else{
-                    std::__throw_runtime_error("Wrong BWFS-mode");
-                }
-            }else if(config_pair.first == "time"){
-                config.time = strtoul(config_pair.second.c_str(), nullptr, 10);
-            }else if(config_pair.first == "client_confirmation"){
-                config.client_confirmation = strtoul(config_pair.second.c_str(), nullptr, 10);
-            }else{
-                std::__throw_runtime_error("Wrong BWFS config parameter");
-            }
-        }
-    );
-    return config;
-}
-
-void indicators_c::check_indc_confg_params_( const std::vector<std::string> &itr, 
-                                             const uint64_t &config_idx, 
-                                             const uint64_t &max_params_sz, 
-                                             const std::string &indc_type){
-    int item_left_in_vector = itr.size() - config_idx;
-    if(item_left_in_vector > max_params_sz){
-        const std::string error_message =   "So many " + 
-                                            indc_type + 
-                                            " config indicator parameters"; 
-        std::__throw_runtime_error(error_message.c_str());
-    }
-}
-
 void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<std::string>> &indcs,
                                                 std::array<bool, (uint64_t)inds_e::SIZE> &indcs_state,
                                                 std::array<uint64_t, (uint64_t)data_types::SIZE> &num_of_indcs_per_mnger){
@@ -136,22 +82,10 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
             case (uint64_t)inds_e::QTY_IN_OUT:
             case (uint64_t)inds_e::TICK_IN_OUT:
             {
-                if(indcs_status[(uint64_t)inds_e::BWFS_HANDLER] == true)
+                if(indcs_status[(uint64_t)inds_e::BWFS_HANDLER] == true){
                     std::__throw_runtime_error("You are setting BWFS indicator twice");
-                uint64_t bwfs_config_idx = 0;
-                get_BWFS_indicator_states_( itr, 
-                                            indcs_state, 
-                                            num_of_indcs_per_mnger[(uint64_t)data_types::TRADE], 
-                                            bwfs_config_idx);
-                if((bwfs_config_idx + 1) > itr.size()){
-                    m_BWFS_config = ind_BWFS_confg_t(); 
-                }else{
-                    check_indc_confg_params_(itr, bwfs_config_idx, MAX_BWFS_PARAMS_SZ, "BWFS");
-                    m_BWFS_config = get_BWFS_config_(itr, bwfs_config_idx);
                 }
-                std::cout<<"BWFS Config: "<<std::endl<<"time: "<<m_BWFS_config.time<<std::endl; 
-                std::cout<<"mode: "<<(int)m_BWFS_config.mode<<std::endl; 
-                std::cout<<"limit: "<<m_BWFS_config.client_confirmation<<std::endl;
+                m_BWFS_config = indicators::bwfs::get_config(itr, indcs_state, num_of_indcs_per_mnger[(uint64_t)data_types::TRADE]);
                 indcs_status[(uint64_t)inds_e::BWFS_HANDLER] = true;
                 break;
             }
@@ -177,15 +111,15 @@ void indicators_c::set(const std::vector<std::vector<std::string>> &indcs){
 }
 
 void indicators_c::init_all_indicators_vars_(indicators::indicator_t &indcs){
-    indcs.indcs_var.ticks_in_vars = std::make_unique<indicators::ticks_in_t>(indcs); 
-    indcs.indcs_var.ticks_out_vars = std::make_unique<indicators::ticks_out_t>(indcs); 
-    indcs.indcs_var.qtys_in_vars = std::make_unique<indicators::qty_in_t>(indcs); 
-    indcs.indcs_var.qty_out_vars = std::make_unique<indicators::qty_out_t>(indcs); 
-    indcs.indcs_var.avrg_in_vars = std::make_unique<indicators::avrg_in_t>(indcs); 
-    indcs.indcs_var.avrg_out_vars = std::make_unique<indicators::avrg_out_t>(indcs); 
-    indcs.indcs_var.qty_in_out_vars = std::make_unique<indicators::qty_in_out_t>(indcs); 
-    indcs.indcs_var.ticks_in_out_vars = std::make_unique<indicators::ticks_in_out_t>(indcs); 
-    indcs.indcs_var.buy_vs_sell_vars = std::make_unique<indicators::buy_vs_sell_t>(indcs); 
+    indcs.indcs_var.ticks_in_vars = std::make_unique<indicators::ticks_in_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.ticks_out_vars = std::make_unique<indicators::ticks_out_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.qtys_in_vars = std::make_unique<indicators::qty_in_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.qty_out_vars = std::make_unique<indicators::qty_out_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.avrg_in_vars = std::make_unique<indicators::avrg_in_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.avrg_out_vars = std::make_unique<indicators::avrg_out_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.qty_in_out_vars = std::make_unique<indicators::qty_in_out_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.ticks_in_out_vars = std::make_unique<indicators::ticks_in_out_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.buy_vs_sell_vars = std::make_unique<indicators::buy_vs_sell_t>(indcs, m_BWFS_config); 
 }
 
 auto indicators_c::init_new_symbol_(const std::string symbol){
