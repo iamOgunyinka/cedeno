@@ -5,6 +5,7 @@
 #include "user_data.hpp"
 #include <unordered_map>
 #include <queue>
+#include "indicators/bwfs/bwfs.hpp"
 
 namespace indicators{
 
@@ -19,13 +20,12 @@ struct buy_vs_sell_q_t{
     double quantity;
 };
 
-struct buy_vs_sell_t{
-    buy_vs_sell_t(indicators::indicator_t &common_db_, indicators::ind_BWFS_confg_t &configuration_){
-        common_db = &common_db_;
-        configuration = &configuration_; 
-    } 
-    indicators::indicator_t *common_db;
-    indicators::ind_BWFS_confg_t *configuration;
+struct buy_vs_sell_t: public bwfs_t{
+    buy_vs_sell_t( indicators::indicator_t &common_db_, 
+                   indicators::conf_BWFS_t &configuration_):
+                   bwfs_t( common_db_, 
+                           configuration_){}
+    ~buy_vs_sell_t(){}
 
     uint64_t time_threshold = 0;
     uint64_t last_time_threshold = 0;

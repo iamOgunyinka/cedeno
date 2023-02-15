@@ -3,17 +3,16 @@
 
 #include "indc_data.hpp"
 #include "user_data.hpp"
-
+#include "indicators/bwfs/bwfs.hpp"
 
 namespace indicators{
 
-struct avrg_in_t{
-    avrg_in_t(indicators::indicator_t &common_db_, indicators::ind_BWFS_confg_t &configuration_){
-        common_db = &common_db_;
-        configuration = &configuration_; 
-    } 
-    indicators::indicator_t *common_db;
-    indicators::ind_BWFS_confg_t *configuration;
+struct avrg_in_t: public bwfs_t{
+    avrg_in_t( indicators::indicator_t &common_db_, 
+               indicators::conf_BWFS_t &configuration_):
+               bwfs_t( common_db_, 
+                       configuration_){}
+    ~avrg_in_t(){}
 };
 
 void avrg_in_callback( const backtesting::trade_data_t &trade_data, indicator_t &handler_);

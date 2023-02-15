@@ -6,6 +6,7 @@
 namespace indicators{
 namespace indcs_utils{
 std::pair<std::string, std::string> split_string(const std::string &config, const std::string &separator);
+bool check_if_string_is_number(const std::string &str);
 }
 }
 #endif
