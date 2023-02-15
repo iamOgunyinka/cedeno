@@ -6,14 +6,7 @@
 #include <string>
 #include <vector>
 
-#define CANDLESTICK "kline"
-#define BTICKER "bookTicker"
-#define TICKER "ticker"
-#define TRADE "trade"
-#define DEPTH "depth"
-
-#define SPOT "spot"
-#define FUTURES "futures"
+#include "enumerations.hpp"
 
 namespace backtesting {
 using fs_list_t = std::vector<std::filesystem::path>;
@@ -23,6 +16,7 @@ using trade_type_td = std::string;
 using token_map_td = std::map<std::string, backtesting::fs_list_t>;
 using trade_map_td = std::map<trade_type_td, token_map_td>;
 using filename_map_td = std::map<stream_type_td, trade_map_td>;
+enum class trade_type_e;
 
 std::string getDatabaseConfigPath();
 
@@ -38,7 +32,12 @@ void trim_string(std::string &str);
 std::string getRandomString(std::size_t const length);
 std::size_t getRandomInteger();
 char getRandomChar();
-std::optional<std::time_t> stringToTimeT(std::string const &s);
+std::vector<std::filesystem::path>
+listOfFilesForTradeData(time_t const startTime, time_t const endTime,
+                        trade_type_e const tt, std::string const &symbol,
+                        std::string const &stream);
+std::optional<std::time_t> dateStringToTimeT(std::string const &s);
+unsigned long timeStringToSeconds(std::string const &s);
 std::string toUpperString(std::string const &s);
 bool listContains(std::vector<std::string> const &container,
                   std::string const &t);

@@ -104,6 +104,7 @@ set(SRC_FILES
   src/aggregate_trade.cpp
   src/arg_parser_extension.cpp
   src/arguments_parser.cpp
+  src/bookticker.cpp
   src/callbacks.cpp
   src/candlestick_data.cpp
   src/common.cpp
@@ -125,6 +126,7 @@ set(HEADERS_FILES
   include/adaptor.hpp
   include/aggregate_trade.hpp
   include/arguments_parser.hpp
+  include/bookticker.hpp
   include/callbacks.hpp
   include/candlestick_data.hpp
   include/common.hpp

@@ -93,23 +93,41 @@ bool listContains(std::vector<std::string> const &container,
   return false;
 }
 
-std::optional<std::time_t> stringToTimeT(std::string const &s) {
-  std::tm tm;
-  std::istringstream ss(s);
-  ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
-  if (ss.fail())
+std::optional<std::time_t> dateStringToTimeT(std::string const &s) {
+  time_t tStart;
+
+  int yy, month, dd, hh, mm, ss;
+  struct tm whenStart;
+  char const *zStart = s.c_str();
+
+  if (sscanf(zStart, "%d-%d-%d %d:%d:%d", &yy, &month, &dd, &hh, &mm, &ss) < 0)
     return std::nullopt;
-  std::time_t const time = mktime(&tm);
-  if (time == -1)
-    return std::nullopt;
-  return time;
+  whenStart.tm_year = yy - 1'900;
+  whenStart.tm_mon = month - 1;
+  whenStart.tm_mday = dd;
+  whenStart.tm_hour = hh;
+  whenStart.tm_min = mm;
+  whenStart.tm_sec = ss;
+  whenStart.tm_isdst = -1;
+
+  tStart = mktime(&whenStart);
+  return tStart;
+}
+
+unsigned long timeStringToSeconds(std::string const &s) {
+  int second = 0, minute = 0, hour = 0;
+  if (sscanf(s.c_str(), "%d_%d_%d", &hour, &minute, &second) < 0)
+    return 0;
+  unsigned long const result = (hour * 3'600) + (minute * 60) + (second);
+  return result;
 }
 
 std::string toUpperString(std::string const &s) {
   std::string temp;
-  temp.reserve(s.size());
-  for (auto c : s)
-    temp.push_back(std::toupper(c));
+  auto const strLen = s.size();
+  temp.resize(strLen);
+  for (std::string::size_type i = 0; i < strLen; ++i)
+    temp[i] = std::toupper(s[i]);
   return temp;
 }
 
@@ -140,13 +158,15 @@ std::optional<std::string> currentTimeToString(std::time_t const currentTime,
 std::vector<std::time_t> intervalsBetweenDates(std::time_t const start,
                                                std::time_t const end) {
   std::time_t const endOfStartDate =
-      stringToTimeT(currentTimeToString(start, "-").value() + " 23:59:59")
+      dateStringToTimeT(currentTimeToString(start, "-").value() + " 23:59:59")
           .value();
   constexpr size_t const secondsInOneDay = 3'600 * 24;
   std::vector<std::time_t> timeList{start};
-  if (endOfStartDate > end) // same day
+  if (endOfStartDate > end) { // same day
+    timeList.push_back(end);
     return timeList;
-  auto s = endOfStartDate + 1;
+  }
+  auto s = endOfStartDate;
   while (s <= end) {
     timeList.push_back(s);
     s += secondsInOneDay;

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "common.hpp"
+#include "bookticker.hpp"
+#include "candlestick_data.hpp"
 
 namespace backtesting {
 enum class trade_type_e;
@@ -19,6 +20,9 @@ struct configuration_t {
   std::string dateFromStr;
   std::string dateToStr;
   std::string rootDir;
+
+  std::optional<kline_config_t> klineConfig = std::nullopt;
+  std::optional<bktick_config_t> bookTickerConfig = std::nullopt;
 
 #ifdef BT_USE_WITH_DB
   std::string dbConfigFilename = getDatabaseConfigPath();

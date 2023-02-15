@@ -5,35 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "enumerations.hpp"
+
 namespace backtesting {
-enum class trade_type_e : int {
-  none,
-  spot,
-  futures,
-};
-
-enum class trade_side_e : int {
-  none,
-  sell, // short
-  buy,  // long
-};
-
-enum class trade_market_e : int {
-  none,
-  limit,
-  market,
-};
-using market_type_e = trade_market_e;
-
-enum class order_status_e : int {
-  new_order,
-  partially_filled,
-  filled,
-  cancelled,
-  pending_cancel,
-  rejected,
-  expired,
-};
 
 struct trade_data_t {
   std::string tokenName;

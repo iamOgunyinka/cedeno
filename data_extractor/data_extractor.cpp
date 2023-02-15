@@ -13,7 +13,7 @@
 #include <spdlog/spdlog.h>
 
 #define CANDLESTICK "kline"
-#define BTICKER "bookTicker"
+#define BTICKER "bookticker"
 #define TICKER "ticker"
 #define TRADE "trade"
 #define DEPTH "depth"
@@ -127,9 +127,11 @@ void fetchCandlestick(net::io_context &ioContext, net::ssl::context &sslContext,
   candlestick_futures_stream_t fTradeStream(ioContext, sslContext,
                                             tradeMap[FUTURES]);
   candlestick_spot_stream_t sTradeStream(ioContext, sslContext, tradeMap[SPOT]);
+  spdlog::info("Starting the kline stream...");
   fTradeStream.start();
   sTradeStream.start();
   ioContext.run();
+  spdlog::info("[Done] running the kline streams...");
 }
 
 tm getCurrentDate() {
@@ -355,9 +357,10 @@ int data_extractor_t::run(size_t const argc, char **argv) {
   }
 
   m_contextIsRunning = true;
+  std::this_thread::sleep_for(std::chrono::seconds(5));
   ioContext.run();
   // wait for all objects to be destroyed.
-  std::this_thread::sleep_for(std::chrono::seconds(2));
+  std::this_thread::sleep_for(std::chrono::seconds(5));
   m_contextIsRunning = false;
   return 0;
 }

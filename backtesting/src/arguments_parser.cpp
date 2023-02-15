@@ -29,8 +29,8 @@
   return ERROR_PARSE();
 
 using backtesting::utils::currentTimeToString;
+using backtesting::utils::dateStringToTimeT;
 using backtesting::utils::listContains;
-using backtesting::utils::stringToTimeT;
 
 bool verbose =
 #ifdef _DEBUG
@@ -155,7 +155,7 @@ void readTokensFromFileImpl(token_data_list_t &result,
       if (splits.size() != 3)
         continue;
       token_data_list_t::value_type d;
-      d.name = splits[0];
+      d.name = utils::toUpperString(splits[0]);
       d.baseAsset = splits[1];
       d.quoteAsset = splits[2];
       d.tradeType = tradeType;
@@ -277,16 +277,36 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     PRINT_INFO("End-date not specified, will use '{}'", config.dateToStr)
   }
 
-  auto &globalRtData = global_data_t::instance();
+  if (config.klineConfig) {
+    using backtesting::getContinuousKlineData;
 
-  if (auto const optStartTime = stringToTimeT(config.dateFromStr);
+    auto &klineConfig = *config.klineConfig;
+    if (!(klineConfig.callback &&
+          getContinuousKlineData(std::move(klineConfig)))) {
+      ERROR_EXIT("There was a problem setting the kline config");
+    }
+  }
+
+  if (config.bookTickerConfig) {
+    using backtesting::getContinuousBTickerData;
+
+    auto &bookTickerConfig = *config.bookTickerConfig;
+    if (!bookTickerConfig.callback &&
+        getContinuousBTickerData(std::move(bookTickerConfig))) {
+      ERROR_EXIT("There was a problem setting the book ticker config");
+    }
+  }
+  auto &globalRtData = global_data_t::instance();
+  globalRtData.rootPath = config.rootDir;
+
+  if (auto const optStartTime = dateStringToTimeT(config.dateFromStr);
       optStartTime.has_value()) {
     globalRtData.startTime = *optStartTime;
   } else {
     ERROR_EXIT("Unable to calculate the start date from user input");
   }
 
-  if (auto const optEndTime = stringToTimeT(config.dateToStr);
+  if (auto const optEndTime = dateStringToTimeT(config.dateToStr);
       optEndTime.has_value()) {
     globalRtData.endTime = *optEndTime;
   } else {
@@ -417,9 +437,14 @@ bool backtesting_t::prepareData() {
 
 #else
   globalRtData.allTokens = backtesting::readTokensFromFile(m_config->rootDir);
-
 #endif
 
+  std::sort(globalRtData.allTokens.begin(), globalRtData.allTokens.end(),
+            [](backtesting::token_data_list_t::value_type const &a,
+               backtesting::token_data_list_t::value_type const &b) {
+              return std::tie(a.name, a.tradeType) <
+                     std::tie(b.name, b.tradeType);
+            });
   using backtesting::utils::toUpperString;
   using backtesting::utils::trim;
   for (auto &token : globalRtData.allTokens) {
