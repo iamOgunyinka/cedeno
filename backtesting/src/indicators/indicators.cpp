@@ -78,7 +78,7 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
                 }
                 m_BWFS_config = indicators::config::bwfs::get_config( itr,   
                                                                       &indcs_state, 
-                                                                      num_of_indcs_per_mnger[(uint64_t)data_types::TRADE]);
+                                                                      num_of_indcs_per_mnger[(uint64_t)data_types::IND_TRADE]);
                 indcs_state[(uint64_t)types_e::BWFS_HANDLER] = true;
                 break;
             }
@@ -87,7 +87,7 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
                     std::__throw_runtime_error("You are setting EMA indicator twice");
                 }
                 m_ema_config = indicators::config::ema::get_config(itr);
-                num_of_indcs_per_mnger[(uint64_t)data_types::TRADE]++;
+                num_of_indcs_per_mnger[(uint64_t)data_types::IND_TRADE]++;
                 indcs_state[(uint64_t)types_e::EMA] = true;
                 break;
             }
@@ -108,7 +108,7 @@ void indicators_c::set(const std::vector<std::vector<std::string>> &indcs){
 
     m_indcs_trade_mngr = new indicators::ind_mngr_c<backtesting::trade_data_t,
                                                     indicators::indicator_t>(
-                                        num_of_indcs_per_mngr[(uint64_t)data_types::TRADE]
+                                        num_of_indcs_per_mngr[(uint64_t)data_types::IND_TRADE]
                                         );
     set_indicators_callbacks_(indcs_state);
 }

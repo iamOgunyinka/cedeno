@@ -18,8 +18,12 @@ struct ema_t{
     ~ema_t(){}
     indicators::indicator_t *common_db;
     const conf_ema_t *configuration;
-    bool first_data = false;
-    double last_ema_price = 0.0;
+
+    struct{
+        bool calculating = true;
+        double sumatory = 0.0;
+        uint8_t counter = 0;
+    }SMA;
 };
 
 void ema_callback( const backtesting::trade_data_t &trade_data, 

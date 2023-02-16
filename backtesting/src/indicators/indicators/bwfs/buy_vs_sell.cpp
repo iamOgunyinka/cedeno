@@ -17,10 +17,10 @@ static void reset_info_data(buy_vs_sell_t &handler){
 }
 
 static auto get_user( std::unordered_map<std::string, double> &handler,
-                      const std::string &id){
+                         const std::string &id){
     auto itr = handler.find(id);
     if(itr == handler.end()){
-        handler.emplace(id);
+        handler.emplace(id, 0.0);
         return handler.find(id);
     }
     return itr;

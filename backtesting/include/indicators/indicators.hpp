@@ -13,7 +13,7 @@
 namespace indicators{
 
 enum class data_types{
-    TRADE,
+    IND_TRADE,
     SIZE,
 };
 

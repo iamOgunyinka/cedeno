@@ -10,14 +10,23 @@ static void ema_calculate( indicators::ema_t &handler,
     ema_price = k*(curr_price - ema_price) + ema_price;
 }
 
+static bool sma_calculate( indicators::ema_t &handler,
+                           const backtesting::trade_data_t &trade_data){
+    handler.SMA.sumatory += trade_data.amountPerPiece;
+    if(++handler.SMA.counter == 30){
+        handler.common_db->indc_info.ema.price = handler.SMA.sumatory/handler.SMA.counter;
+        return true;
+    }
+    return false;
+}
+
 void ema_callback( const backtesting::trade_data_t &trade_data, 
                    indicators::indicator_t &handler_){
     indicators::ema_t handler = *handler_.indcs_var.ema_vars;
     std::cout<<__func__<<std::endl;
-    std::cout<<"ema: "<<handler.configuration->n<<std::endl;
-    if(handler.first_data == false){
-        handler.common_db->indc_info.ema.price = trade_data.amountPerPiece;
-        handler.first_data = true;
+    if(handler.SMA.calculating == true){
+        if(sma_calculate(handler, trade_data))
+            handler.SMA.calculating = false;
     }else{
         ema_calculate(handler, trade_data.amountPerPiece);
     }    

@@ -20,7 +20,7 @@ void python_script(void){
         // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_n", "qty_in_out", "tick_in_out"}, /*enable all*/
         // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_n", "mode:static"}, /*config mode*/
         {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in","buy_vs_sell", "mode:dynamic", "client_confirmation:878","time:45"}, /*config mode and time*/
-        {"ema"},
+        {"ema", "n:8"},
         // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in", "mode:dynamic", "tim:45"}, /*config wrong parameter*/
         // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in", "mode:dynamic", "time:45", "limit:89"},/*config all including parameters*/
     };
