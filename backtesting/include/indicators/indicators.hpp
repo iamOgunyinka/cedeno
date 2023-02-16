@@ -2,6 +2,7 @@
 #define INDICATORS_HPP_
 #include "helpers/cllbck_iterator.hpp"
 #include "indc_data.hpp"
+#include "testing.hpp"
 
 
 #include <ctime>
@@ -13,7 +14,8 @@
 namespace indicators{
 
 enum class data_types{
-    IND_TRADE,
+    INDC_TRADE,
+    INDC_KLINE,
     SIZE,
 };
 
@@ -23,12 +25,16 @@ class indicators_c{
         indicators::conf_ema_t m_ema_config;
 
         indicators::ind_mngr_c<backtesting::trade_data_t, indicators::indicator_t> *m_indcs_trade_mngr;
+        indicators::ind_mngr_c<kline_test_t, indicators::indicator_t> *m_indcs_kline_mngr;
         std::unordered_map<std::string, indicators::indicator_t> m_symbol_list;
 
         void delete_current_indicators_(void);
         uint64_t calculate_time_threshold_( const uint64_t &timestamp);
 
-        void set_indicators_callbacks_( const std::array<bool, 
+        void set_trade_stream_indicators( const std::array<bool, 
+                                        (uint64_t)types_e::SIZE> &indcs);
+
+        void set_kline_stream_indicators( const std::array<bool, 
                                         (uint64_t)types_e::SIZE> &indcs);
 
         void init_BWFS_indicators_(const std::vector<std::string> &itr);
@@ -48,6 +54,8 @@ class indicators_c{
         void set(const std::vector<std::vector<std::string>> &indcs);
 
         void process(const backtesting::trade_list_t &data);
+
+        void process(const kline_test_t &kline_data);
 };
 
 }

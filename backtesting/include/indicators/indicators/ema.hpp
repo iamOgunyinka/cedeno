@@ -4,6 +4,7 @@
 #include "user_data.hpp"
 #include "indc_data.hpp"
 
+#include "testing.hpp"
 namespace indicators{
 
 struct conf_ema_t{
@@ -26,7 +27,7 @@ struct ema_t{
     }SMA;
 };
 
-void ema_callback( const backtesting::trade_data_t &trade_data, 
+void ema_callback( const kline_test_t &kline_data, 
                    indicator_t &handler_);
 
 namespace config{

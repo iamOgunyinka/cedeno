@@ -21,6 +21,7 @@ void python_script(void){
         // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_n", "mode:static"}, /*config mode*/
         {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in","buy_vs_sell", "mode:dynamic", "client_confirmation:878","time:45"}, /*config mode and time*/
         {"ema", "n:8"},
+        {"sma"},
         // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in", "mode:dynamic", "tim:45"}, /*config wrong parameter*/
         // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in", "mode:dynamic", "time:45", "limit:89"},/*config all including parameters*/
     };
@@ -59,18 +60,26 @@ void print_info(const std::string &symbol){
              <<"qty_in_out: "<<indicator_info.cab.qty_in_out<<std::endl;
 }
 
-void tick(const uint64_t &price, const trade_side_e &side){
+static void tick_trade_stream(const uint64_t &price, const trade_side_e &side){
     trade_list_t trade_list = set_trade_list(indicator_handler, price, side);
     indicator_handler.process(trade_list);
     print_info("BTCUSDT");
 }
 
+static void tick_kline_stream(const uint64_t &price){
+    kline_test_t kline_data;
+    indicator_handler.process(kline_data);
+}
+
 int main(void){
     python_script();
     
-    tick(80, trade_side_e::buy);
-    tick(90, trade_side_e::buy);
-    tick(10, trade_side_e::sell);
+    tick_trade_stream(80, trade_side_e::buy);
+    tick_trade_stream(90, trade_side_e::buy);
+    tick_trade_stream(10, trade_side_e::sell);
+    
+    tick_kline_stream(90);
+    tick_kline_stream(80);
     return 0;
 
 }

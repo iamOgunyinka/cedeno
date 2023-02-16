@@ -1,6 +1,7 @@
 #include "indicators/ema.hpp"
 #include "indicators/helpers/indcs_utils.hpp"
 
+
 namespace indicators{
 
 static void ema_calculate( indicators::ema_t &handler, 
@@ -11,8 +12,8 @@ static void ema_calculate( indicators::ema_t &handler,
 }
 
 static bool sma_calculate( indicators::ema_t &handler,
-                           const backtesting::trade_data_t &trade_data){
-    handler.SMA.sumatory += trade_data.amountPerPiece;
+                           const kline_test_t &kline_data){
+    handler.SMA.sumatory += kline_data.price;
     if(++handler.SMA.counter == 30){
         handler.common_db->indc_info.ema.price = handler.SMA.sumatory/handler.SMA.counter;
         return true;
@@ -20,15 +21,15 @@ static bool sma_calculate( indicators::ema_t &handler,
     return false;
 }
 
-void ema_callback( const backtesting::trade_data_t &trade_data, 
+void ema_callback( const kline_test_t &kline_data, 
                    indicators::indicator_t &handler_){
-    indicators::ema_t handler = *handler_.indcs_var.ema_vars;
+    indicators::ema_t &handler = *handler_.indcs_var.ema_vars;
     std::cout<<__func__<<std::endl;
     if(handler.SMA.calculating == true){
-        if(sma_calculate(handler, trade_data))
+        if(sma_calculate(handler, kline_data))
             handler.SMA.calculating = false;
     }else{
-        ema_calculate(handler, trade_data.amountPerPiece);
+        ema_calculate(handler, kline_data.price);
     }    
 }
 

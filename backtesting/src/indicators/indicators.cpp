@@ -10,8 +10,6 @@
 
 namespace indicators{
 
-#define MAX_BWFS_PARAMS_SZ 3
-
 indicators_c::indicators_c(){
     m_indcs_trade_mngr = new indicators::ind_mngr_c<backtesting::trade_data_t, indicators::indicator_t>;
 }
@@ -24,7 +22,7 @@ void indicators_c::delete_current_indicators_(void){
     delete m_indcs_trade_mngr;
 }
 
-void indicators_c::set_indicators_callbacks_(const std::array<bool, (uint64_t)types_e::SIZE> &indcs){
+void indicators_c::set_trade_stream_indicators(const std::array<bool, (uint64_t)types_e::SIZE> &indcs){
     if(indcs[(uint64_t)types_e::BUY_VS_SELL] == true){
         m_indcs_trade_mngr->add_indicator(buy_vs_sell_callback);
     }
@@ -52,8 +50,13 @@ void indicators_c::set_indicators_callbacks_(const std::array<bool, (uint64_t)ty
     if(indcs[(uint64_t)types_e::TICK_IN_OUT] == true){
         m_indcs_trade_mngr->add_indicator(ticks_in_out_callback);
     }
+}
+void indicators_c::set_kline_stream_indicators(const std::array<bool, (uint64_t)types_e::SIZE> &indcs){
     if(indcs[(uint64_t)types_e::EMA] == true){
-        m_indcs_trade_mngr->add_indicator(ema_callback);
+        m_indcs_kline_mngr->add_indicator(ema_callback);
+    }
+    if(indcs[(uint64_t)types_e::SMA] == true){
+        m_indcs_kline_mngr->add_indicator(sma_callback);
     }
 }
 
@@ -73,22 +76,32 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
             case (uint64_t)types_e::TICK_IN_OUT:
             case (uint64_t)types_e::BUY_VS_SELL:
             {
-                if(indcs_state[(uint64_t)types_e::BWFS_HANDLER] == true){
+                if(indcs_state[(uint64_t)types_e::BWFS_HANDLER] == true)
                     std::__throw_runtime_error("You are setting BWFS indicator twice");
-                }
+
                 m_BWFS_config = indicators::config::bwfs::get_config( itr,   
                                                                       &indcs_state, 
-                                                                      num_of_indcs_per_mnger[(uint64_t)data_types::IND_TRADE]);
+                                                                      num_of_indcs_per_mnger[(uint64_t)data_types::INDC_TRADE]);
                 indcs_state[(uint64_t)types_e::BWFS_HANDLER] = true;
                 break;
             }
             case (uint64_t)types_e::EMA:{
-                if(indcs_state[(uint64_t)types_e::EMA] == true){
+                if(indcs_state[(uint64_t)types_e::EMA] == true)
                     std::__throw_runtime_error("You are setting EMA indicator twice");
-                }
+
                 m_ema_config = indicators::config::ema::get_config(itr);
-                num_of_indcs_per_mnger[(uint64_t)data_types::IND_TRADE]++;
+                num_of_indcs_per_mnger[(uint64_t)data_types::INDC_KLINE]++;
                 indcs_state[(uint64_t)types_e::EMA] = true;
+                break;
+            }
+            case (uint64_t)types_e::SMA:{
+                if(indcs_state[(uint64_t)types_e::SMA] == true)
+                    std::__throw_runtime_error("You are setting SMA indicator twice");
+                if(itr.size() > 1)
+                    std::__throw_runtime_error("SMA indicator has not config parameters");
+
+                num_of_indcs_per_mnger[(uint64_t)data_types::INDC_KLINE]++;
+                indcs_state[(uint64_t)types_e::SMA] = true;
                 break;
             }
             default:
@@ -108,9 +121,14 @@ void indicators_c::set(const std::vector<std::vector<std::string>> &indcs){
 
     m_indcs_trade_mngr = new indicators::ind_mngr_c<backtesting::trade_data_t,
                                                     indicators::indicator_t>(
-                                        num_of_indcs_per_mngr[(uint64_t)data_types::IND_TRADE]
+                                        num_of_indcs_per_mngr[(uint64_t)data_types::INDC_TRADE]
                                         );
-    set_indicators_callbacks_(indcs_state);
+    set_trade_stream_indicators(indcs_state);
+
+    m_indcs_kline_mngr = new indicators::ind_mngr_c<kline_test_t, indicators::indicator_t>(
+                                        num_of_indcs_per_mngr[(uint64_t)data_types::INDC_KLINE]
+                                        );
+    set_kline_stream_indicators(indcs_state);
 }
 
 void indicators_c::init_all_indicators_vars_(indicators::indicator_t &indcs){
@@ -124,6 +142,7 @@ void indicators_c::init_all_indicators_vars_(indicators::indicator_t &indcs){
     indcs.indcs_var.ticks_in_out_vars = std::make_unique<indicators::ticks_in_out_t>(indcs, m_BWFS_config); 
     indcs.indcs_var.buy_vs_sell_vars = std::make_unique<indicators::buy_vs_sell_t>(indcs, m_BWFS_config); 
     indcs.indcs_var.ema_vars = std::make_unique<indicators::ema_t>(indcs, m_ema_config); 
+    indcs.indcs_var.sma_vars = std::make_unique<indicators::sma_t>(indcs); 
 }
 
 auto indicators_c::init_new_symbol_(const std::string symbol){
@@ -144,6 +163,16 @@ void indicators_c::process(const backtesting::trade_list_t &trade_list){
         m_indcs_trade_mngr->process(trade_data, new_symbol.first->second);
     }else{
         m_indcs_trade_mngr->process(trade_data, itr->second);
+    }   
+}
+
+void indicators_c::process(const kline_test_t &kline_data){
+    auto itr = m_symbol_list.find(kline_data.symbol);
+    if(itr == m_symbol_list.end()){
+        auto new_symbol = init_new_symbol_(kline_data.symbol);
+        m_indcs_kline_mngr->process(kline_data, new_symbol.first->second);
+    }else{
+        m_indcs_kline_mngr->process(kline_data, itr->second);
     }   
 }
 
