@@ -32,7 +32,7 @@ void ema_callback( const kline_test_t &kline_data,
 
 namespace config{
 namespace ema{
-conf_ema_t get_config(const std::vector<std::string> &indcs);
+indicators::conf_ema_t get_config(const std::vector<std::string> &indcs);
 }
 }
 

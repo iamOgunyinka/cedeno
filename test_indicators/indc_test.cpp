@@ -22,6 +22,7 @@ void python_script(void){
         {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in","buy_vs_sell", "mode:dynamic", "client_confirmation:878","time:45"}, /*config mode and time*/
         {"ema", "n:8"},
         {"sma"},
+        {"macd"},
         // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in", "mode:dynamic", "tim:45"}, /*config wrong parameter*/
         // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in", "mode:dynamic", "time:45", "limit:89"},/*config all including parameters*/
     };

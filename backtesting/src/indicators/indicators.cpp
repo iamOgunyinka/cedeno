@@ -58,6 +58,9 @@ void indicators_c::set_kline_stream_indicators(const std::array<bool, (uint64_t)
     if(indcs[(uint64_t)types_e::SMA] == true){
         m_indcs_kline_mngr->add_indicator(sma_callback);
     }
+    if(indcs[(uint64_t)types_e::MACD] == true){
+        m_indcs_kline_mngr->add_indicator(macd_callback);
+    }
 }
 
 void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<std::string>> &indcs,
@@ -104,6 +107,15 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
                 indcs_state[(uint64_t)types_e::SMA] = true;
                 break;
             }
+            case (uint64_t)types_e::MACD:{
+                if(indcs_state[(uint64_t)types_e::MACD] == true)
+                    std::__throw_runtime_error("You are setting SMA indicator twice");
+
+                m_macd_config = indicators::config::macd::get_config(itr);
+                num_of_indcs_per_mnger[(uint64_t)data_types::INDC_KLINE]++;
+                indcs_state[(uint64_t)types_e::MACD] = true;
+                break;
+            }
             default:
                 std::__throw_runtime_error("Indicator does not exist");
                 break;
@@ -143,6 +155,7 @@ void indicators_c::init_all_indicators_vars_(indicators::indicator_t &indcs){
     indcs.indcs_var.buy_vs_sell_vars = std::make_unique<indicators::buy_vs_sell_t>(indcs, m_BWFS_config); 
     indcs.indcs_var.ema_vars = std::make_unique<indicators::ema_t>(indcs, m_ema_config); 
     indcs.indcs_var.sma_vars = std::make_unique<indicators::sma_t>(indcs); 
+    indcs.indcs_var.macd_vars = std::make_unique<indicators::macd_t>(indcs, m_macd_config); 
 }
 
 auto indicators_c::init_new_symbol_(const std::string symbol){

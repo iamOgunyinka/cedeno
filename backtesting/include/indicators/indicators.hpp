@@ -23,6 +23,7 @@ class indicators_c{
     private:
         indicators::conf_BWFS_t m_BWFS_config;
         indicators::conf_ema_t m_ema_config;
+        indicators::conf_macd_t  m_macd_config;
 
         indicators::ind_mngr_c<backtesting::trade_data_t, indicators::indicator_t> *m_indcs_trade_mngr;
         indicators::ind_mngr_c<kline_test_t, indicators::indicator_t> *m_indcs_kline_mngr;

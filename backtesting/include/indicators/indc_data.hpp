@@ -20,6 +20,7 @@ struct bwfs_hndlr_t;
 struct buy_vs_sell_t;
 struct ema_t;
 struct sma_t;
+struct macd_t;
 struct indicator_t;
 
 enum class types_e{
@@ -35,6 +36,7 @@ enum class types_e{
     BWFS_HANDLER,
     EMA,
     SMA,
+    MACD,
     SIZE,
 };
 
@@ -58,10 +60,17 @@ struct inf_sma_t{
     double price = 0.0;
 };
 
+struct inf_macd_t{
+    double macd = 0.0;
+    double signal = 0.0;
+    double histogram = 0.0;
+};
+
 struct inf_t{
     inf_BWFS_t cab; 
     inf_ema_t ema;
     inf_sma_t sma;
+    inf_macd_t macd;
 };
 
 struct indcs_vars_t{
@@ -76,6 +85,7 @@ struct indcs_vars_t{
     std::unique_ptr<buy_vs_sell_t> buy_vs_sell_vars = nullptr;
     std::unique_ptr<ema_t> ema_vars = nullptr;
     std::unique_ptr<sma_t> sma_vars = nullptr;
+    std::unique_ptr<macd_t> macd_vars = nullptr;
 };
 
 struct indicator_t{
@@ -94,7 +104,8 @@ static std::unordered_map<std::string, uint64_t> indc_list = {
 {"tick_in_out", (uint64_t)types_e::TICK_IN_OUT},
 {"buy_vs_sell", (uint64_t)types_e::BUY_VS_SELL},
 {"ema",         (uint64_t)types_e::EMA},
-{"sma",         (uint64_t)types_e::SMA}
+{"sma",         (uint64_t)types_e::SMA},
+{"macd",        (uint64_t)types_e::MACD}
 };
 
 }
@@ -111,5 +122,6 @@ static std::unordered_map<std::string, uint64_t> indc_list = {
 
 #include "indicators/ema.hpp"
 #include "indicators/sma.hpp"
+#include "indicators/macd.hpp"
 
 #endif
