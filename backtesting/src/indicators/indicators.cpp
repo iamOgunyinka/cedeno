@@ -154,7 +154,7 @@ void indicators_c::init_all_indicators_vars_(indicators::indicator_t &indcs){
     indcs.indcs_var.ticks_in_out_vars = std::make_unique<indicators::ticks_in_out_t>(indcs, m_BWFS_config); 
     indcs.indcs_var.buy_vs_sell_vars = std::make_unique<indicators::buy_vs_sell_t>(indcs, m_BWFS_config); 
     indcs.indcs_var.ema_vars = std::make_unique<indicators::ema_t>(indcs, m_ema_config); 
-    indcs.indcs_var.sma_vars = std::make_unique<indicators::sma_t>(indcs); 
+    indcs.indcs_var.sma_vars = std::make_unique<indicators::sma_t>(indcs, m_sma_config); 
     indcs.indcs_var.macd_vars = std::make_unique<indicators::macd_t>(indcs, m_macd_config); 
 }
 

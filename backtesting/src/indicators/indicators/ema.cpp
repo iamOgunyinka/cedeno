@@ -14,7 +14,7 @@ static void ema_calculate( indicators::ema_t &handler,
 static bool sma_calculate( indicators::ema_t &handler,
                            const kline_test_t &kline_data){
     handler.SMA.sumatory += kline_data.price;
-    if(++handler.SMA.counter == 30){
+    if(++handler.SMA.counter == handler.configuration->n){
         handler.common_db->indc_info.ema.price = handler.SMA.sumatory/handler.SMA.counter;
         return true;
     }

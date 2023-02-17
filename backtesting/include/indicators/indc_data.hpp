@@ -61,9 +61,7 @@ struct inf_sma_t{
 };
 
 struct inf_macd_t{
-    double macd = 0.0;
-    double signal = 0.0;
-    double histogram = 0.0;
+    double price = 0.0;
 };
 
 struct inf_t{

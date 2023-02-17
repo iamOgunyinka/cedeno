@@ -11,7 +11,6 @@
 namespace indicators{
 
 struct conf_macd_t{
-    uint64_t signal_period = 9;
     uint64_t high_period = 26;
     uint64_t low_period = 12;
 };
