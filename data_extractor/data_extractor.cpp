@@ -272,7 +272,7 @@ int data_extractor_t::run(size_t const argc, char **argv) {
     spdlog::info("Streams not specified, will use 'DEPTH' as default");
     streams.push_back(DEPTH);
   } else {
-    std::vector<std::string> const validStreams{INDC_TRADE, TICKER, BTICKER,
+    std::vector<std::string> const validStreams{TRADE, TICKER, BTICKER,
                                                 CANDLESTICK, DEPTH};
     for (auto &stream : streams) {
       if (!listContains(validStreams, stream)) {
@@ -303,9 +303,9 @@ int data_extractor_t::run(size_t const argc, char **argv) {
   if (!binance::createAllFiles(filenameMap, tokenList, streams, trades))
     return -1;
 
-  if (listContains(streams, INDC_TRADE)) {
+  if (listContains(streams, TRADE)) {
     std::thread([&] {
-      binance::fetchTradeStream(ioContext, *sslContext, filenameMap[INDC_TRADE]);
+      binance::fetchTradeStream(ioContext, *sslContext, filenameMap[TRADE]);
     }).detach();
   }
 
