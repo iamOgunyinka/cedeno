@@ -215,7 +215,7 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     PRINT_INFO("Streams not specified, will use 'DEPTH' as default")
     config.streams.push_back(DEPTH);
   } else {
-    std::vector<std::string> const validStreams{TRADE, TICKER, BTICKER,
+    std::vector<std::string> const validStreams{INDC_TRADE, TICKER, BTICKER,
                                                 CANDLESTICK, DEPTH};
     for (auto &stream : config.streams) {
       if (!listContains(validStreams, stream)) {
