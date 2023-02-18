@@ -7,14 +7,6 @@
 #include "common.hpp"
 #include "data_streamer.hpp"
 
-namespace boost {
-namespace asio {
-class io_context;
-}
-} // namespace boost
-
-namespace net = boost::asio;
-
 namespace backtesting {
 struct depth_data_t {
   struct depth_meta_t {
@@ -24,6 +16,7 @@ struct depth_data_t {
 
   std::string tokenName;
   time_t eventTime = 0;
+  trade_type_e tradeType = trade_type_e::none;
   uint64_t firstUpdateID = 0;
   uint64_t finalUpdateID = 0;
   uint64_t finalStreamUpdateID = 0;
@@ -41,6 +34,16 @@ private:
   static depth_data_t depthFromCSVRow(csv::CSVRow const &row);
 };
 
-void processDepthStream(net::io_context &ioContext, trade_map_td &tradeMap);
+struct py_depth_data_t {
+  uint64_t eventTime = 0;
+  int type = 0;
+  double price = 0.0;
+  double quantity = 0.0;
+};
+using py_depth_data_list_t = std::vector<py_depth_data_t>;
 
+void processDepthStream(trade_map_td &tradeMap);
+py_depth_data_list_t depthDataToPythonDepth(depth_data_t const &);
+using depth_event_callback_t = void (*)(py_depth_data_list_t);
+using depth_callback_map_t = std::map<int, std::vector<depth_event_callback_t>>;
 } // namespace backtesting

@@ -1,6 +1,9 @@
 #include "spot_order_book.hpp"
 #include <mutex>
+
+#ifdef _DEBUG
 #include <spdlog/spdlog.h>
+#endif
 
 namespace backtesting {
 using simple_sort_callback_t =
@@ -163,11 +166,15 @@ spot_order_book_t::spot_order_book_t(net::io_context &ioContext,
                    trade_type_e::spot),
       m_currentTimer(0) {
   auto firstData = m_dataStreamer.getNextData();
+  firstData.tradeType = m_tradeType;
+
   insertAndSort(firstData.bids, m_orderBook.bids, trade_side_e::buy,
                 m_tradeType, symbol, isGreater);
   insertAndSort(firstData.asks, m_orderBook.asks, trade_side_e::sell,
                 m_tradeType, symbol, isLesser);
   m_currentTimer = firstData.eventTime;
+
+  NewDepthObtained(firstData);
 }
 
 spot_order_book_t::~spot_order_book_t() {
@@ -462,6 +469,8 @@ void spot_order_book_t::setNextTimer() {
     m_periodicTimer.reset(new net::deadline_timer(m_ioContext));
 
   m_nextData = m_dataStreamer.getNextData();
+  m_nextData.tradeType = m_tradeType;
+  NewDepthObtained(m_nextData);
 
   // no more data but we need to keep the simulator running
   if (m_nextData.asks.empty() && m_nextData.bids.empty())

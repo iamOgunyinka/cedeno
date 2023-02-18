@@ -1,11 +1,16 @@
 #pragma once
 
-#include <boost/asio/io_context.hpp>
 #include <memory>
 
 #include "Signals/Signal.h"
 #include "depth_data.hpp"
 #include "user_data.hpp"
+
+namespace boost {
+namespace asio {
+class io_context;
+} // namespace asio
+} // namespace boost
 
 namespace net = boost::asio;
 
@@ -38,7 +43,9 @@ public:
 
   virtual ~order_book_t() {}
   virtual void run() = 0;
+
   Gallant::Signal1<trade_list_t> NewTradesCreated;
+  Gallant::Signal1<depth_data_t> NewDepthObtained;
 
 protected:
   virtual void match(backtesting::order_data_t order) = 0;

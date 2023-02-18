@@ -1,6 +1,7 @@
 #include <boost/asio/io_context.hpp>
 
 #include "callbacks.hpp"
+#include "container.hpp"
 #include "depth_data.hpp"
 #include "futures_order_book.hpp"
 #include "matching_engine.hpp"
@@ -18,7 +19,7 @@ struct global_order_book_t {
 
 std::vector<global_order_book_t> globalOrderBooks;
 
-void processDepthStream(net::io_context &ioContext, trade_map_td &tradeMap) {
+void processDepthStream(trade_map_td &tradeMap) {
   globalOrderBooks.clear();
   auto sorter = [](token_map_td &map, char const *str) mutable
       -> std::optional<data_streamer_t<depth_data_t>> {
@@ -42,6 +43,7 @@ void processDepthStream(net::io_context &ioContext, trade_map_td &tradeMap) {
     return symbol;
   };
 
+  boost::asio::io_context ioContext;
   for (auto &[tokenName, value] : tradeMap) {
     global_order_book_t d;
     d.tokenName = utils::toUpperString(tokenName);
@@ -62,12 +64,16 @@ void processDepthStream(net::io_context &ioContext, trade_map_td &tradeMap) {
   }
 
   auto &newTradesDelegate = trade_signal_handler_t::GetTradesDelegate();
+  auto &newDepthDelegate = depth_signal_handler_t::GetDepthDelegate();
+
   for (auto &orderBook : globalOrderBooks) {
     if (orderBook.futures) {
+      orderBook.futures->NewDepthObtained.Connect(newDepthDelegate);
       orderBook.futures->NewTradesCreated.Connect(newTradesDelegate);
       orderBook.futures->run();
     }
     if (orderBook.spot) {
+      orderBook.spot->NewDepthObtained.Connect(newDepthDelegate);
       orderBook.spot->NewTradesCreated.Connect(newTradesDelegate);
       orderBook.spot->run();
     }
@@ -200,4 +206,31 @@ bool cancelAllOrders(order_list_t const &orders) {
   }
   return true;
 }
+
+py_depth_data_list_t depthDataToPythonDepth(depth_data_t const &data) {
+  py_depth_data_list_t result;
+  result.reserve(data.asks.size() + data.bids.size());
+
+  for (auto const &a : data.asks) {
+    py_depth_data_t data;
+    data.eventTime = data.eventTime;
+    data.price = a.priceLevel;
+    data.quantity = a.quantity;
+    result.push_back(std::move(data));
+  }
+
+  for (auto const &b : data.bids) {
+    py_depth_data_t data;
+    data.type = 1;
+    data.eventTime = data.eventTime;
+    data.price = b.priceLevel;
+    data.quantity = b.quantity;
+    result.push_back(std::move(data));
+  }
+
+  return result;
+}
+
+depth_callback_map_t depthCallbackList{};
+::utils::waitable_container_t<depth_data_t> depthDataList{};
 } // namespace backtesting

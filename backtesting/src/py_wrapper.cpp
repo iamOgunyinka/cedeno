@@ -201,6 +201,11 @@ PYBIND11_MODULE(jbacktest, m) {
           return backtesting::registerTradesCallback(tt, cb, false);
         });
 
+  m.def("registerDepthCallback", [](backtesting::trade_type_e const tt,
+                                    backtesting::depth_event_callback_t cb) {
+    return backtesting::registerDepthCallback(tt, cb, false);
+  });
+
   m.def(
       "getDiscreteKline", [](backtesting::kline_config_t config) -> auto {
         if (config.callback)

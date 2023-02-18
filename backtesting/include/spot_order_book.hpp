@@ -1,7 +1,8 @@
 #pragma once
 
-#include "order_book_base.hpp"
 #include <boost/asio/deadline_timer.hpp>
+
+#include "order_book_base.hpp"
 
 namespace backtesting {
 namespace details {
