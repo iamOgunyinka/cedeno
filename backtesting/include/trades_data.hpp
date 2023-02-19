@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
@@ -21,7 +22,7 @@ struct trade_data_t {
 };
 using trade_list_t = std::vector<trade_data_t>;
 
-using recent_trades_callback_t = void (*)(trade_list_t const &);
+using recent_trades_callback_t = std::function<void(trade_list_t const &)>;
 using trades_callback_map_t =
     std::map<int, std::vector<recent_trades_callback_t>>;
 } // namespace backtesting

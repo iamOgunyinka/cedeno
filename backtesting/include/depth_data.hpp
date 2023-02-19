@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ctime>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -8,6 +9,15 @@
 #include "data_streamer.hpp"
 
 namespace backtesting {
+class order_book_t;
+
+struct global_order_book_t {
+  std::string tokenName;
+  std::unique_ptr<order_book_t> futures;
+  std::unique_ptr<order_book_t> spot;
+  static std::vector<global_order_book_t> globalOrderBooks;
+};
+
 struct depth_data_t {
   struct depth_meta_t {
     double priceLevel = 0.0;
@@ -44,6 +54,6 @@ using py_depth_data_list_t = std::vector<py_depth_data_t>;
 
 void processDepthStream(trade_map_td &tradeMap);
 py_depth_data_list_t depthDataToPythonDepth(depth_data_t const &);
-using depth_event_callback_t = void (*)(py_depth_data_list_t);
+using depth_event_callback_t = std::function<void(py_depth_data_list_t)>;
 using depth_callback_map_t = std::map<int, std::vector<depth_event_callback_t>>;
 } // namespace backtesting

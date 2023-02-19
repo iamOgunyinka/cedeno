@@ -148,10 +148,11 @@ order_data_t user_data_t::createOrderImpl(
 }
 
 int64_t user_data_t::sendOrderToBook(std::optional<order_data_t> &&order) {
-  if (!order)
-    return false;
-
   int64_t orderNumber = -1;
+
+  if (!order)
+    return orderNumber;
+
   if (bool const isSuccess = initiateOrder(*order); isSuccess) {
     orderNumber = order->orderID;
   } else {

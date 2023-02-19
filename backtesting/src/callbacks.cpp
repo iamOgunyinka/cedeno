@@ -25,7 +25,7 @@ void onNewTradesImpl() {
     auto trades = allNewTradeList.get();
     spdlog::info("Trades executed: {}", trades.size());
 
-    if (!(recentTradesCallbacks.empty() && trades.empty())) {
+    if (!recentTradesCallbacks.empty() && !trades.empty()) {
       auto &callbacks = recentTradesCallbacks[(int)trades[0].tradeType];
       for (auto const &callback : callbacks) {
         if (callback)
@@ -66,10 +66,6 @@ void registerDepthCallback(backtesting::trade_type_e const tt,
     return;
 
   auto &callbackList = depthCallbackList[(int)tt];
-  auto iter = std::find(callbackList.cbegin(), callbackList.cend(), cb);
-  if (iter != callbackList.cend())
-    return;
-
   if (!pushToFront)
     return callbackList.push_back(cb);
   callbackList.insert(callbackList.begin(), cb);
@@ -87,17 +83,11 @@ void registerTradesCallback(backtesting::trade_type_e const tt,
         using T = std::decay_t<decltype(cb)>;
         if constexpr (std::is_same_v<recent_trades_callback_t, T>) {
           auto &callbackList = recentTradesCallbacks[t];
-          auto iter = std::find(callbackList.cbegin(), callbackList.cend(), cb);
-          if (iter != callbackList.cend())
-            return;
           if (!pushToFront)
             return callbackList.push_back(cb);
           callbackList.insert(callbackList.begin(), cb);
         } else if constexpr (std::is_same_v<aggregate_trades_callback_t, T>) {
           auto &callbackList = aggTradesCallbacks[t];
-          auto iter = std::find(callbackList.cbegin(), callbackList.cend(), cb);
-          if (iter != callbackList.cend())
-            return;
           if (!pushToFront)
             return callbackList.push_back(cb);
           callbackList.insert(callbackList.begin(), cb);

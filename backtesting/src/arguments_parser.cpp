@@ -1,8 +1,7 @@
 #include "arguments_parser.hpp"
 
-#include "adaptor.hpp"
-
 #ifdef BT_USE_WITH_DB
+#include "adaptor.hpp"
 #include "database_connector.hpp"
 #endif // BT_USE_WITH_DB
 
@@ -171,13 +170,19 @@ token_data_list_t readTokensFromFile(std::string const &rootPath) {
   auto const dirPath = std::filesystem::path(rootPath);
   backtesting::token_data_list_t result;
 
-  if (!std::filesystem::exists(dirPath))
+  if (!std::filesystem::exists(dirPath)) {
+    PRINT_INFO("Path does not exist: {}", rootPath);
     return result;
+  }
 
   for (auto const &[tradeType, filename] : pair) {
     auto const path = dirPath / filename;
-    if (!std::filesystem::exists(filename))
+    PRINT_INFO("Path to navigate: {}", path.string());
+
+    if (!std::filesystem::exists(path)) {
+      PRINT_INFO("Path does not exist");
       continue;
+    }
     readTokensFromFileImpl(result, tradeType, path.string());
   }
   return result;
@@ -259,6 +264,7 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
         (std::filesystem::current_path() / "backtestingFiles").string();
   }
 
+  PRINT_INFO("Root directory: {}", config.rootDir);
   if (!std::filesystem::exists(config.rootDir)) {
     ERROR_EXIT("'{}' does not exist.", config.rootDir);
   }
@@ -347,6 +353,7 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
       spdlog::info("trade: {}", t);
   }
 
+  m_config.emplace(config);
   m_argumentParsed = true;
   return m_argumentParsed;
 }
@@ -437,6 +444,7 @@ bool backtesting_t::prepareData() {
 
 #else
   globalRtData.allTokens = backtesting::readTokensFromFile(m_config->rootDir);
+  PRINT_INFO("Size of allTokens: {}", globalRtData.allTokens.size());
 #endif
 
   std::sort(globalRtData.allTokens.begin(), globalRtData.allTokens.end(),
