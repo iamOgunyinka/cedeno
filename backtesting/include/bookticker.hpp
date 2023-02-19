@@ -55,10 +55,10 @@ struct bktick_config_t {
   static std::mutex globalBkTickerMutex;
 };
 
+bktick_list_t getDiscreteBTickerData(bktick_config_t &&config);
 bool checkAndValidateBookTickerRequestHelper(bktick_config_t &config);
 bool checkAndValidateBookTickerRequest(bktick_config_t &config);
 bool getContinuousBTickerData(bktick_config_t &&config);
-bktick_list_t getDiscreteBTickerData(bktick_config_t &&config);
 void bookTickerProcessingThreadImpl(bktick_config_t &&config);
 void insertNewestData(bktick_data_t const &, bktick_config_t const &);
 void bookTickerChildThreadImpl(bktick_config_t &&);

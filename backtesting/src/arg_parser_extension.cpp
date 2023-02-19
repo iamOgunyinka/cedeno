@@ -1,14 +1,10 @@
-#include <boost/asio/io_context.hpp>
-
 #include "arguments_parser.hpp"
 #include "global_data.hpp"
 
 #include <thread>
 
-namespace net = boost::asio;
-
 namespace backtesting {
-void processDepthStream(net::io_context &, trade_map_td &tradeMap);
+void processDepthStream(trade_map_td &tradeMap);
 void aggregateTradesImpl();
 void candlestickProcessingImpl();
 void bookTickerProcessingThreadImpl();
@@ -25,14 +21,14 @@ int backtesting_t::run() {
   std::thread{[] { backtesting::candlestickProcessingImpl(); }}.detach();
   std::thread{[] { backtesting::bookTickerProcessingThreadImpl(); }}.detach();
 
-  boost::asio::io_context ioContext;
+  std::unique_ptr<std::thread> depthStreamThread = nullptr;
   if (auto iter = csvFilenames.find(DEPTH); iter != csvFilenames.end()) {
-    std::thread{[csData = iter->second, &ioContext]() mutable {
-      backtesting::processDepthStream(ioContext, csData);
-    }}.detach();
+    depthStreamThread.reset(new std::thread{[csData = iter->second]() mutable {
+      backtesting::processDepthStream(csData);
+    }});
   }
 
-  std::this_thread::sleep_for(std::chrono::seconds(10));
-  ioContext.run();
+  if (depthStreamThread)
+    depthStreamThread->join();
   return 0;
 }

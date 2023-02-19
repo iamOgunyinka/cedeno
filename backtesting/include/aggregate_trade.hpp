@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
@@ -21,7 +22,8 @@ struct agg_trade_data_t {
 
 void aggregateTradesImpl();
 
-using aggregate_trades_callback_t = void (*)(agg_trade_data_t const &);
+using aggregate_trades_callback_t =
+    std::function<void(agg_trade_data_t const &)>;
 using agg_callback_map_t =
     std::map<int, std::vector<aggregate_trades_callback_t>>;
 } // namespace backtesting
