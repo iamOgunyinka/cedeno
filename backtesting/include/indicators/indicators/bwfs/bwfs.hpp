@@ -38,6 +38,10 @@ namespace bwfs{
 indicators::conf_BWFS_t get_config( const std::vector<std::string> &indcs,
                                          std::array<bool, (uint64_t)indicators::types_e::SIZE> *indc_states,
                                          uint64_t &counter);
+void get_config( const std::vector<std::string> &,
+                std::array<bool, (uint64_t)indicators::types_e::SIZE>*,
+                std::array<uint64_t, (uint64_t)data_types::SIZE> &,
+                void *config_);
 }
 }
 }

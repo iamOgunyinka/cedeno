@@ -13,16 +13,34 @@
 
 namespace indicators{
 
-enum class data_types{
-    INDC_TRADE,
-    INDC_KLINE,
-    SIZE,
-};
+struct indcs_config_t{
+    using config_callback_t =  void (*)( const std::vector<std::string> &,
+                             std::array<bool, (uint64_t)types_e::SIZE>*,
+                             std::array<uint64_t, (uint64_t)data_types::SIZE> &,
+                             void *config);
+    indcs_config_t( config_callback_t config_callback_, 
+                    void *config_,
+                    const indicators::types_e &id_number_,
+                    const std::string &id_str_):
+                    config_callback(config_callback_),
+                    config(config_),
+                    id_number(id_number_),
+                    id_str(id_str_)
+                    {}
+
+    config_callback_t config_callback; 
+    void *config;
+    std::string id_str;
+    indicators::types_e id_number;
+    std::array<std::string, (uint64_t)data_types::SIZE> source_data;
+};  
 
 class indicators_c{
     private:
-        indicators::conf_BWFS_t m_BWFS_config;
+        std::unordered_map<std::string, indcs_config_t> indcs_config;
+
         indicators::conf_ema_t m_ema_config;
+        indicators::conf_BWFS_t m_BWFS_config;
         indicators::conf_sma_t m_sma_config;
         indicators::conf_macd_t  m_macd_config;
 

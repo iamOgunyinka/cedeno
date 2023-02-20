@@ -40,6 +40,13 @@ enum class types_e{
     SIZE,
 };
 
+
+enum class data_types{
+    INDC_TRADE,
+    INDC_KLINE,
+    SIZE,
+};
+
 struct inf_BWFS_t{
     uint64_t ticks_in = 0;
     uint64_t ticks_out = 0;
@@ -105,6 +112,7 @@ static std::unordered_map<std::string, uint64_t> indc_list = {
 {"sma",         (uint64_t)types_e::SMA},
 {"macd",        (uint64_t)types_e::MACD}
 };
+
 
 }
 

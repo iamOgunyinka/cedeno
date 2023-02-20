@@ -10,8 +10,24 @@
 
 namespace indicators{
 
+void function( const std::vector<std::string> &,
+                             std::array<bool, (uint64_t)types_e::SIZE>*,
+                             std::array<uint64_t, (uint64_t)data_types::SIZE> &,
+                             void *config){}
+
 indicators_c::indicators_c(){
     m_indcs_trade_mngr = new indicators::ind_mngr_c<backtesting::trade_data_t, indicators::indicator_t>;
+    indcs_config.emplace(   "ticks_in", 
+                            indcs_config_t( indicators::config::bwfs::get_config, 
+                                            &m_BWFS_config, 
+                                            indicators::types_e::BWFS_HANDLER,
+                                            "BWFS")); 
+
+    indcs_config.emplace(   "ema", 
+                            indcs_config_t( indicators::config::ema::get_config, 
+                                            &m_ema_config, 
+                                            indicators::types_e::EMA,
+                                            "EMA")); 
 }
 
 indicators_c::~indicators_c(){
@@ -68,6 +84,7 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
                                                 std::array<uint64_t, (uint64_t)data_types::SIZE> &num_of_indcs_per_mnger){
     for(auto &itr : indcs){
         uint64_t indc_idx =  indc_list.find(itr.front())->second; 
+
         switch (indc_idx){
             case (uint64_t)types_e::TICK_IN:
             case (uint64_t)types_e::TICK_OUT:
@@ -79,22 +96,29 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
             case (uint64_t)types_e::TICK_IN_OUT:
             case (uint64_t)types_e::BUY_VS_SELL:
             {
-                if(indcs_state[(uint64_t)types_e::BWFS_HANDLER] == true)
-                    std::__throw_runtime_error("You are setting BWFS indicator twice");
-
-                m_BWFS_config = indicators::config::bwfs::get_config( itr,   
-                                                                      &indcs_state, 
-                                                                      num_of_indcs_per_mnger[(uint64_t)data_types::INDC_TRADE]);
-                indcs_state[(uint64_t)types_e::BWFS_HANDLER] = true;
+                auto indc = indcs_config.find("ticks_in");
+                if(indcs_state[(uint64_t)indc->second.id_number] == true){
+                    std::__throw_runtime_error(std::string( "You are setting " 
+                                                            + indc->second.id_str 
+                                                            +" indicator twice").c_str());
+                }
+                indc->second.config_callback(itr, &indcs_state, num_of_indcs_per_mnger, indc->second.config);
                 break;
             }
             case (uint64_t)types_e::EMA:{
-                if(indcs_state[(uint64_t)types_e::EMA] == true)
-                    std::__throw_runtime_error("You are setting EMA indicator twice");
+                auto indc = indcs_config.find("ema");
+                if(indcs_state[(uint64_t)indc->second.id_number] == true){
+                    std::__throw_runtime_error(std::string( "You are setting " 
+                                                            + indc->second.id_str 
+                                                            +" indicator twice").c_str());
+                }
+                indc->second.config_callback(itr, &indcs_state, num_of_indcs_per_mnger, indc->second.config);
+                // if(indcs_state[(uint64_t)types_e::EMA] == true)
+                //     std::__throw_runtime_error("You are setting EMA indicator twice");
 
-                m_ema_config = indicators::config::ema::get_config(itr);
-                num_of_indcs_per_mnger[(uint64_t)data_types::INDC_KLINE]++;
-                indcs_state[(uint64_t)types_e::EMA] = true;
+                // m_ema_config = indicators::config::ema::get_config(itr);
+                // num_of_indcs_per_mnger[(uint64_t)data_types::INDC_KLINE]++;
+                // indcs_state[(uint64_t)types_e::EMA] = true;
                 break;
             }
             case (uint64_t)types_e::SMA:{
