@@ -35,10 +35,10 @@ jobs:
         cmake ..
         make check -j 4
         sudo make install -j 4
+        export BOOST_ROOT="~/boost_dir/boost_1_81_0/"
 
     - name: Configure CMake
       run: |
-        export BOOST_ROOT="~/boost_dir/boost_1_81_0/"
         cd $thisdir
         git submodule update --init --recursive
         cmake .
