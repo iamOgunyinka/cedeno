@@ -4,6 +4,9 @@
 #include "callbacks.hpp"
 #include "candlestick_data.hpp"
 
+#include <pybind11/complex.h>
+#include <pybind11/functional.h>
+
 namespace py = pybind11;
 
 std::optional<backtesting::user_data_t> findUserByID(int64_t userID) {
@@ -64,24 +67,6 @@ PYBIND11_MODULE(jbacktest, m) {
       .value("one_week", backtesting::data_interval_e::one_week)
       .value("one_month", backtesting::data_interval_e::one_month);
 
-  py::class_<backtesting::configuration_t>(m, "AppConfig")
-      .def(py::init<>())
-      .def_readwrite("trades", &backtesting::configuration_t::tradeTypes)
-      .def_readwrite("symbols", &backtesting::configuration_t::tokenList)
-      .def_readwrite("path", &backtesting::configuration_t::rootDir)
-      .def_readwrite("dateStart", &backtesting::configuration_t::dateFromStr)
-      .def_readwrite("dateEnd", &backtesting::configuration_t::dateToStr)
-      .def_readwrite("klineConfig", &backtesting::configuration_t::klineConfig)
-      .def_readwrite("booktickerConfig",
-                     &backtesting::configuration_t::bookTickerConfig)
-#ifdef BT_USE_WITH_DB
-      .def_readwrite("dbConfigFilename",
-                     &backtesting::configuration_t::dbConfigFilename)
-      .def_readwrite("dbLaunchType",
-                     &backtesting::configuration_t::dbLaunchType)
-#endif
-      ;
-
   py::class_<backtesting::bktick_data_t>(m, "BooktickerData")
       .def(py::init<>())
       .def_readonly("ts", &backtesting::bktick_data_t::ts)
@@ -110,7 +95,12 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readwrite("startTime", &backtesting::kline_config_t::startTime)
       .def_readwrite("endTime", &backtesting::kline_config_t::endTime)
       .def_readwrite("maxLimit", &backtesting::kline_config_t::limit)
-      .def_readwrite("callback", &backtesting::kline_config_t::callback);
+      .def("setCallback", [](backtesting::kline_config_t &self,
+                             backtesting::kline_callback_t cb) {
+        if (!cb)
+          throw std::runtime_error("invalid callback passed to kline_config_t");
+        self.callback = cb;
+      });
 
   py::class_<backtesting::bktick_config_t>(m, "BooktickerConfig")
       .def(py::init<>())
@@ -118,7 +108,13 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readwrite("tradeType", &backtesting::bktick_config_t::tradeType)
       .def_readwrite("startTime", &backtesting::bktick_config_t::startTime)
       .def_readwrite("endTime", &backtesting::bktick_config_t::endTime)
-      .def_readwrite("callback", &backtesting::bktick_config_t::callback);
+      .def("setCallback", [](backtesting::bktick_config_t &self,
+                             backtesting::bktick_callback_t cb) {
+        if (!cb)
+          throw std::runtime_error(
+              "invalid callback passed to bookticker_config");
+        self.callback = cb;
+      });
 
   py::class_<backtesting::spot_wallet_asset_t>(m, "SpotWalletAsset")
       .def(py::init<std::string const &, double const>())
@@ -129,6 +125,13 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_property("symbolName",
                     &backtesting::spot_wallet_asset_t::getTokenName,
                     &backtesting::spot_wallet_asset_t::setTokenName);
+
+  py::class_<backtesting::py_depth_data_t>(m, "DepthData")
+      .def(py::init<>())
+      .def_readonly("ts", &backtesting::py_depth_data_t::eventTime)
+      .def_readonly("type", &backtesting::py_depth_data_t::type)
+      .def_readonly("price", &backtesting::py_depth_data_t::price)
+      .def_readonly("quantity", &backtesting::py_depth_data_t::quantity);
 
   py::class_<backtesting::order_data_t>(m, "OrderData")
       .def(py::init<>())
@@ -190,16 +193,45 @@ PYBIND11_MODULE(jbacktest, m) {
                   })
       .def("run", &backtesting_t::run);
 
+  py::class_<backtesting::configuration_t>(m, "AppConfig")
+      .def(py::init<>())
+      .def_readwrite("trades", &backtesting::configuration_t::tradeTypes)
+      .def_readwrite("symbols", &backtesting::configuration_t::tokenList)
+      .def_readwrite("path", &backtesting::configuration_t::rootDir)
+      .def_readwrite("dateStart", &backtesting::configuration_t::dateFromStr)
+      .def_readwrite("dateEnd", &backtesting::configuration_t::dateToStr)
+      .def_readwrite("klineConfig", &backtesting::configuration_t::klineConfig)
+      .def_readwrite("booktickerConfig",
+                     &backtesting::configuration_t::bookTickerConfig)
+#ifdef BT_USE_WITH_DB
+      .def_readwrite("dbConfigFilename",
+                     &backtesting::configuration_t::dbConfigFilename)
+      .def_readwrite("dbLaunchType",
+                     &backtesting::configuration_t::dbLaunchType)
+#endif
+      ;
+
   m.def("sendOrder", &backtesting::initiateOrder);
   m.def("findUserByID", &findUserByID);
   m.def("addUser", [](backtesting::spot_wallet_asset_list_t assets) {
     return findUserByID(global_data_t::newUser(std::move(assets)));
   });
 
-  m.def("registerTradesCallback",
-        [](backtesting::trade_type_e const tt, trades_event_callback_t cb) {
+  m.def("registerTradesCallback", [](backtesting::trade_type_e const tt,
+                                     backtesting::recent_trades_callback_t cb) {
+    return backtesting::registerTradesCallback(tt, cb, false);
+  });
+
+  m.def("registerAggTradesCallback",
+        [](backtesting::trade_type_e const tt,
+           backtesting::aggregate_trades_callback_t cb) {
           return backtesting::registerTradesCallback(tt, cb, false);
         });
+
+  m.def("registerDepthCallback", [](backtesting::trade_type_e const tt,
+                                    backtesting::depth_event_callback_t cb) {
+    return backtesting::registerDepthCallback(tt, cb, false);
+  });
 
   m.def(
       "getDiscreteKline", [](backtesting::kline_config_t config) -> auto {

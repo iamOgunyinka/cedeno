@@ -53,7 +53,7 @@ int64_t global_data_t::newUser(backtesting::spot_wallet_asset_list_t assets) {
   {
     auto iter = globalRtData.allUserAccounts.cend();
     do {
-      auto const userID = backtesting::utils::getRandomInteger();
+      userID = backtesting::utils::getRandomInteger();
       iter = std::find_if(
           globalRtData.allUserAccounts.cbegin(),
           globalRtData.allUserAccounts.cend(),

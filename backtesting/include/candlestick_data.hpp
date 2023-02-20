@@ -3,7 +3,6 @@
 #include "common.hpp"
 #include "container.hpp"
 #include "data_streamer.hpp"
-#include "enumerations.hpp"
 #include <functional>
 
 namespace backtesting {
@@ -81,8 +80,8 @@ struct kline_task_t {
   static ::utils::waitable_container_t<kline_task_t> klineScheduledTasks;
 };
 
-bool checkAndValidateKlineRequest(kline_config_t &config);
 optional_kline_list_t getDiscreteKlineData(kline_config_t &&config);
+bool checkAndValidateKlineRequest(kline_config_t &config);
 bool getContinuousKlineData(kline_config_t &&config);
 void candlestickProcessingImpl();
 void klineChildThreadImpl(kline_task_t &&);
