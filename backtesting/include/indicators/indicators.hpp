@@ -18,26 +18,25 @@ struct indcs_config_t{
                              std::array<bool, (uint64_t)types_e::SIZE>*,
                              std::array<uint64_t, (uint64_t)data_types::SIZE> &,
                              void *config);
-    indcs_config_t( config_callback_t config_callback_, 
-                    void *config_,
-                    const indicators::types_e &id_number_,
-                    const std::string &id_str_):
-                    config_callback(config_callback_),
-                    config(config_),
-                    id_number(id_number_),
-                    id_str(id_str_)
-                    {}
+    using trade_callback_t = void (*)( const backtesting::trade_data_t &, 
+                                       indicator_t &);
+    using kline_callback_t = void (*)( const kline_test_t &, 
+                                       indicator_t &);
+
+    indcs_config_t(){}
 
     config_callback_t config_callback; 
+    trade_callback_t  trade_callback; 
+    kline_callback_t  kline_callback; 
     void *config;
     std::string id_str;
     indicators::types_e id_number;
-    std::array<std::string, (uint64_t)data_types::SIZE> source_data;
+    std::vector<indicators::data_types> source;
 };  
 
 class indicators_c{
     private:
-        std::unordered_map<std::string, indcs_config_t> indcs_config;
+        std::unordered_map<std::string, indcs_config_t> indcs_config_list;
 
         indicators::conf_ema_t m_ema_config;
         indicators::conf_BWFS_t m_BWFS_config;
@@ -65,6 +64,7 @@ class indicators_c{
 
         void init_all_indicators_vars_(indicators::indicator_t &indcs);
         auto init_new_symbol_(const std::string symbol); 
+        void set_indicators_callback(const std::array<bool, (uint64_t)types_e::SIZE> &indcs);
     public:
         indicators_c();
         ~indicators_c();

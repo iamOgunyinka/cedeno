@@ -29,5 +29,14 @@ struct sma_t{
 
 void sma_callback( const kline_test_t &kline_data, 
                    indicator_t &handler_);
+
+namespace config{
+namespace sma{
+void get_config( const std::vector<std::string> &indcs,
+                std::array<bool, (uint64_t)indicators::types_e::SIZE> *indc_states,
+                std::array<uint64_t, (uint64_t)data_types::SIZE> &types_counter,
+                void *config_);
+}
+}
 }
 #endif

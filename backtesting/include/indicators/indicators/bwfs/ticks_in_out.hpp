@@ -15,7 +15,7 @@ struct ticks_in_out_t: public bwfs_t{
     ~ticks_in_out_t(){}
 };
 
-void ticks_in_out_callback( const backtesting::trade_data_t &trade_data, indicator_t &handler_);
+void tick_in_out_callback( const backtesting::trade_data_t &trade_data, indicator_t &handler_);
 
 }
 

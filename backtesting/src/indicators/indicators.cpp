@@ -17,17 +17,104 @@ void function( const std::vector<std::string> &,
 
 indicators_c::indicators_c(){
     m_indcs_trade_mngr = new indicators::ind_mngr_c<backtesting::trade_data_t, indicators::indicator_t>;
-    indcs_config.emplace(   "ticks_in", 
-                            indcs_config_t( indicators::config::bwfs::get_config, 
-                                            &m_BWFS_config, 
-                                            indicators::types_e::BWFS_HANDLER,
-                                            "BWFS")); 
 
-    indcs_config.emplace(   "ema", 
-                            indcs_config_t( indicators::config::ema::get_config, 
-                                            &m_ema_config, 
-                                            indicators::types_e::EMA,
-                                            "EMA")); 
+    indcs_config_t indc_config;
+    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config = &m_BWFS_config;
+    indc_config.id_number = indicators::types_e::TICK_IN;
+    indc_config.id_str = "TICK_IN";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
+    indc_config.trade_callback = indicators::ticks_in_callback;
+    indcs_config_list["tick_in"] = indc_config;
+
+    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config = &m_BWFS_config;
+    indc_config.id_number = indicators::types_e::TICK_OUT;
+    indc_config.id_str = "TICK_OUT";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
+    indc_config.trade_callback = indicators::ticks_out_callback;
+    indcs_config_list["tick_out"] = indc_config;
+
+    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config = &m_BWFS_config;
+    indc_config.id_number = indicators::types_e::QTY_IN;
+    indc_config.id_str = "QTY_IN";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
+    indc_config.trade_callback = indicators::qty_in_callback;
+    indcs_config_list["qty_in"] = indc_config;
+
+    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config = &m_BWFS_config;
+    indc_config.id_number = indicators::types_e::QTY_OUT;
+    indc_config.id_str = "QTY_OUT";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
+    indc_config.trade_callback = indicators::qty_out_callback;
+    indcs_config_list["qty_out"] = indc_config;
+
+    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config = &m_BWFS_config;
+    indc_config.id_number = indicators::types_e::AVRG_IN;
+    indc_config.id_str = "AVRG_IN";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
+    indc_config.trade_callback = indicators::avrg_in_callback;
+    indcs_config_list["avrg_in"] = indc_config;
+
+    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config = &m_BWFS_config;
+    indc_config.id_number = indicators::types_e::AVRG_OUT;
+    indc_config.id_str = "AVRG_OUT";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
+    indc_config.trade_callback = indicators::avrg_out_callback;
+    indcs_config_list["avrg_out"] = indc_config;
+
+    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config = &m_BWFS_config;
+    indc_config.id_number = indicators::types_e::QTY_IN_OUT;
+    indc_config.id_str = "QTY_IN_OUT";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
+    indc_config.trade_callback = indicators::qty_in_out_callback;
+    indcs_config_list["qty_in_out"] = indc_config;
+
+    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config = &m_BWFS_config;
+    indc_config.id_number = indicators::types_e::TICK_IN_OUT;
+    indc_config.id_str = "TICK_IN_OUT";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
+    indc_config.trade_callback = indicators::tick_in_out_callback;
+    indcs_config_list["tick_in_out"] = indc_config;
+
+    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config = &m_BWFS_config;
+    indc_config.id_number = indicators::types_e::BUY_VS_SELL;
+    indc_config.id_str = "BUY_VS_SELL";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
+    indc_config.trade_callback = indicators::buy_vs_sell_callback;
+    indcs_config_list["buy_vs_sell"] = indc_config;
+
+    indc_config.config_callback = indicators::config::ema::get_config;
+    indc_config.config = &m_ema_config; 
+    indc_config.id_number = indicators::types_e::EMA;
+    indc_config.id_str = "EMA";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_KLINE});
+    indc_config.kline_callback = indicators::ema_callback;
+    indcs_config_list["ema"] = indc_config;
+
+    indc_config.config_callback = indicators::config::macd::get_config;
+    indc_config.config = &m_macd_config;
+    indc_config.id_number = indicators::types_e::MACD;
+    indc_config.id_str = "MACD";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_KLINE});
+    indc_config.kline_callback = indicators::macd_callback;
+    indcs_config_list["macd"] = indc_config;
+
+    indc_config.config_callback = indicators::config::sma::get_config; 
+    indc_config.config = &m_sma_config; 
+    indc_config.id_number = indicators::types_e::SMA;
+    indc_config.id_str = "SMA";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_KLINE});
+    indc_config.kline_callback = indicators::sma_callback;
+    indcs_config_list["sma"] = indc_config;
+
 }
 
 indicators_c::~indicators_c(){
@@ -38,44 +125,23 @@ void indicators_c::delete_current_indicators_(void){
     delete m_indcs_trade_mngr;
 }
 
-void indicators_c::set_trade_stream_indicators(const std::array<bool, (uint64_t)types_e::SIZE> &indcs){
-    if(indcs[(uint64_t)types_e::BUY_VS_SELL] == true){
-        m_indcs_trade_mngr->add_indicator(buy_vs_sell_callback);
-    }
-    if(indcs[(uint64_t)types_e::TICK_IN] == true){
-        m_indcs_trade_mngr->add_indicator(ticks_in_callback);
-    }
-    if(indcs[(uint64_t)types_e::TICK_OUT] == true){
-        m_indcs_trade_mngr->add_indicator(ticks_out_callback);
-    }
-    if(indcs[(uint64_t)types_e::QTY_IN] == true){
-        m_indcs_trade_mngr->add_indicator(qty_in_callback);
-    }
-    if(indcs[(uint64_t)types_e::QTY_OUT] == true){
-        m_indcs_trade_mngr->add_indicator(qty_out_callback);
-    }
-    if(indcs[(uint64_t)types_e::AVRG_IN] == true){
-        m_indcs_trade_mngr->add_indicator(avrg_in_callback);
-    }
-    if(indcs[(uint64_t)types_e::AVRG_OUT] == true){
-        m_indcs_trade_mngr->add_indicator(avrg_out_callback);
-    }
-    if(indcs[(uint64_t)types_e::QTY_IN_OUT] == true){
-        m_indcs_trade_mngr->add_indicator(qty_in_out_callback);
-    }
-    if(indcs[(uint64_t)types_e::TICK_IN_OUT] == true){
-        m_indcs_trade_mngr->add_indicator(ticks_in_out_callback);
-    }
-}
-void indicators_c::set_kline_stream_indicators(const std::array<bool, (uint64_t)types_e::SIZE> &indcs){
-    if(indcs[(uint64_t)types_e::EMA] == true){
-        m_indcs_kline_mngr->add_indicator(ema_callback);
-    }
-    if(indcs[(uint64_t)types_e::SMA] == true){
-        m_indcs_kline_mngr->add_indicator(sma_callback);
-    }
-    if(indcs[(uint64_t)types_e::MACD] == true){
-        m_indcs_kline_mngr->add_indicator(macd_callback);
+void indicators_c::set_indicators_callback(const std::array<bool, (uint64_t)types_e::SIZE> &indcs_state){
+    for( uint64_t indc_idx = (uint64_t)types_e::BUY_VS_SELL, end = (uint64_t)types_e::SIZE; 
+         indc_idx <  end; 
+         indc_idx++){
+        if(indcs_state[indc_idx] == true){
+            auto indc_config = indcs_config_list.find(indc_list_key_number[indc_idx]);
+            for(auto &source : indc_config->second.source){
+                if(source == indicators::data_types::INDC_TRADE){
+                    std::cout<<"Adding " + indc_config->first<<std::endl;
+                    m_indcs_trade_mngr->add_indicator(indc_config->second.trade_callback);
+                }
+                if(source == indicators::data_types::INDC_KLINE){
+                    std::cout<<"Adding " + indc_config->first<<std::endl;
+                    m_indcs_kline_mngr->add_indicator(indc_config->second.kline_callback);
+                }
+            }
+        }
     }
 }
 
@@ -83,67 +149,16 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
                                                 std::array<bool, (uint64_t)types_e::SIZE> &indcs_state,
                                                 std::array<uint64_t, (uint64_t)data_types::SIZE> &num_of_indcs_per_mnger){
     for(auto &itr : indcs){
-        uint64_t indc_idx =  indc_list.find(itr.front())->second; 
+        auto indc = indcs_config_list.find(itr.front());
+        if(indc == indcs_config_list.end())
+            std::__throw_runtime_error("Indicator does not exist");
 
-        switch (indc_idx){
-            case (uint64_t)types_e::TICK_IN:
-            case (uint64_t)types_e::TICK_OUT:
-            case (uint64_t)types_e::QTY_IN:
-            case (uint64_t)types_e::QTY_OUT:
-            case (uint64_t)types_e::AVRG_IN:
-            case (uint64_t)types_e::AVRG_OUT:
-            case (uint64_t)types_e::QTY_IN_OUT:
-            case (uint64_t)types_e::TICK_IN_OUT:
-            case (uint64_t)types_e::BUY_VS_SELL:
-            {
-                auto indc = indcs_config.find("ticks_in");
-                if(indcs_state[(uint64_t)indc->second.id_number] == true){
-                    std::__throw_runtime_error(std::string( "You are setting " 
-                                                            + indc->second.id_str 
-                                                            +" indicator twice").c_str());
-                }
-                indc->second.config_callback(itr, &indcs_state, num_of_indcs_per_mnger, indc->second.config);
-                break;
-            }
-            case (uint64_t)types_e::EMA:{
-                auto indc = indcs_config.find("ema");
-                if(indcs_state[(uint64_t)indc->second.id_number] == true){
-                    std::__throw_runtime_error(std::string( "You are setting " 
-                                                            + indc->second.id_str 
-                                                            +" indicator twice").c_str());
-                }
-                indc->second.config_callback(itr, &indcs_state, num_of_indcs_per_mnger, indc->second.config);
-                // if(indcs_state[(uint64_t)types_e::EMA] == true)
-                //     std::__throw_runtime_error("You are setting EMA indicator twice");
-
-                // m_ema_config = indicators::config::ema::get_config(itr);
-                // num_of_indcs_per_mnger[(uint64_t)data_types::INDC_KLINE]++;
-                // indcs_state[(uint64_t)types_e::EMA] = true;
-                break;
-            }
-            case (uint64_t)types_e::SMA:{
-                if(indcs_state[(uint64_t)types_e::SMA] == true)
-                    std::__throw_runtime_error("You are setting SMA indicator twice");
-                if(itr.size() > 1)
-                    std::__throw_runtime_error("SMA indicator has not config parameters");
-
-                num_of_indcs_per_mnger[(uint64_t)data_types::INDC_KLINE]++;
-                indcs_state[(uint64_t)types_e::SMA] = true;
-                break;
-            }
-            case (uint64_t)types_e::MACD:{
-                if(indcs_state[(uint64_t)types_e::MACD] == true)
-                    std::__throw_runtime_error("You are setting SMA indicator twice");
-
-                m_macd_config = indicators::config::macd::get_config(itr);
-                num_of_indcs_per_mnger[(uint64_t)data_types::INDC_KLINE]++;
-                indcs_state[(uint64_t)types_e::MACD] = true;
-                break;
-            }
-            default:
-                std::__throw_runtime_error("Indicator does not exist");
-                break;
+        if(indcs_state[(uint64_t)indc->second.id_number] == true){
+            std::__throw_runtime_error(std::string( "You are setting " 
+                                                    + indc->second.id_str 
+                                                    +" indicator twice").c_str());
         }
+        indc->second.config_callback(itr, &indcs_state, num_of_indcs_per_mnger, indc->second.config);
     }
 }
 
@@ -154,17 +169,17 @@ void indicators_c::set(const std::vector<std::vector<std::string>> &indcs){
     std::array<uint64_t, (uint64_t)data_types::SIZE> num_of_indcs_per_mngr{0};    
 
     get_indicators_to_activing_(indcs, indcs_state, num_of_indcs_per_mngr);
-
+    std::cout<<"Size trade manager: "<<num_of_indcs_per_mngr[(uint64_t)data_types::INDC_TRADE]<<std::endl;
+    std::cout<<"Size kline manager: "<<num_of_indcs_per_mngr[(uint64_t)data_types::INDC_KLINE]<<std::endl;
     m_indcs_trade_mngr = new indicators::ind_mngr_c<backtesting::trade_data_t,
                                                     indicators::indicator_t>(
                                         num_of_indcs_per_mngr[(uint64_t)data_types::INDC_TRADE]
                                         );
-    set_trade_stream_indicators(indcs_state);
 
     m_indcs_kline_mngr = new indicators::ind_mngr_c<kline_test_t, indicators::indicator_t>(
                                         num_of_indcs_per_mngr[(uint64_t)data_types::INDC_KLINE]
                                         );
-    set_kline_stream_indicators(indcs_state);
+    set_indicators_callback(indcs_state);
 }
 
 void indicators_c::init_all_indicators_vars_(indicators::indicator_t &indcs){
@@ -203,7 +218,7 @@ void indicators_c::process(const backtesting::trade_list_t &trade_list){
     }   
 }
 
-void indicators_c::process(const kline_test_t &kline_data){
+void indicators_c::process(const kline_test_t &kline_data){ 
     auto itr = m_symbol_list.find(kline_data.symbol);
     if(itr == m_symbol_list.end()){
         auto new_symbol = init_new_symbol_(kline_data.symbol);
