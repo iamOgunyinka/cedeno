@@ -1,7 +1,7 @@
 import jbacktest as jb
 import datetime as dt
-import multiprocessing, time
-from multiprocessing import Process
+import multiprocessing, time, os
+from threading import Thread
 
 
 def klineCallback(klineData):
@@ -63,10 +63,11 @@ def testSpotLimitOrder():
     
 
 def createBacktestObject(nowDt, nowTs, tenDaysAgo):
+    os.chdir(os.path.dirname(__file__))
     appConfig = jb.AppConfig()
     appConfig.symbols = ["BTCUSDT"]
     appConfig.trades = ["SPOT"]
-    appConfig.path = "/home/joshuaogunyinka/Downloads/JoJo/cedeno/bin/backtestingFiles"
+    appConfig.path = f'{os.getcwd()}/backtestingFiles'
     appConfig.dateStart = tenDaysAgo.strftime('%Y-%m-%d %H:%M:%S')
     appConfig.dateEnd = nowDt.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -137,9 +138,9 @@ def main():
     testSpotMarketOrder()
     testSpotLimitOrder()
     
-    p = Process(target=spinPrint)
-    p.start()
-    p.join()
+    bgThread = Thread(target=spinPrint)
+    bgThread.start()
+    bgThread.join()
     print ("End of test")
 
 

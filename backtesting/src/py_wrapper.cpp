@@ -4,6 +4,9 @@
 #include "callbacks.hpp"
 #include "candlestick_data.hpp"
 
+#include <pybind11/complex.h>
+#include <pybind11/functional.h>
+
 namespace py = pybind11;
 
 std::optional<backtesting::user_data_t> findUserByID(int64_t userID) {
