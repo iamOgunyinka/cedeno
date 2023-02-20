@@ -150,6 +150,9 @@
       <Project>{82fa2f5c-88b5-4dea-baac-c2b7a2052550}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="script\test.py" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

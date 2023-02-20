@@ -19,12 +19,15 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt install libboost-all-dev cmake
+        sudo apt install cmake
         wget  https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81_0.tar.gz -O ~/boost_181.tar.gz
         mkdir ~/boost_dir
         tar -xzvf ~/boost_181.tar.gz -C ~/boost_dir
         sudo apt-get install -y python3-dev git cmake python3-pip libssl-dev unixodbc-dev gcc g++
         pip3 install pytest
+
+    - name: Install PyBind11
+      run: |
         git clone https://github.com/pybind/pybind11 ~/pybind11
         thisdir=`pwd`
         cd ~/pybind11
@@ -32,15 +35,20 @@ jobs:
         cmake ..
         make check -j 4
         sudo make install -j 4
+
+    - name: Configure CMake
+      run: |
         export BOOST_ROOT="~/boost_dir/boost_1_81_0/"
         cd $thisdir
         git submodule update --init --recursive
-    - name: Build
-      run: |
         cmake .
+
+    - name: Compile all projects
+      run: |
         make -j 2
+
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
       with:
        name: my-artifact
-       path: "./lib"
+       path: "./lib/jbacktest.*.so"
