@@ -25,6 +25,7 @@ void python_script(void){
         {"ema", "n:8"},
         {"sma", "n:80"},
         {"macd"},
+        {"wma", "n:5", "w:1,2.9,3.91,6,3.5"},
         // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in", "mode:dynamic", "tim:45"}, /*config wrong parameter*/
         // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in", "mode:dynamic", "time:45", "limit:89"},/*config all including parameters*/
     };

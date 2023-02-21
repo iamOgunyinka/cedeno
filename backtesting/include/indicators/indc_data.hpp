@@ -21,6 +21,7 @@ struct buy_vs_sell_t;
 struct ema_t;
 struct sma_t;
 struct macd_t;
+struct wma_t;
 struct indicator_t;
 
 enum class types_e{
@@ -36,6 +37,7 @@ enum class types_e{
     EMA,
     SMA,
     MACD,
+    WMA,
     SIZE,
 };
 
@@ -70,11 +72,16 @@ struct inf_macd_t{
     double price = 0.0;
 };
 
+struct inf_wma_t{
+    double price = 0.0;
+};
+
 struct inf_t{
     inf_BWFS_t cab; 
     inf_ema_t ema;
     inf_sma_t sma;
     inf_macd_t macd;
+    inf_wma_t wma;
 };
 
 struct indcs_vars_t{
@@ -90,6 +97,7 @@ struct indcs_vars_t{
     std::unique_ptr<ema_t> ema_vars = nullptr;
     std::unique_ptr<sma_t> sma_vars = nullptr;
     std::unique_ptr<macd_t> macd_vars = nullptr;
+    std::unique_ptr<wma_t> wma_vars = nullptr;
 };
 
 struct indicator_t{
@@ -109,7 +117,8 @@ static std::unordered_map<std::string, uint64_t> indc_list_key_string = {
 {"buy_vs_sell", (uint64_t)types_e::BUY_VS_SELL},
 {"ema",         (uint64_t)types_e::EMA},
 {"sma",         (uint64_t)types_e::SMA},
-{"macd",        (uint64_t)types_e::MACD}
+{"macd",        (uint64_t)types_e::MACD},
+{"wma",         (uint64_t)types_e::WMA}
 };
 
 static std::unordered_map<uint64_t, std::string> indc_list_key_number = {
@@ -124,7 +133,8 @@ static std::unordered_map<uint64_t, std::string> indc_list_key_number = {
 {(uint64_t)types_e::BUY_VS_SELL,    "buy_vs_sell"},
 {(uint64_t)types_e::EMA,            "ema"        },
 {(uint64_t)types_e::SMA,            "sma"        },
-{(uint64_t)types_e::MACD,           "macd"       }
+{(uint64_t)types_e::MACD,           "macd"       },
+{(uint64_t)types_e::WMA,            "wma"        }
 };
 
 
@@ -143,5 +153,6 @@ static std::unordered_map<uint64_t, std::string> indc_list_key_number = {
 #include "indicators/ema.hpp"
 #include "indicators/sma.hpp"
 #include "indicators/macd.hpp"
+#include "indicators/wma.hpp"
 
 #endif

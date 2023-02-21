@@ -115,6 +115,14 @@ indicators_c::indicators_c(){
     indc_config.kline_callback = indicators::sma_callback;
     indcs_config_list["sma"] = indc_config;
 
+    indc_config.config_callback = indicators::config::wma::get_config; 
+    indc_config.config = &m_wma_config; 
+    indc_config.id_number = indicators::types_e::WMA;
+    indc_config.id_str = "WMA";
+    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_KLINE});
+    indc_config.kline_callback = indicators::wma_callback;
+    indcs_config_list["wma"] = indc_config;
+
 }
 
 indicators_c::~indicators_c(){
@@ -195,6 +203,7 @@ void indicators_c::init_all_indicators_vars_(indicators::indicator_t &indcs){
     indcs.indcs_var.ema_vars = std::make_unique<indicators::ema_t>(indcs, m_ema_config); 
     indcs.indcs_var.sma_vars = std::make_unique<indicators::sma_t>(indcs, m_sma_config); 
     indcs.indcs_var.macd_vars = std::make_unique<indicators::macd_t>(indcs, m_macd_config); 
+    indcs.indcs_var.wma_vars = std::make_unique<indicators::wma_t>(indcs, m_wma_config); 
 }
 
 auto indicators_c::init_new_symbol_(const std::string symbol){
