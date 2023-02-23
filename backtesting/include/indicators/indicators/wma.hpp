@@ -13,31 +13,35 @@ namespace indicators{
 
 struct conf_wma_t{
     uint64_t n = 1;
-    std::vector<double> w;
+    std::vector<double> wi;
 };
 
 struct wma_t{
-    wma_t( indicators::indicator_t &common_db_,
-           indicators::conf_wma_t &configuration_):
-           common_db(&common_db_),
-           configuration(&configuration_){}
+    wma_t( indicator_t &common_db_,
+           conf_wma_t &configuration_):
+        common_db(&common_db_),
+        configuration(&configuration_){}
+
     ~wma_t(){}
-    indicators::indicator_t *common_db;
-    indicators::conf_wma_t *configuration;
+
+    indicator_t *common_db;
+    conf_wma_t *configuration;
     double sumatory = 0.0;
     uint64_t n = 0;
-    std::queue<double> prices_q;
-};
+    std::deque<double> prices_q;
+};  
 
 void wma_callback( const kline_test_t &kline_data, 
                    indicator_t &handler_);
 
 namespace config{
 namespace wma{
+
 void get_config( const std::vector<std::string> &indcs,
-                std::array<bool, (uint64_t)indicators::types_e::SIZE> *indc_states,
-                std::array<uint64_t, (uint64_t)data_types::SIZE> &types_counter,
+                std::array<bool, (uint64_t)types_e::SIZE> *indc_states,
+                std::array<uint64_t, (uint64_t)source_e::SIZE> &types_counter,
                 void *config_);
+
 }
 }
 }

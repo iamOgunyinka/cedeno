@@ -84,6 +84,9 @@ int main(void){
     
     tick_kline_stream(90);
     tick_kline_stream(80);
+    tick_kline_stream(80);
+    tick_kline_stream(80);
+    tick_kline_stream(80);
     return 0;
 
 }

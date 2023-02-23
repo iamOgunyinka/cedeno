@@ -16,13 +16,11 @@ struct avrg_in_t;
 struct avrg_out_t;
 struct qty_in_out_t;
 struct ticks_in_out_t;
-struct bwfs_hndlr_t;
 struct buy_vs_sell_t;
 struct ema_t;
 struct sma_t;
 struct macd_t;
 struct wma_t;
-struct indicator_t;
 
 enum class types_e{
     BUY_VS_SELL,
@@ -42,9 +40,9 @@ enum class types_e{
 };
 
 
-enum class data_types{
-    INDC_TRADE,
-    INDC_KLINE,
+enum class source_e{
+    SRC_TRADE,
+    SRC_KLINE,
     SIZE,
 };
 

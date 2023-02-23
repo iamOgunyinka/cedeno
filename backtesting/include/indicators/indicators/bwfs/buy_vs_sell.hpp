@@ -12,19 +12,21 @@ namespace indicators{
 struct buy_vs_sell_q_t{
     buy_vs_sell_q_t(const double &quantity_,
                     const std::string &buyer_id_,
-                    const std::string &seller_id_): buyer_id(buyer_id_),
-                                                    seller_id(seller_id_),
-                                                    quantity(quantity_){}
+                    const std::string &seller_id_): 
+        buyer_id(buyer_id_),
+        seller_id(seller_id_),
+        quantity(quantity_){}
+
     std::string buyer_id;
     std::string seller_id;
     double quantity;
 };
 
 struct buy_vs_sell_t: public bwfs_t{
-    buy_vs_sell_t( indicators::indicator_t &common_db_, 
-                   indicators::conf_BWFS_t &configuration_):
-                   bwfs_t( common_db_, 
-                           configuration_){}
+    buy_vs_sell_t( indicator_t &common_db_, 
+                   conf_BWFS_t &configuration_):
+    bwfs_t( common_db_, configuration_){}
+
     ~buy_vs_sell_t(){}
 
     uint64_t time_threshold = 0;
@@ -35,7 +37,7 @@ struct buy_vs_sell_t: public bwfs_t{
 };
 
 void buy_vs_sell_callback( const backtesting::trade_data_t &trade_data, 
-                           indicators::indicator_t &handler_);
+                           indicator_t &handler_);
 }
 
 

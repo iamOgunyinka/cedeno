@@ -16,7 +16,7 @@ namespace indicators{
 struct indcs_config_t{
     using config_callback_t =  void (*)( const std::vector<std::string> &,
                              std::array<bool, (uint64_t)types_e::SIZE>*,
-                             std::array<uint64_t, (uint64_t)data_types::SIZE> &,
+                             std::array<uint64_t, (uint64_t)source_e::SIZE> &,
                              void *config);
     using trade_callback_t = void (*)( const backtesting::trade_data_t &, 
                                        indicator_t &);
@@ -30,23 +30,23 @@ struct indcs_config_t{
     kline_callback_t  kline_callback; 
     void *config;
     std::string id_str;
-    indicators::types_e id_number;
-    std::vector<indicators::data_types> source;
+    types_e id_number;
+    std::vector<source_e> source;
 };  
 
 class indicators_c{
     private:
         std::unordered_map<std::string, indcs_config_t> indcs_config_list;
 
-        indicators::conf_ema_t m_ema_config;
-        indicators::conf_BWFS_t m_BWFS_config;
-        indicators::conf_sma_t m_sma_config;
-        indicators::conf_macd_t  m_macd_config;
-        indicators::conf_wma_t  m_wma_config;
+        conf_ema_t m_ema_config;
+        conf_BWFS_t m_BWFS_config;
+        conf_sma_t m_sma_config;
+        conf_macd_t  m_macd_config;
+        conf_wma_t  m_wma_config;
 
-        indicators::ind_mngr_c<backtesting::trade_data_t, indicators::indicator_t> *m_indcs_trade_mngr;
-        indicators::ind_mngr_c<kline_test_t, indicators::indicator_t> *m_indcs_kline_mngr;
-        std::unordered_map<std::string, indicators::indicator_t> m_symbol_list;
+        ind_mngr_c<backtesting::trade_data_t, indicator_t> *m_indcs_trade_mngr;
+        ind_mngr_c<kline_test_t, indicator_t> *m_indcs_kline_mngr;
+        std::unordered_map<std::string, indicator_t> m_symbol_list;
 
         void delete_current_indicators_(void);
         uint64_t calculate_time_threshold_( const uint64_t &timestamp);
@@ -61,16 +61,16 @@ class indicators_c{
 
         void get_indicators_to_activing_( const std::vector<std::vector<std::string>> &indcs,
                                           std::array<bool, (uint64_t)types_e::SIZE> &indcs_state,
-                                          std::array<uint64_t, (uint64_t)data_types::SIZE> &num_of_indcs_per_mnger);
+                                          std::array<uint64_t, (uint64_t)source_e::SIZE> &num_of_indcs_per_mnger);
 
-        void init_all_indicators_vars_(indicators::indicator_t &indcs);
+        void init_all_indicators_vars_(indicator_t &indcs);
         auto init_new_symbol_(const std::string symbol); 
         void set_indicators_callback(const std::array<bool, (uint64_t)types_e::SIZE> &indcs);
     public:
         indicators_c();
         ~indicators_c();
 
-        indicators::inf_t get(const std::string &symbol);
+        inf_t get(const std::string &symbol);
 
         void set(const std::vector<std::vector<std::string>> &indcs);
 

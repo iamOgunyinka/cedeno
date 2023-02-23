@@ -12,115 +12,115 @@ namespace indicators{
 
 void function( const std::vector<std::string> &,
                              std::array<bool, (uint64_t)types_e::SIZE>*,
-                             std::array<uint64_t, (uint64_t)data_types::SIZE> &,
+                             std::array<uint64_t, (uint64_t)source_e::SIZE> &,
                              void *config){}
 
 indicators_c::indicators_c(){
-    m_indcs_trade_mngr = new indicators::ind_mngr_c<backtesting::trade_data_t, indicators::indicator_t>;
+    m_indcs_trade_mngr = new ind_mngr_c<backtesting::trade_data_t, indicator_t>;
 
     indcs_config_t indc_config;
-    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config_callback = config::bwfs::get_config;
     indc_config.config = &m_BWFS_config;
-    indc_config.id_number = indicators::types_e::TICK_IN;
+    indc_config.id_number = types_e::TICK_IN;
     indc_config.id_str = "TICK_IN";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
-    indc_config.trade_callback = indicators::ticks_in_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_TRADE});
+    indc_config.trade_callback = ticks_in_callback;
     indcs_config_list["tick_in"] = indc_config;
 
-    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config_callback = config::bwfs::get_config;
     indc_config.config = &m_BWFS_config;
-    indc_config.id_number = indicators::types_e::TICK_OUT;
+    indc_config.id_number = types_e::TICK_OUT;
     indc_config.id_str = "TICK_OUT";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
-    indc_config.trade_callback = indicators::ticks_out_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_TRADE});
+    indc_config.trade_callback = ticks_out_callback;
     indcs_config_list["tick_out"] = indc_config;
 
-    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config_callback = config::bwfs::get_config;
     indc_config.config = &m_BWFS_config;
-    indc_config.id_number = indicators::types_e::QTY_IN;
+    indc_config.id_number = types_e::QTY_IN;
     indc_config.id_str = "QTY_IN";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
-    indc_config.trade_callback = indicators::qty_in_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_TRADE});
+    indc_config.trade_callback = qty_in_callback;
     indcs_config_list["qty_in"] = indc_config;
 
-    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config_callback = config::bwfs::get_config;
     indc_config.config = &m_BWFS_config;
-    indc_config.id_number = indicators::types_e::QTY_OUT;
+    indc_config.id_number = types_e::QTY_OUT;
     indc_config.id_str = "QTY_OUT";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
-    indc_config.trade_callback = indicators::qty_out_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_TRADE});
+    indc_config.trade_callback = qty_out_callback;
     indcs_config_list["qty_out"] = indc_config;
 
-    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config_callback = config::bwfs::get_config;
     indc_config.config = &m_BWFS_config;
-    indc_config.id_number = indicators::types_e::AVRG_IN;
+    indc_config.id_number = types_e::AVRG_IN;
     indc_config.id_str = "AVRG_IN";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
-    indc_config.trade_callback = indicators::avrg_in_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_TRADE});
+    indc_config.trade_callback = avrg_in_callback;
     indcs_config_list["avrg_in"] = indc_config;
 
-    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config_callback = config::bwfs::get_config;
     indc_config.config = &m_BWFS_config;
-    indc_config.id_number = indicators::types_e::AVRG_OUT;
+    indc_config.id_number = types_e::AVRG_OUT;
     indc_config.id_str = "AVRG_OUT";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
-    indc_config.trade_callback = indicators::avrg_out_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_TRADE});
+    indc_config.trade_callback = avrg_out_callback;
     indcs_config_list["avrg_out"] = indc_config;
 
-    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config_callback = config::bwfs::get_config;
     indc_config.config = &m_BWFS_config;
-    indc_config.id_number = indicators::types_e::QTY_IN_OUT;
+    indc_config.id_number = types_e::QTY_IN_OUT;
     indc_config.id_str = "QTY_IN_OUT";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
-    indc_config.trade_callback = indicators::qty_in_out_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_TRADE});
+    indc_config.trade_callback = qty_in_out_callback;
     indcs_config_list["qty_in_out"] = indc_config;
 
-    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config_callback = config::bwfs::get_config;
     indc_config.config = &m_BWFS_config;
-    indc_config.id_number = indicators::types_e::TICK_IN_OUT;
+    indc_config.id_number = types_e::TICK_IN_OUT;
     indc_config.id_str = "TICK_IN_OUT";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
-    indc_config.trade_callback = indicators::tick_in_out_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_TRADE});
+    indc_config.trade_callback = tick_in_out_callback;
     indcs_config_list["tick_in_out"] = indc_config;
 
-    indc_config.config_callback = indicators::config::bwfs::get_config;
+    indc_config.config_callback = config::bwfs::get_config;
     indc_config.config = &m_BWFS_config;
-    indc_config.id_number = indicators::types_e::BUY_VS_SELL;
+    indc_config.id_number = types_e::BUY_VS_SELL;
     indc_config.id_str = "BUY_VS_SELL";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_TRADE});
-    indc_config.trade_callback = indicators::buy_vs_sell_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_TRADE});
+    indc_config.trade_callback = buy_vs_sell_callback;
     indcs_config_list["buy_vs_sell"] = indc_config;
 
-    indc_config.config_callback = indicators::config::ema::get_config;
+    indc_config.config_callback = config::ema::get_config;
     indc_config.config = &m_ema_config; 
-    indc_config.id_number = indicators::types_e::EMA;
+    indc_config.id_number = types_e::EMA;
     indc_config.id_str = "EMA";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_KLINE});
-    indc_config.kline_callback = indicators::ema_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_KLINE});
+    indc_config.kline_callback = ema_callback;
     indcs_config_list["ema"] = indc_config;
 
-    indc_config.config_callback = indicators::config::macd::get_config;
+    indc_config.config_callback = config::macd::get_config;
     indc_config.config = &m_macd_config;
-    indc_config.id_number = indicators::types_e::MACD;
+    indc_config.id_number = types_e::MACD;
     indc_config.id_str = "MACD";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_KLINE});
-    indc_config.kline_callback = indicators::macd_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_KLINE});
+    indc_config.kline_callback = macd_callback;
     indcs_config_list["macd"] = indc_config;
 
-    indc_config.config_callback = indicators::config::sma::get_config; 
+    indc_config.config_callback = config::sma::get_config; 
     indc_config.config = &m_sma_config; 
-    indc_config.id_number = indicators::types_e::SMA;
+    indc_config.id_number = types_e::SMA;
     indc_config.id_str = "SMA";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_KLINE});
-    indc_config.kline_callback = indicators::sma_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_KLINE});
+    indc_config.kline_callback = sma_callback;
     indcs_config_list["sma"] = indc_config;
 
-    indc_config.config_callback = indicators::config::wma::get_config; 
+    indc_config.config_callback = config::wma::get_config; 
     indc_config.config = &m_wma_config; 
-    indc_config.id_number = indicators::types_e::WMA;
+    indc_config.id_number = types_e::WMA;
     indc_config.id_str = "WMA";
-    indc_config.source = std::vector<indicators::data_types>({data_types::INDC_KLINE});
-    indc_config.kline_callback = indicators::wma_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_KLINE});
+    indc_config.kline_callback = wma_callback;
     indcs_config_list["wma"] = indc_config;
 
 }
@@ -140,11 +140,11 @@ void indicators_c::set_indicators_callback(const std::array<bool, (uint64_t)type
         if(indcs_state[indc_idx] == true){
             auto indc_config = indcs_config_list.find(indc_list_key_number[indc_idx]);
             for(auto &source : indc_config->second.source){
-                if(source == indicators::data_types::INDC_TRADE){
+                if(source == source_e::SRC_TRADE){
                     std::cout<<"Adding " + indc_config->first<<std::endl;
                     m_indcs_trade_mngr->add_indicator(indc_config->second.trade_callback);
                 }
-                if(source == indicators::data_types::INDC_KLINE){
+                if(source == source_e::SRC_KLINE){
                     std::cout<<"Adding " + indc_config->first<<std::endl;
                     m_indcs_kline_mngr->add_indicator(indc_config->second.kline_callback);
                 }
@@ -155,7 +155,7 @@ void indicators_c::set_indicators_callback(const std::array<bool, (uint64_t)type
 
 void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<std::string>> &indcs,
                                                 std::array<bool, (uint64_t)types_e::SIZE> &indcs_state,
-                                                std::array<uint64_t, (uint64_t)data_types::SIZE> &num_of_indcs_per_mnger){
+                                                std::array<uint64_t, (uint64_t)source_e::SIZE> &num_of_indcs_per_mnger){
     for(auto &itr : indcs){
         auto indc = indcs_config_list.find(itr.front());
         if(indc == indcs_config_list.end())
@@ -174,45 +174,45 @@ void indicators_c::set(const std::vector<std::vector<std::string>> &indcs){
     delete_current_indicators_();
 
     std::array<bool, (uint64_t)types_e::SIZE> indcs_state{false};
-    std::array<uint64_t, (uint64_t)data_types::SIZE> num_of_indcs_per_mngr{0};    
+    std::array<uint64_t, (uint64_t)source_e::SIZE> num_of_indcs_per_mngr{0};    
 
     get_indicators_to_activing_(indcs, indcs_state, num_of_indcs_per_mngr);
-    std::cout<<"Size trade manager: "<<num_of_indcs_per_mngr[(uint64_t)data_types::INDC_TRADE]<<std::endl;
-    std::cout<<"Size kline manager: "<<num_of_indcs_per_mngr[(uint64_t)data_types::INDC_KLINE]<<std::endl;
-    m_indcs_trade_mngr = new indicators::ind_mngr_c<backtesting::trade_data_t,
-                                                    indicators::indicator_t>(
-                                        num_of_indcs_per_mngr[(uint64_t)data_types::INDC_TRADE]
+    std::cout<<"Size trade manager: "<<num_of_indcs_per_mngr[(uint64_t)source_e::SRC_TRADE]<<std::endl;
+    std::cout<<"Size kline manager: "<<num_of_indcs_per_mngr[(uint64_t)source_e::SRC_KLINE]<<std::endl;
+    m_indcs_trade_mngr = new ind_mngr_c<backtesting::trade_data_t,
+                                                    indicator_t>(
+                                        num_of_indcs_per_mngr[(uint64_t)source_e::SRC_TRADE]
                                         );
 
-    m_indcs_kline_mngr = new indicators::ind_mngr_c<kline_test_t, indicators::indicator_t>(
-                                        num_of_indcs_per_mngr[(uint64_t)data_types::INDC_KLINE]
+    m_indcs_kline_mngr = new ind_mngr_c<kline_test_t, indicator_t>(
+                                        num_of_indcs_per_mngr[(uint64_t)source_e::SRC_KLINE]
                                         );
     set_indicators_callback(indcs_state);
 }
 
-void indicators_c::init_all_indicators_vars_(indicators::indicator_t &indcs){
-    indcs.indcs_var.ticks_in_vars = std::make_unique<indicators::ticks_in_t>(indcs, m_BWFS_config); 
-    indcs.indcs_var.ticks_out_vars = std::make_unique<indicators::ticks_out_t>(indcs, m_BWFS_config); 
-    indcs.indcs_var.qtys_in_vars = std::make_unique<indicators::qty_in_t>(indcs, m_BWFS_config); 
-    indcs.indcs_var.qty_out_vars = std::make_unique<indicators::qty_out_t>(indcs, m_BWFS_config); 
-    indcs.indcs_var.avrg_in_vars = std::make_unique<indicators::avrg_in_t>(indcs, m_BWFS_config); 
-    indcs.indcs_var.avrg_out_vars = std::make_unique<indicators::avrg_out_t>(indcs, m_BWFS_config); 
-    indcs.indcs_var.qty_in_out_vars = std::make_unique<indicators::qty_in_out_t>(indcs, m_BWFS_config); 
-    indcs.indcs_var.ticks_in_out_vars = std::make_unique<indicators::ticks_in_out_t>(indcs, m_BWFS_config); 
-    indcs.indcs_var.buy_vs_sell_vars = std::make_unique<indicators::buy_vs_sell_t>(indcs, m_BWFS_config); 
-    indcs.indcs_var.ema_vars = std::make_unique<indicators::ema_t>(indcs, m_ema_config); 
-    indcs.indcs_var.sma_vars = std::make_unique<indicators::sma_t>(indcs, m_sma_config); 
-    indcs.indcs_var.macd_vars = std::make_unique<indicators::macd_t>(indcs, m_macd_config); 
-    indcs.indcs_var.wma_vars = std::make_unique<indicators::wma_t>(indcs, m_wma_config); 
+void indicators_c::init_all_indicators_vars_(indicator_t &indcs){
+    indcs.indcs_var.ticks_in_vars = std::make_unique<ticks_in_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.ticks_out_vars = std::make_unique<ticks_out_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.qtys_in_vars = std::make_unique<qty_in_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.qty_out_vars = std::make_unique<qty_out_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.avrg_in_vars = std::make_unique<avrg_in_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.avrg_out_vars = std::make_unique<avrg_out_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.qty_in_out_vars = std::make_unique<qty_in_out_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.ticks_in_out_vars = std::make_unique<ticks_in_out_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.buy_vs_sell_vars = std::make_unique<buy_vs_sell_t>(indcs, m_BWFS_config); 
+    indcs.indcs_var.ema_vars = std::make_unique<ema_t>(indcs, m_ema_config); 
+    indcs.indcs_var.sma_vars = std::make_unique<sma_t>(indcs, m_sma_config); 
+    indcs.indcs_var.macd_vars = std::make_unique<macd_t>(indcs, m_macd_config); 
+    indcs.indcs_var.wma_vars = std::make_unique<wma_t>(indcs, m_wma_config); 
 }
 
 auto indicators_c::init_new_symbol_(const std::string symbol){
-    auto itr = m_symbol_list.emplace(symbol, indicators::indicator_t());
+    auto itr = m_symbol_list.emplace(symbol, indicator_t());
     init_all_indicators_vars_(itr.first->second);
     return itr;
 }
 
-indicators::inf_t indicators_c::get(const std::string &symbol){
+inf_t indicators_c::get(const std::string &symbol){
     return m_symbol_list[symbol].indc_info;
 }
 

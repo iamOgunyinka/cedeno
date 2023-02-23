@@ -6,8 +6,8 @@
 
 namespace indicators{    
 
-bwfs_t::bwfs_t( indicators::indicator_t &common_db_, 
-                indicators::conf_BWFS_t &configuration_): indcs_c(common_db_){
+bwfs_t::bwfs_t( indicator_t &common_db_, 
+                conf_BWFS_t &configuration_): indcs_c(common_db_){
     common_db = &common_db_;
     configuration = &configuration_;
 }
@@ -50,11 +50,11 @@ static void get_indicators_( const std::vector<std::string> &indicators,
 }
 
 static void get_config_( const std::vector<std::string> &indcs,
-                         indicators::conf_BWFS_t &config,  
+                         conf_BWFS_t &config,  
                          const uint64_t &indx){
     
     std::for_each(indcs.begin() + indx, indcs.end(), [&](const std::string &config_str){
-            auto config_pair = indicators::indcs_utils::split_string(config_str, ":"); 
+            auto config_pair = utils::split_string(config_str, ":"); 
             if(config_pair.first == "mode"){
                 if(config_pair.second == "static"){
                     config.mode = bwfs_mode_e::STATIC;
@@ -75,14 +75,14 @@ static void get_config_( const std::vector<std::string> &indcs,
 }
 
 void get_config( const std::vector<std::string> &indcs,
-                std::array<bool, (uint64_t)indicators::types_e::SIZE> *indc_states,
-                std::array<uint64_t, (uint64_t)data_types::SIZE> &types_counter,
+                std::array<bool, (uint64_t)types_e::SIZE> *indc_states,
+                std::array<uint64_t, (uint64_t)source_e::SIZE> &types_counter,
                 void *config_){
-    indicators::conf_BWFS_t &config = *((indicators::conf_BWFS_t*)config_);
+    conf_BWFS_t &config = *((conf_BWFS_t*)config_);
     config = conf_BWFS_t(); 
     uint8_t config_idx = 0;
 
-    get_indicators_(indcs, *indc_states, types_counter[(uint64_t)indicators::data_types::INDC_TRADE], config_idx );
+    get_indicators_(indcs, *indc_states, types_counter[(uint64_t)source_e::SRC_TRADE], config_idx );
     if(config_idx  < indcs.size()){
         check_indc_confg_params_(indcs, config_idx, 3, "BWFS");
         get_config_(indcs, config, config_idx);

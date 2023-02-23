@@ -24,24 +24,25 @@ struct conf_BWFS_t{
 };
 
 struct bwfs_t : public indcs_c{
-    bwfs_t( indicators::indicator_t &common_db_, 
-            indicators::conf_BWFS_t &configuration_);
+    bwfs_t( indicator_t &common_db_, 
+            conf_BWFS_t &configuration_);
+
     ~bwfs_t();
-    indicators::indicator_t *common_db;
-    indicators::conf_BWFS_t *configuration;
+
+    indicator_t *common_db;
+    conf_BWFS_t *configuration;
 };
 }
 #include "indc_data.hpp"
 namespace indicators{
 namespace config{
 namespace bwfs{
-indicators::conf_BWFS_t get_config( const std::vector<std::string> &indcs,
-                                         std::array<bool, (uint64_t)indicators::types_e::SIZE> *indc_states,
-                                         uint64_t &counter);
+
 void get_config( const std::vector<std::string> &,
-                std::array<bool, (uint64_t)indicators::types_e::SIZE>*,
-                std::array<uint64_t, (uint64_t)data_types::SIZE> &,
-                void *config_);
+                 std::array<bool, (uint64_t)types_e::SIZE>*,
+                 std::array<uint64_t, (uint64_t)source_e::SIZE> &,
+                 void *config_);
+                 
 }
 }
 }

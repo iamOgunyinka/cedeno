@@ -5,15 +5,15 @@
 
 namespace indicators{
 
-static void calculate_macd(indicators::macd_t &handler){
-    indicators::inf_macd_t &inf_macd = handler.common_db->indc_info.macd;
+static void calculate_macd(macd_t &handler){
+    inf_macd_t &inf_macd = handler.common_db->indc_info.macd;
     inf_macd.price = handler.ema_q[handler.configuration->high_period] - 
                      handler.ema_q[handler.configuration->low_period];
 }
 
 void macd_callback( const kline_test_t &kline_data, 
-                    indicators::indicator_t &handler_){
-    indicators::macd_t &handler = *handler_.indcs_var.macd_vars;
+                    indicator_t &handler_){
+    macd_t &handler = *handler_.indcs_var.macd_vars;
     std::cout<<__func__<<std::endl;
     if(handler.n <= handler.configuration->high_period){
         handler.ema_q.push_front(handler.common_db->indc_info.ema.price);
@@ -31,7 +31,7 @@ void macd_callback( const kline_test_t &kline_data,
 namespace config{
 namespace macd{
 
-static void check_config_values_parameters(const indicators::conf_macd_t &config){
+static void check_config_values_parameters(const conf_macd_t &config){
     if(config.high_period < config.low_period)
         std::__throw_runtime_error("MACD high period must be higher than low period");
     if( config.high_period == 0 || config.low_period == 0)
@@ -40,19 +40,19 @@ static void check_config_values_parameters(const indicators::conf_macd_t &config
 }
 
 void get_config( const std::vector<std::string> &indcs,
-                std::array<bool, (uint64_t)indicators::types_e::SIZE> *indc_states,
-                std::array<uint64_t, (uint64_t)data_types::SIZE> &types_counter,
+                std::array<bool, (uint64_t)types_e::SIZE> *indc_states,
+                std::array<uint64_t, (uint64_t)source_e::SIZE> &types_counter,
                 void *config_){
-    indicators::conf_macd_t &config = *((indicators::conf_macd_t*)config_);
-    config = indicators::conf_macd_t();
+    conf_macd_t &config = *((conf_macd_t*)config_);
+    config = conf_macd_t();
     if(indcs.size() > 1){
         if(indcs.size() != 3)
             std::__throw_runtime_error("MACD incorrect numbers of config parameters");
 
         std::for_each(indcs.begin() + 1, indcs.end(), [&](const std::string &str){
-            auto config_pair = indicators::indcs_utils::split_string(str, ":");
+            auto config_pair = utils::split_string(str, ":");
 
-            if(!indicators::indcs_utils::check_if_string_is_number(config_pair.second))
+            if(!utils::check_if_string_is_number(config_pair.second))
                 std::__throw_runtime_error("Wrong ema config, n must be a number");
 
             if(config_pair.first == "high"){
@@ -68,7 +68,7 @@ void get_config( const std::vector<std::string> &indcs,
     config.high_period--;
     config.low_period--;
     (*indc_states)[(uint64_t)types_e::MACD] = true;
-    types_counter[(uint64_t)indicators::data_types::INDC_KLINE]++;
+    types_counter[(uint64_t)source_e::SRC_KLINE]++;
 }
 
 }

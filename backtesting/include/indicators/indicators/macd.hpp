@@ -16,12 +16,14 @@ struct conf_macd_t{
 };
 
 struct macd_t{
-    macd_t( indicators::indicator_t &common_db_,
+    macd_t( indicator_t &common_db_,
            conf_macd_t &configuration_):
-           common_db(&common_db_),
-           configuration(&configuration_){}
+        common_db(&common_db_),
+        configuration(&configuration_){}
+
     ~macd_t(){}
-    indicators::indicator_t *common_db;
+
+    indicator_t *common_db;
     const conf_macd_t *configuration;
     std::deque<double> ema_q;
     uint64_t n = 0;
@@ -33,8 +35,8 @@ void macd_callback( const kline_test_t &kline_data,
 namespace config{
 namespace macd{
 void get_config( const std::vector<std::string> &indcs,
-                std::array<bool, (uint64_t)indicators::types_e::SIZE> *indc_states,
-                std::array<uint64_t, (uint64_t)data_types::SIZE> &types_counter,
+                std::array<bool, (uint64_t)types_e::SIZE> *indc_states,
+                std::array<uint64_t, (uint64_t)source_e::SIZE> &types_counter,
                 void *config_);
 }
 }

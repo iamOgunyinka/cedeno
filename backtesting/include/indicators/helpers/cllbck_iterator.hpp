@@ -35,11 +35,13 @@ class ind_mngr_c{
 
 
 template <typename T,typename B>
-ind_mngr_c<T, B>::ind_mngr_c():m_cllbcks(nullptr), 
-                            m_sz_indcs(0){} 
+ind_mngr_c<T, B>::ind_mngr_c():
+    m_cllbcks(nullptr), 
+    m_sz_indcs(0){} 
 
 template <typename T,typename B>
-ind_mngr_c<T, B>::ind_mngr_c(const uint64_t &sz_indcs): m_sz_indcs(sz_indcs){
+ind_mngr_c<T, B>::ind_mngr_c(const uint64_t &sz_indcs): 
+    m_sz_indcs(sz_indcs){
     m_cllbcks = new indc_cllbck_p[sz_indcs]{nullptr};
 } 
 
@@ -69,7 +71,8 @@ void ind_mngr_c<T, B>::add_indicator(indc_cllbck_p ind_hndlr){
 }
 
 template <typename T,typename B>
-void ind_mngr_c<T, B>::process(const T &data, B &indc_data){
+void ind_mngr_c<T, B>::process( const T &data, 
+                                B &indc_data){
     for(uint64_t index = 0; index < m_sz_indcs_set; index++){
         (*m_cllbcks[index])(data, indc_data);
     }
