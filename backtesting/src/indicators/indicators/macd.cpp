@@ -42,7 +42,8 @@ static void check_config_values_parameters(const conf_macd_t &config){
 void get_config( const std::vector<std::string> &indcs,
                 std::array<bool, (uint64_t)types_e::SIZE> *indc_states,
                 std::array<uint64_t, (uint64_t)source_e::SIZE> &types_counter,
-                void *config_){
+                void *config_,
+                std::vector<source_e> &sources){
     conf_macd_t &config = *((conf_macd_t*)config_);
     config = conf_macd_t();
     if(indcs.size() > 1){
@@ -52,7 +53,7 @@ void get_config( const std::vector<std::string> &indcs,
         std::for_each(indcs.begin() + 1, indcs.end(), [&](const std::string &str){
             auto config_pair = utils::split_string(str, ":");
 
-            if(!utils::check_if_string_is_number(config_pair.second))
+            if(!(bool)utils::get_number_type_from_string(config_pair.second))
                 std::__throw_runtime_error("Wrong ema config, n must be a number");
 
             if(config_pair.first == "high"){

@@ -77,7 +77,8 @@ static void get_config_( const std::vector<std::string> &indcs,
 void get_config( const std::vector<std::string> &indcs,
                 std::array<bool, (uint64_t)types_e::SIZE> *indc_states,
                 std::array<uint64_t, (uint64_t)source_e::SIZE> &types_counter,
-                void *config_){
+                void *config_,
+                std::vector<source_e> &sources){
     conf_BWFS_t &config = *((conf_BWFS_t*)config_);
     config = conf_BWFS_t(); 
     uint8_t config_idx = 0;

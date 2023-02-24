@@ -41,7 +41,8 @@ namespace bwfs{
 void get_config( const std::vector<std::string> &,
                  std::array<bool, (uint64_t)types_e::SIZE>*,
                  std::array<uint64_t, (uint64_t)source_e::SIZE> &,
-                 void *config_);
+                 void *config_, 
+                 std::vector<source_e> &sources);
                  
 }
 }

@@ -16,24 +16,27 @@ std::pair<std::string, std::string> split_string( const std::string &str,
     );
 }
 
-bool check_if_string_is_number(const std::string &str){
+num_types get_number_type_from_string(const std::string &str){
     size_t sz = str.size();
     if(sz == 1){
-        return std::isdigit(str[0]);
+        return num_types::INTEGER;
     }
 
-    for(uint64_t idx = 0, counter = 0; idx < sz; idx++){
+    uint8_t counter = 0;
+    for(uint64_t idx = 0; idx < sz; idx++){
         const char &c = str[idx];
         if(c == '.'){
             if(idx == 0 || idx == (sz-1))
-                return false;
+                return num_types::NO_NUMBER;
             if(++counter == 2)
-                return false;
+                return num_types::NO_NUMBER;
         }else if(!std::isdigit(c)){
-            return false;
+            return num_types::NO_NUMBER;
         }
     }
-    return true;
+    if(counter)
+        return num_types::DOUBLE;
+    return num_types::INTEGER;
 }
 
 void split_string_by_delimiter( const std::string &str, 

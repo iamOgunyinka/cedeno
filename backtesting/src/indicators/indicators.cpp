@@ -95,8 +95,9 @@ indicators_c::indicators_c(){
     indc_config.config = &m_ema_config; 
     indc_config.id_number = types_e::EMA;
     indc_config.id_str = "EMA";
-    indc_config.source = std::vector<source_e>({source_e::SRC_KLINE});
-    indc_config.kline_callback = ema_callback;
+    indc_config.source = std::vector<source_e>({source_e::SRC_TRADE});
+    indc_config.kline_callback = ema_kline_callback;
+    indc_config.trade_callback = ema_trade_callback;
     indcs_config_list["ema"] = indc_config;
 
     indc_config.config_callback = config::macd::get_config;
@@ -123,6 +124,13 @@ indicators_c::indicators_c(){
     indc_config.kline_callback = wma_callback;
     indcs_config_list["wma"] = indc_config;
 
+    indc_config.config_callback = config::atr::get_config; 
+    indc_config.config = &m_atr_config; 
+    indc_config.id_number = types_e::ATR;
+    indc_config.id_str = "ATR";
+    indc_config.source = std::vector<source_e>({source_e::SRC_KLINE});
+    indc_config.kline_callback = atr_callback;
+    indcs_config_list["atr"] = indc_config;
 }
 
 indicators_c::~indicators_c(){
@@ -166,7 +174,7 @@ void indicators_c::get_indicators_to_activing_( const std::vector<std::vector<st
                                                     + indc->second.id_str 
                                                     +" indicator twice").c_str());
         }
-        indc->second.config_callback(itr, &indcs_state, num_of_indcs_per_mnger, indc->second.config);
+        indc->second.config_callback(itr, &indcs_state, num_of_indcs_per_mnger, indc->second.config, indc->second.source);
     }
 }
 
@@ -204,6 +212,7 @@ void indicators_c::init_all_indicators_vars_(indicator_t &indcs){
     indcs.indcs_var.sma_vars = std::make_unique<sma_t>(indcs, m_sma_config); 
     indcs.indcs_var.macd_vars = std::make_unique<macd_t>(indcs, m_macd_config); 
     indcs.indcs_var.wma_vars = std::make_unique<wma_t>(indcs, m_wma_config); 
+    indcs.indcs_var.atr_vars = std::make_unique<atr_t>(indcs, m_atr_config); 
 }
 
 auto indicators_c::init_new_symbol_(const std::string symbol){

@@ -15,19 +15,12 @@ using namespace backtesting;
 
 void python_script(void){
     std::vector<std::vector<std::string>> indicator_config{
-        // {"qty_in","qty_out","tick_in","tick_out"},
-        // {"qty_out","ticks_in","qty_in","tick_out"}, /*diferent order*/
-        // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_n", "qty_in_out", "tick_in_out"}, /*enable all*/
-        // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_n", "mode:static"}, /*config mode*/
         {"qty_out", "qty_in", "tick_in","tick_out", "avrg_out", "avrg_in","buy_vs_sell", "mode:dynamic", "client_confirmation:878","time:45"}, /*config mode and time*/
-        // {"qty_out", "qty_in"}, /*config mode and time*/
-        // {"bwfs", "qty_out", "qty_in", "tick_in"}, /*config mode and time*/
         {"ema", "n:8"},
         {"sma", "n:80"},
         {"macd"},
         {"wma", "n:5", "w:1,2.9,3.91,6,3.5"},
-        // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in", "mode:dynamic", "tim:45"}, /*config wrong parameter*/
-        // {"qty_in","qty_out","tick_in","tick_out", "avrg_out", "avrg_in", "mode:dynamic", "time:45", "limit:89"},/*config all including parameters*/
+        {"atr", "n:10"},
     };
     indicator_handler.set(indicator_config);
 }
