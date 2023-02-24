@@ -10,28 +10,16 @@ Write your code in this editor and press "Run" button to compile and execute it.
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <optional>
 
-void split_string_by_delimiter( const std::string &str, 
-                                const char &delimiter,
-                                std::vector<std::string> &result){
-    size_t end_index = 0;
-    size_t start_index = 0;
-    while (end_index != std::string::npos)
-    {   
-        end_index = str.find_first_of(delimiter,start_index);
-        result.push_back(str.substr(start_index, end_index - start_index));
-        start_index = end_index+1;
-    }
-    for(auto &str : result){
-        std::cout<<str<<std::endl;
-    }   
-}
+std::optional<int> optional_function(const bool &b){
+    if(b)
+        return 8;
+    return {};
+}   
 
 int main(void)
 {
-    std::vector<std::string> result;
-    split_string_by_delimiter( "1,2,3,4,5,6",
-                                ',',
-                                result);
+    std::cout<<std::is_same_v<double, int><<std::endl;
     return 0;
 }

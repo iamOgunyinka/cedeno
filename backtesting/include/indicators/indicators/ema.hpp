@@ -29,17 +29,19 @@ struct ema_t{
     }SMA;
 };
 
-void ema_callback( const kline_test_t &kline_data, 
-                   indicator_t &handler_);
+void ema_trade_callback( const backtesting::trade_data_t &trade_data, 
+                         indicator_t &handler_);
+void ema_kline_callback( const kline_test_t &kline_data, 
+                         indicator_t &handler_);
 
 namespace config{
 namespace ema{
-conf_ema_t get_config(const std::vector<std::string> &indcs);
 
 void get_config( const std::vector<std::string> &indcs,
                 std::array<bool, (uint64_t)types_e::SIZE> *indc_states,
                 std::array<uint64_t, (uint64_t)source_e::SIZE> &types_counter,
-                void *config_);
+                void *config_, 
+                std::vector<source_e> &sources);
 }
 }
 

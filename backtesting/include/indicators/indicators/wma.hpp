@@ -40,7 +40,8 @@ namespace wma{
 void get_config( const std::vector<std::string> &indcs,
                 std::array<bool, (uint64_t)types_e::SIZE> *indc_states,
                 std::array<uint64_t, (uint64_t)source_e::SIZE> &types_counter,
-                void *config_);
+                void *config_,
+                std::vector<source_e> &sources);
 
 }
 }

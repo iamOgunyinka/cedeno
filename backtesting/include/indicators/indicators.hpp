@@ -17,7 +17,8 @@ struct indcs_config_t{
     using config_callback_t =  void (*)( const std::vector<std::string> &,
                              std::array<bool, (uint64_t)types_e::SIZE>*,
                              std::array<uint64_t, (uint64_t)source_e::SIZE> &,
-                             void *config);
+                             void *,
+                             std::vector<source_e> &);
     using trade_callback_t = void (*)( const backtesting::trade_data_t &, 
                                        indicator_t &);
     using kline_callback_t = void (*)( const kline_test_t &, 
@@ -43,6 +44,7 @@ class indicators_c{
         conf_sma_t m_sma_config;
         conf_macd_t  m_macd_config;
         conf_wma_t  m_wma_config;
+        conf_atr_t  m_atr_config;
 
         ind_mngr_c<backtesting::trade_data_t, indicator_t> *m_indcs_trade_mngr;
         ind_mngr_c<kline_test_t, indicator_t> *m_indcs_kline_mngr;
