@@ -12,6 +12,7 @@ namespace indicators{
 
 struct conf_atr_t{
     uint64_t n = 14;
+    uint64_t threshold = n+1;
 };
 
 struct atr_t{
@@ -26,7 +27,8 @@ struct atr_t{
     conf_atr_t *configuration;
     double sumatory = 0.0;
     uint64_t n = 0;
-    std::queue<double> prices_q;
+    std::deque<double> prices_q;
+    double last_price = 0.0;
 };
 
 void atr_callback( const kline_test_t &kline_data, 

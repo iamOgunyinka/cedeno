@@ -5,6 +5,8 @@
 struct kline_test_t{
     std::string symbol = "symbol";
     double price = 0.0;
+    double high = 0.0;
+    double low = 0.0;
 };
 
 #endif
