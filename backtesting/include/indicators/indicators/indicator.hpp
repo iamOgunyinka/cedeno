@@ -1,5 +1,5 @@
-#ifndef INDC_HPP_
-#define INDC_HPP_
+#ifndef INDCATOR_HPP_
+#define INDCATOR_HPP_
 
 namespace indicators{
 struct indicator_t;

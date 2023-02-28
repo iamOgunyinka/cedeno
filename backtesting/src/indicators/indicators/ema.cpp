@@ -1,6 +1,5 @@
 #include "indicators/ema.hpp"
 #include "indicators/helpers/indcs_utils.hpp"
-#include "config.hpp"
 
 #include <algorithm>
 
@@ -48,8 +47,6 @@ void ema_kline_callback( const kline_d &kline_data,
 
 namespace config{
 namespace ema{
-using config_pair_t = std::pair< std::string, 
-        std::variant<double, uint64_t, int64_t, std::string>>; 
 void get_config( const std::vector<std::string> &indcs,
                 std::array<bool, (uint64_t)types_e::SIZE> *indc_states,
                 std::array<uint64_t, (uint64_t)source_e::SIZE> &types_counter,

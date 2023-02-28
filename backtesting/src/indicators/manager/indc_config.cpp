@@ -1,4 +1,4 @@
-#include "indc_config.hpp"
+#include "manager/indc_config.hpp"
 
 namespace indicators{
     

@@ -1,4 +1,4 @@
-#include "indc.hpp"
+#include "indicators/indicator.hpp"
 
 namespace indicators{
 indcs_c::indcs_c(indicator_t &common_db_){

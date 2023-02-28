@@ -1,16 +1,17 @@
-#ifndef INDICATORS_HPP_
-#define INDICATORS_HPP_
-#include "helpers/cllbck_iterator.hpp"
-#include "indc_data.hpp"
-#include "source_data.hpp"
-#include "indc_config.hpp"
-
-
+#ifndef INDC_MNGER_HPP_
+#define INDC_MNGER_HPP_
 #include <ctime>
 #include <vector>
 #include <memory>
 #include <array>
 #include <unordered_map>
+
+#include "helpers/cllbck_iterator.hpp"
+#include "indc_data.hpp"
+#include "source_data.hpp"
+#include "manager/indc_config.hpp"
+
+
 
 namespace indicators{
 

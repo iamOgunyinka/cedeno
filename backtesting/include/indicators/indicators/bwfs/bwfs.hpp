@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include "indc.hpp"
+#include "indicators/indicator.hpp"
 
 namespace indicators{
 struct conf_BWFS_t;
