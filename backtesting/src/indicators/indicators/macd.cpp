@@ -11,7 +11,7 @@ static void calculate_macd(macd_t &handler){
                      handler.ema_q[handler.configuration->low_period];
 }
 
-void macd_callback( const kline_test_t &kline_data, 
+void macd_callback( const kline_d &kline_data, 
                     indicator_t &handler_){
     macd_t &handler = *handler_.indcs_var.macd_vars;
     std::cout<<__func__<<std::endl;

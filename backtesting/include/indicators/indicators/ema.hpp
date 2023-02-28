@@ -1,10 +1,9 @@
 #ifndef EMA_HPP_
 #define EMA_HPP_
 
-#include "user_data.hpp"
 #include "indc_data.hpp"
 
-#include "testing.hpp"
+#include "source_data.hpp"
 namespace indicators{
 
 struct conf_ema_t{
@@ -29,9 +28,9 @@ struct ema_t{
     }SMA;
 };
 
-void ema_trade_callback( const backtesting::trade_data_t &trade_data, 
+void ema_trade_callback( const trade_stream_d &trade_data, 
                          indicator_t &handler_);
-void ema_kline_callback( const kline_test_t &kline_data, 
+void ema_kline_callback( const kline_d &kline_data, 
                          indicator_t &handler_);
 
 namespace config{

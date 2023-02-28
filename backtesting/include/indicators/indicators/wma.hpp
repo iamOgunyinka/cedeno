@@ -4,10 +4,9 @@
 #include <queue>
 #include <vector>
 
-#include "user_data.hpp"
 #include "indc_data.hpp"
 
-#include "testing.hpp"
+#include "source_data.hpp"
 
 namespace indicators{
 
@@ -31,7 +30,7 @@ struct wma_t{
     std::deque<double> prices_q;
 };  
 
-void wma_callback( const kline_test_t &kline_data, 
+void wma_callback( const kline_d &kline_data, 
                    indicator_t &handler_);
 
 namespace config{

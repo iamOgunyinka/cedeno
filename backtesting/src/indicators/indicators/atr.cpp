@@ -2,11 +2,11 @@
 #include "indicators/helpers/indcs_utils.hpp"
 
 namespace indicators{
-static double atr_get_max_value( const kline_test_t &kline_data,
+static double atr_get_max_value( const kline_d &kline_data,
                                  atr_t &handler){
-    double H_L = kline_data.high - kline_data.low;
-    double H_Cp = std::abs(kline_data.high - handler.last_price);
-    double L_Cp = std::abs(kline_data.low - handler.last_price);
+    double H_L = kline_data.highPrice - kline_data.lowPrice;
+    double H_Cp = std::abs(kline_data.highPrice - handler.last_price);
+    double L_Cp = std::abs(kline_data.lowPrice - handler.last_price);
 
     if(H_L >= H_Cp && H_L >= L_Cp){
         return H_L;
@@ -17,7 +17,7 @@ static double atr_get_max_value( const kline_test_t &kline_data,
     }
 }
 
-static void atr_calculate(const kline_test_t &kline_data, 
+static void atr_calculate(const kline_d &kline_data, 
                           atr_t &handler){
 
     uint64_t &n = handler.configuration->n;
@@ -35,7 +35,7 @@ static void atr_calculate(const kline_test_t &kline_data,
     handler.prices_q.push_back(atr_curr);
 }
 
-void atr_callback( const kline_test_t &kline_data, 
+void atr_callback( const kline_d &kline_data, 
                    indicator_t &handler_){
     atr_t &handler = *handler_.indcs_var.atr_vars;
     std::cout<<__func__<<std::endl;
@@ -47,7 +47,7 @@ void atr_callback( const kline_test_t &kline_data,
         }
         handler.n++;
     }
-    handler.last_price = kline_data.price;
+    handler.last_price = kline_data.closePrice;
 
 }
 

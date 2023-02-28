@@ -80,7 +80,7 @@ static void increase_quantity( buy_vs_sell_t &handler,
     last_quantity_seller = current_price_seller; 
 }
 
-void buy_vs_sell_callback( const backtesting::trade_data_t &trade_data, 
+void buy_vs_sell_callback( const trade_stream_d &trade_data, 
                           indicator_t &handler_){
 
     buy_vs_sell_t &handler = *handler_.indcs_var.buy_vs_sell_vars;
@@ -118,7 +118,7 @@ void buy_vs_sell_callback( const backtesting::trade_data_t &trade_data,
                                    "buyer_id", "seller_id");
                 handler.price_q.push(buy_vs_sell_q_t( trade_data.quantityExecuted, 
                                                       "buyer_id", 
-                                                      "seller_id"));
+                                                      "seller_id")); 
             }
         }
     }

@@ -3,10 +3,9 @@
 
 #include <queue>
 
-#include "user_data.hpp"
 #include "indc_data.hpp"
 
-#include "testing.hpp"
+#include "source_data.hpp"
 
 namespace indicators{
 
@@ -29,7 +28,7 @@ struct sma_t{
     std::queue<double> prices_q;
 };
 
-void sma_callback( const kline_test_t &kline_data, 
+void sma_callback( const kline_d &kline_data, 
                    indicator_t &handler_);
 
 namespace config{

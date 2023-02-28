@@ -1,8 +1,6 @@
 #ifndef TICKS_IN_HPP_
 #define TICKS_IN_HPP_
 
-#include "user_data.hpp"
-// #include "indc_data.hpp"
 #include "indicators/bwfs/bwfs.hpp"
 namespace indicators{
 struct ticks_in_t: public bwfs_t{   
@@ -13,7 +11,7 @@ struct ticks_in_t: public bwfs_t{
     ~ticks_in_t(){}
 };
 
-void ticks_in_callback( const backtesting::trade_data_t &trade_data, 
+void ticks_in_callback( const trade_stream_d &trade_data, 
                         indicator_t &handler_);
 
 }

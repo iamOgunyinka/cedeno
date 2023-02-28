@@ -2,7 +2,7 @@
 #include "indicators/helpers/indcs_utils.hpp"
 
 namespace indicators{
-void sma_callback( const kline_test_t &kline_data, 
+void sma_callback( const kline_d &kline_data, 
                    indicator_t &handler_){
     sma_t &handler = *handler_.indcs_var.sma_vars;
     std::cout<<__func__<<std::endl;
@@ -13,9 +13,9 @@ void sma_callback( const kline_test_t &kline_data,
         handler.sumatory -= back_price;
         handler.prices_q.pop();
     }
-    handler.sumatory += kline_data.price;
+    handler.sumatory += kline_data.closePrice;
     handler.common_db->indc_info.sma.price = handler.sumatory/handler.n;
-    handler.prices_q.push(kline_data.price);
+    handler.prices_q.push(kline_data.closePrice);
 }
 
 namespace config{

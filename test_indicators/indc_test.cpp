@@ -8,7 +8,6 @@
 
 /*GLOBAL VAR*/
 indicators::indicators_c indicator_handler;
-using namespace backtesting;
 
 /*=========================================================*/
 /*======================PYTHON SCRIPT======================*/
@@ -29,22 +28,21 @@ void python_script(void){
 
 
 
-trade_list_t set_trade_list(indicators::indicators_c &indcs, double price, trade_side_e side){
+indicators::trade_stream_d set_trade_list(double price, indicators::side_e side){
 
-    trade_list_t trade_list;
-    trade_data_t trade_data; 
+    indicators::trade_stream_d trade_list;
+    indicators::trade_stream_d trade_data; 
     trade_data.tokenName = "BTCUSDT";
     trade_data.amountPerPiece = price;
     trade_data.side = side;
     trade_data.eventTime =  std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count();
-    trade_list.push_back(trade_data);
     return trade_list;
 }
 
 void print_info(const std::string &symbol){
-    indicators::inf_t indicator_info = indicator_handler.get(symbol);
+    const indicators::inf_t &indicator_info = indicator_handler.get();
 
     std::cout<<std::endl<<"INFO:"<<std::endl
              <<"ticks_in: "<<indicator_info.cab.ticks_in<<std::endl
@@ -57,23 +55,23 @@ void print_info(const std::string &symbol){
              <<"qty_in_out: "<<indicator_info.cab.qty_in_out<<std::endl;
 }
 
-static void tick_trade_stream(const uint64_t &price, const trade_side_e &side){
-    trade_list_t trade_list = set_trade_list(indicator_handler, price, side);
+static void tick_trade_stream(const uint64_t &price, const indicators::side_e &side){
+    indicators::trade_stream_d trade_list = set_trade_list(price, side);
     indicator_handler.process(trade_list);
     print_info("BTCUSDT");
 }
 
 static void tick_kline_stream(const uint64_t &price){
-    kline_test_t kline_data;
+    indicators::kline_d kline_data;
     indicator_handler.process(kline_data);
 }
 
 int main(void){
     python_script();
     
-    tick_trade_stream(80, trade_side_e::buy);
-    tick_trade_stream(90, trade_side_e::buy);
-    tick_trade_stream(10, trade_side_e::sell);
+    tick_trade_stream(80, indicators::side_e::buy);
+    tick_trade_stream(90, indicators::side_e::buy);
+    tick_trade_stream(10, indicators::side_e::sell);
     
     tick_kline_stream(90);
     tick_kline_stream(80);

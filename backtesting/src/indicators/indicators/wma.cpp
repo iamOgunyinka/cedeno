@@ -11,19 +11,19 @@ static void wma_calculate(wma_t &handler){
     }
 }
 
-void wma_callback( const kline_test_t &kline_data, 
+void wma_callback( const kline_d &kline_data, 
                    indicator_t &handler_){
     wma_t &handler = *handler_.indcs_var.wma_vars;
     std::cout<<__func__<<std::endl;
     if(handler.n < handler.configuration->n){
         handler.n++;
-        handler.prices_q.push_front(kline_data.price);
+        handler.prices_q.push_front(kline_data.closePrice);
         if(handler.n == handler.configuration->n){
             wma_calculate(handler);
         }
     }else{
         handler.prices_q.pop_back();
-        handler.prices_q.push_front(kline_data.price);
+        handler.prices_q.push_front(kline_data.closePrice);
         wma_calculate(handler);
     }
 }

@@ -5,6 +5,7 @@
 #include <queue>
 #include <unordered_map>
 #include <memory>
+#include "source_data.hpp"
 
 namespace indicators{
 

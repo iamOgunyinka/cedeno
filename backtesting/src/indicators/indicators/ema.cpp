@@ -34,16 +34,16 @@ static void ema_callback(ema_t &handler,
     }    
 }
 
-void ema_trade_callback( const backtesting::trade_data_t &trade_data, 
+void ema_trade_callback( const trade_stream_d &trade_data, 
                          indicator_t &handler_){
     std::cout<<__func__<<std::endl;
     ema_callback(*handler_.indcs_var.ema_vars, trade_data.amountPerPiece);
 }
 
-void ema_kline_callback( const kline_test_t &kline_data, 
+void ema_kline_callback( const kline_d &kline_data, 
                          indicator_t &handler_){
     std::cout<<__func__<<std::endl;
-    ema_callback(*handler_.indcs_var.ema_vars, kline_data.price);
+    ema_callback(*handler_.indcs_var.ema_vars, kline_data.closePrice);
 }
 
 namespace config{

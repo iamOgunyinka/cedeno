@@ -3,10 +3,9 @@
 
 #include <queue>
 
-#include "user_data.hpp"
 #include "indc_data.hpp"
 
-#include "testing.hpp"
+#include "source_data.hpp"
 
 namespace indicators{
 
@@ -31,7 +30,7 @@ struct atr_t{
     double last_price = 0.0;
 };
 
-void atr_callback( const kline_test_t &kline_data, 
+void atr_callback( const kline_d &kline_data, 
                    indicator_t &handler_);
 
 namespace config{

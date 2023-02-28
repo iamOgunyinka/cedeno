@@ -2,7 +2,6 @@
 #define BUY_VS_SELL_HPP_
 
 #include "indc_data.hpp"
-#include "user_data.hpp"
 #include <unordered_map>
 #include <queue>
 #include "indicators/bwfs/bwfs.hpp"
@@ -36,7 +35,7 @@ struct buy_vs_sell_t: public bwfs_t{
     std::unordered_map<std::string, double> seller;
 };
 
-void buy_vs_sell_callback( const backtesting::trade_data_t &trade_data, 
+void buy_vs_sell_callback( const trade_stream_d &trade_data, 
                            indicator_t &handler_);
 }
 

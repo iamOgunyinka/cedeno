@@ -2,7 +2,6 @@
 #define TICKS_IN_OUT_HPP_
 
 #include "indc_data.hpp"
-// #include "user_data.hpp"
 #include "indicators/bwfs/bwfs.hpp"
 
 namespace indicators{
@@ -15,7 +14,7 @@ struct ticks_in_out_t: public bwfs_t{
     ~ticks_in_out_t(){}
 };
 
-void tick_in_out_callback( const backtesting::trade_data_t &trade_data, 
+void tick_in_out_callback( const trade_stream_d &trade_data, 
                            indicator_t &handler_);
 
 }
