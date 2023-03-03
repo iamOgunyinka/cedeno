@@ -19,21 +19,38 @@ internal_token_data_t *getTokenWithName(std::string const &tokenName,
   return nullptr;
 }
 
-void spot_wallet_asset_t::setTokenName(std::string const &name) {
+void wallet_asset_t::setTokenName(std::string const &name) {
   tokenName = utils::trim_copy(name);
   if (tokenName.empty())
     throw std::logic_error("invalid token name");
 }
 
-spot_wallet_asset_t *user_data_t::getUserAsset(std::string const &name) {
+wallet_asset_t *user_data_t::getUserAsset(std::string const &name) {
   for (auto &asset : assets)
     if (utils::isCaseInsensitiveStringCompare(asset.tokenName, name))
       return &asset;
   return nullptr;
 }
 
+void user_data_t::setLeverage(double const leverage_) {
+  leverage = std::clamp(leverage_, 1.0, 125.0);
+}
+
 void user_data_t::OnNewTrade(trade_data_t const &trade) {
-  if (isBuyOrSell(trade.side))
+  if (trade.tradeType == trade_type_e::none)
+    return;
+  else if (trade.tradeType == trade_type_e::spot)
+    return OnNewSpotTrade(trade);
+  return OnNewFuturesTrade(trade);
+}
+
+void user_data_t::OnNewFuturesTrade(trade_data_t const &trade) {
+  // TODO:
+  (void)trade;
+}
+
+void user_data_t::OnNewSpotTrade(trade_data_t const &trade) {
+  if (isBuyOrSell(trade.tradeType, trade.side))
     trades.push_back(trade);
 
   auto userOrderIter =
@@ -66,11 +83,20 @@ void user_data_t::OnNewTrade(trade_data_t const &trade) {
   }
 }
 
+bool user_data_t::isBuyOrSell(trade_type_e const tt,
+                              trade_side_e const side) const {
+  if (tt == trade_type_e::spot)
+    return side == trade_side_e::buy || side == trade_side_e::sell;
+  else if (tt == trade_type_e::futures)
+    return side == trade_side_e::long_ || side == trade_side_e::short_;
+  return false;
+}
+
 bool user_data_t::hasTradableBalance(internal_token_data_t const *const token,
                                      trade_side_e const side,
                                      double const quantity, double const price,
                                      double const leverage) {
-  if (!(token && isBuyOrSell(side)))
+  if (!(token && isBuyOrSell(token->tradeType, side)))
     return false;
 
   double const lot = quantity * price * leverage;
@@ -85,7 +111,7 @@ bool user_data_t::hasTradableBalance(internal_token_data_t const *const token,
   return true;
 }
 
-void user_data_t::issueCancelledRefund(spot_wallet_asset_t &asset,
+void user_data_t::issueCancelledRefund(wallet_asset_t &asset,
                                        order_data_t const &order) {
   auto const lot = order.priceLevel * order.quantity;
   asset.amountAvailable += lot;
@@ -117,7 +143,7 @@ user_data_t::getLimitOrder(std::string const &tokenName, double const quantity,
 std::optional<order_data_t> user_data_t::getMarketOrder(
     std::string const &tokenName, double const amountOrQuantityToSpend,
     double const leverage, trade_side_e const side, trade_type_e const type) {
-  if (!isBuyOrSell(side))
+  if (!isBuyOrSell(type, side))
     return std::nullopt;
 
   auto token = getTokenWithName(tokenName, type);
@@ -155,11 +181,10 @@ int64_t user_data_t::sendOrderToBook(std::optional<order_data_t> &&order) {
 
   if (bool const isSuccess = initiateOrder(*order); isSuccess) {
     orderNumber = order->orderID;
+    orders.push_back(std::move(*order));
   } else {
     issueRefund(*order);
-    order->status = order_status_e::rejected;
   }
-  orders.push_back(std::move(*order));
   return orderNumber;
 }
 
@@ -184,6 +209,7 @@ int64_t user_data_t::createSpotLimitOrder(std::string const &tokenName,
                                           double const price,
                                           double const quantity,
                                           trade_side_e const side) {
+  // in the case of spot trading, leverage is always 1.0
   auto order = getLimitOrder(tokenName, quantity, price, 1.0, side);
   return sendOrderToBook(std::move(order));
 }
@@ -191,8 +217,44 @@ int64_t user_data_t::createSpotLimitOrder(std::string const &tokenName,
 int64_t user_data_t::createSpotMarketOrder(std::string const &tokenName,
                                            double const amountOrQtyToSpend,
                                            trade_side_e const side) {
+  // in the case of spot trading, leverage is always 1.0
   auto order = getMarketOrder(tokenName, amountOrQtyToSpend, 1.0, side);
   return sendOrderToBook(std::move(order));
+}
+
+int64_t user_data_t::createFuturesLimitOrder(std::string const &base,
+                                             std::string const &quote,
+                                             double const price,
+                                             double const quantity,
+                                             trade_side_e const side) {
+  auto const fullTokenName = utils::toUpperString(base + quote);
+  return createFuturesLimitOrder(fullTokenName, price, quantity, side);
+}
+
+int64_t user_data_t::createFuturesLimitOrder(std::string const &tokenName,
+                                             double const price,
+                                             double const quantity,
+                                             trade_side_e const side) {
+  [[maybe_unused]] auto order = getLimitOrder(
+      tokenName, quantity, price, leverage, side, trade_type_e::futures);
+  // TODO:
+  return -1;
+  // return sendOrderToBook(std::move(order));
+}
+
+int64_t user_data_t::createFuturesMarketOrder(std::string const &base,
+                                              std::string const &quote,
+                                              double const amountOrQtyToSpend,
+                                              trade_side_e const side) {
+  auto const tokenName = utils::toUpperString(base + quote);
+  return createFuturesMarketOrder(tokenName, amountOrQtyToSpend, side);
+}
+
+int64_t user_data_t::createFuturesMarketOrder(std::string const &tokenName,
+                                              double const amountOrQtyToSpend,
+                                              trade_side_e const side) {
+  // TODO:
+  return -1;
 }
 
 bool user_data_t::cancelOrderWithID(uint64_t const orderID) {

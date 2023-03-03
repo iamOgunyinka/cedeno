@@ -15,6 +15,6 @@ struct global_data_t {
   std::set<std::string> validSymbols;
   std::string rootPath;
 
-  static int64_t newUser(backtesting::spot_wallet_asset_list_t tokensOwned);
+  static int64_t newUser(backtesting::wallet_asset_list_t tokensOwned);
   static global_data_t &instance();
 };

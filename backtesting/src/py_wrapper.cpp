@@ -34,6 +34,8 @@ PYBIND11_MODULE(jbacktest, m) {
   py::enum_<backtesting::trade_side_e>(m, "TradeSide")
       .value("none", backtesting::trade_side_e::none)
       .value("buy", backtesting::trade_side_e::buy)
+      .value("long", backtesting::trade_side_e::long_)
+      .value("short", backtesting::trade_side_e::short_)
       .value("sell", backtesting::trade_side_e::sell);
 
   py::enum_<backtesting::trade_market_e>(m, "TradeMarket")
@@ -116,15 +118,14 @@ PYBIND11_MODULE(jbacktest, m) {
         self.callback = cb;
       });
 
-  py::class_<backtesting::spot_wallet_asset_t>(m, "SpotWalletAsset")
+  py::class_<backtesting::wallet_asset_t>(m, "Asset")
       .def(py::init<std::string const &, double const>())
-      .def_readonly("inUse", &backtesting::spot_wallet_asset_t::amountInUse)
+      .def_readonly("inUse", &backtesting::wallet_asset_t::amountInUse)
       .def_property("available",
-                    &backtesting::spot_wallet_asset_t::getAvailableAmount,
-                    &backtesting::spot_wallet_asset_t::setAvailableAmount)
-      .def_property("symbolName",
-                    &backtesting::spot_wallet_asset_t::getTokenName,
-                    &backtesting::spot_wallet_asset_t::setTokenName);
+                    &backtesting::wallet_asset_t::getAvailableAmount,
+                    &backtesting::wallet_asset_t::setAvailableAmount)
+      .def_property("name", &backtesting::wallet_asset_t::getTokenName,
+                    &backtesting::wallet_asset_t::setTokenName);
 
   py::class_<backtesting::py_depth_data_t>(m, "DepthData")
       .def(py::init<>())
@@ -164,6 +165,8 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readonly("trades", &backtesting::user_data_t::trades)
       .def_readonly("orders", &backtesting::user_data_t::orders)
       .def_readonly("assets", &backtesting::user_data_t::assets)
+      .def_property("leverage", &backtesting::user_data_t::getLeverage,
+                    &backtesting::user_data_t::setLeverage)
       .def("cancelOrder", &backtesting::user_data_t::cancelOrderWithID)
       .def("createSpotLimitOrder",
            static_cast<int64_t (backtesting::user_data_t::*)(
@@ -184,7 +187,27 @@ PYBIND11_MODULE(jbacktest, m) {
            static_cast<int64_t (backtesting::user_data_t::*)(
                std::string const &, double const,
                backtesting::trade_side_e const)>(
-               &backtesting::user_data_t::createSpotMarketOrder));
+               &backtesting::user_data_t::createSpotMarketOrder))
+      .def("createFuturesLimitOrder",
+           static_cast<int64_t (backtesting::user_data_t::*)(
+               std::string const &, std::string const &, double const,
+               double const, backtesting::trade_side_e const)>(
+               &backtesting::user_data_t::createFuturesLimitOrder))
+      .def("createFuturesLimitOrder",
+           static_cast<int64_t (backtesting::user_data_t::*)(
+               std::string const &, double const, double const,
+               backtesting::trade_side_e const)>(
+               &backtesting::user_data_t::createFuturesLimitOrder))
+      .def("createFuturesMarketOrder",
+           static_cast<int64_t (backtesting::user_data_t::*)(
+               std::string const &, std::string const &, double const,
+               backtesting::trade_side_e const)>(
+               &backtesting::user_data_t::createFuturesMarketOrder))
+      .def("createFuturesMarketOrder",
+           static_cast<int64_t (backtesting::user_data_t::*)(
+               std::string const &, double const,
+               backtesting::trade_side_e const)>(
+               &backtesting::user_data_t::createFuturesMarketOrder));
 
   py::class_<backtesting_t>(m, "Backtesting")
       .def_static("instance",
@@ -213,7 +236,7 @@ PYBIND11_MODULE(jbacktest, m) {
 
   m.def("sendOrder", &backtesting::initiateOrder);
   m.def("findUserByID", &findUserByID);
-  m.def("addUser", [](backtesting::spot_wallet_asset_list_t assets) {
+  m.def("addUser", [](backtesting::wallet_asset_list_t assets) {
     return findUserByID(global_data_t::newUser(std::move(assets)));
   });
 

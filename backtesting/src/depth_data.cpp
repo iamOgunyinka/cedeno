@@ -40,6 +40,9 @@ void processDepthStream(trade_map_td &tradeMap) {
   };
 
   auto ioContext = std::make_shared<boost::asio::io_context>();
+  double const futuresTakerFee = 1.0;
+  double const futuresMakerFee = 1.0;
+
   for (auto &[tokenName, value] : tradeMap) {
     global_order_book_t d;
     d.spot = nullptr;
@@ -53,8 +56,9 @@ void processDepthStream(trade_map_td &tradeMap) {
     if (auto futuresStreamer = sorter(value, FUTURES);
         futuresStreamer.has_value()) {
       auto symbol = getTradeSymbol(tokenName, trade_type_e::futures);
-      d.futures.reset(new futures_order_book_t(
-          *ioContext, std::move(*futuresStreamer), symbol));
+      d.futures.reset(
+          new futures_order_book_t(*ioContext, std::move(*futuresStreamer),
+                                   symbol, futuresMakerFee, futuresTakerFee));
     }
 
     if (d.futures || d.spot)

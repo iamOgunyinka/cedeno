@@ -9,12 +9,12 @@
 #include "data_streamer.hpp"
 
 namespace backtesting {
-class order_book_t;
+class order_book_base_t;
 
 struct global_order_book_t {
   std::string tokenName;
-  std::unique_ptr<order_book_t> futures;
-  std::unique_ptr<order_book_t> spot;
+  std::unique_ptr<order_book_base_t> futures;
+  std::unique_ptr<order_book_base_t> spot;
   static std::vector<global_order_book_t> globalOrderBooks;
 };
 

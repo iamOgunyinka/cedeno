@@ -38,8 +38,10 @@ enum class trade_type_e : int {
 
 enum class trade_side_e : int {
   none,
-  sell, // short
-  buy,  // long
+  sell,
+  short_, // short is a reserved word
+  buy,
+  long_, // long is a reserved word
 };
 
 enum class trade_market_e : int {

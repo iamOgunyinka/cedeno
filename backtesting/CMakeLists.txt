@@ -113,8 +113,9 @@ set(SRC_FILES
   src/futures_order_book.cpp
   src/global_data.cpp
   src/matching_engine.cpp
-  src/spot_order_book.cpp
+  src/order_book_base.cpp
   src/py_wrapper.cpp
+  src/spot_order_book.cpp
   src/trades_data.cpp
   src/user_data.cpp
 )
@@ -135,12 +136,14 @@ set(HEADERS_FILES
   include/database_connector.hpp
   include/database_types.hpp
   include/depth_data.hpp
+  include/enumerations.hpp
+  include/futures_data.hpp
+  include/futures_order_book.hpp
   include/global_data.hpp
   include/matching_engine.hpp
-  include/futures_order_book.hpp
-  include/spot_order_book.hpp
   include/order_book_base.hpp
   include/py_wrapper.hpp
+  include/spot_order_book.hpp
   include/trades_data.hpp
   include/user_data.hpp
 )

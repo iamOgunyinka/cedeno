@@ -18,13 +18,31 @@ struct internal_token_data_t {
 };
 using token_data_list_t = std::vector<internal_token_data_t>;
 
-struct spot_wallet_asset_t {
+struct position_t {
+  double entry_price = 0.0;
+  double quantity = 0.0;
+  double leverage = 0.0;
+  trade_side_e side = trade_side_e::none;
+
+  position_t(double const entry_price_, double const qty_,
+             double const leverage_, trade_side_e const side_)
+      : entry_price(entry_price_), quantity(qty_), leverage(leverage_),
+        side(side_) {}
+  inline double value(double const current_price) const {
+    return quantity * current_price;
+  }
+
+  inline double margin() const { return value(entry_price) / leverage; }
+};
+using position_list_t = std::vector<position_t>;
+
+struct wallet_asset_t {
   double amountInUse = 0.0;
   double amountAvailable = 0.0;
   std::string tokenName;
 
-  spot_wallet_asset_t() = default;
-  spot_wallet_asset_t(std::string const &name, double const amount)
+  wallet_asset_t() = default;
+  wallet_asset_t(std::string const &name, double const amount)
       : tokenName(name), amountAvailable(amount) {}
   double getAvailableAmount() const { return amountAvailable; }
   void setAvailableAmount(double const d) { amountAvailable = d; }
@@ -32,7 +50,9 @@ struct spot_wallet_asset_t {
   std::string getTokenName() const { return tokenName; }
   void setTokenName(std::string const &name);
 };
-using spot_wallet_asset_list_t = std::vector<spot_wallet_asset_t>;
+using wallet_asset_list_t = std::vector<wallet_asset_t>;
+
+struct futures_wallet_asset_t {};
 
 struct user_data_t;
 struct order_data_t {
@@ -51,9 +71,11 @@ using order_list_t = std::vector<order_data_t>;
 
 struct user_data_t {
   uint64_t userID = 0;
+  double leverage = 1.0;
   trade_list_t trades;
   order_list_t orders;
-  spot_wallet_asset_list_t assets;
+  wallet_asset_list_t assets;
+  position_list_t openPositions;
 
   int64_t createSpotLimitOrder(std::string const &base,
                                std::string const &quote, double const price,
@@ -67,6 +89,21 @@ struct user_data_t {
   int64_t createSpotMarketOrder(std::string const &tokenName,
                                 double const amountOrQtyToSpend,
                                 trade_side_e const side);
+  int64_t createFuturesLimitOrder(std::string const &base,
+                                  std::string const &quote, double const price,
+                                  double const quantity,
+                                  trade_side_e const side);
+  int64_t createFuturesLimitOrder(std::string const &tokenName,
+                                  double const price, double const quantity,
+                                  trade_side_e const side);
+  int64_t createFuturesMarketOrder(std::string const &base,
+                                   std::string const &quote,
+                                   double const amountOrQtyToSpend,
+                                   trade_side_e const side);
+  int64_t createFuturesMarketOrder(std::string const &tokenName,
+                                   double const amountOrQtyToSpend,
+                                   trade_side_e const side);
+
   std::optional<order_data_t>
   getLimitOrder(std::string const &tokenName, double const quantity,
                 double const price, double const leverage = 1.0,
@@ -76,19 +113,20 @@ struct user_data_t {
       std::string const &tokenName, double const amountOrQuantityToSpend,
       double const leverage = 1.0, trade_side_e const side = trade_side_e::buy,
       trade_type_e const tradeType = trade_type_e::spot);
+  void setLeverage(double const leverage_);
+  double getLeverage() const { return leverage; }
+
   bool cancelOrderWithID(uint64_t const orderID);
   void OnNewTrade(trade_data_t const &trade);
 
 private:
-  inline bool isBuyOrSell(trade_side_e const side) const {
-    return side == trade_side_e::buy || side == trade_side_e::sell;
-  }
-
+  void OnNewSpotTrade(trade_data_t const &trade);
+  void OnNewFuturesTrade(trade_data_t const &trade);
+  bool isBuyOrSell(trade_type_e const tt, trade_side_e const side) const;
   void issueRefund(order_data_t const &order);
-  void issueCancelledRefund(spot_wallet_asset_t &asset,
-                            order_data_t const &order);
+  void issueCancelledRefund(wallet_asset_t &asset, order_data_t const &order);
   int64_t sendOrderToBook(std::optional<order_data_t> &&order);
-  spot_wallet_asset_t *getUserAsset(std::string const &name);
+  wallet_asset_t *getUserAsset(std::string const &name);
   bool hasTradableBalance(internal_token_data_t const *const,
                           trade_side_e const side, double const quantity,
                           double const amount, double const leverage);

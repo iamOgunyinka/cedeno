@@ -61,7 +61,7 @@ depth_signal_handler_t::GetDepthDelegate() {
 
 void registerDepthCallback(backtesting::trade_type_e const tt,
                            depth_event_callback_t cb, bool const pushToFront) {
-  // this will be removed when the futures orderBook is implemented
+  // TODO: will be removed when the futures orderBook is implemented
   if (tt != backtesting::trade_type_e::spot)
     return;
 
@@ -74,7 +74,7 @@ void registerDepthCallback(backtesting::trade_type_e const tt,
 void registerTradesCallback(backtesting::trade_type_e const tt,
                             trades_event_callback_t cb,
                             bool const pushToFront) {
-  // this will also be removed when the futures orderBook is implemented
+  // TODO: will also be removed when the futures orderBook is implemented
   if (tt != backtesting::trade_type_e::spot)
     return;
 
