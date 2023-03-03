@@ -1,29 +1,25 @@
-#include <variant>
-#include <string>
-#include <cassert>
+/******************************************************************************
+
+                              Online C++ Compiler.
+               Code, Compile, Run and Debug C++ program online.
+Write your code in this editor and press "Run" button to compile and execute it.
+
+*******************************************************************************/
+
 #include <iostream>
+#include <string>
+#include <algorithm>
+#include <vector>
+#include <optional>
 
-void function_void(void){
-    std::cout<<"function"<<std::endl;
-}
+std::optional<int> optional_function(const bool &b){
+    if(b)
+        return 8;
+    return {};
+}   
 
-void function_str(const std::string &str){
-    std::cout<<str<<std::endl;
-}
-
-struct strct_t{
-    strct_t(){}
-    ~strct_t(){}
-    static void function(void){
-        std::cout<<"struct function"<<std::endl;
-    }
-};
-
-int main(void){
-    strct_t object;
-    auto pointer = &object.function;
-    // std::variant<void(*)(void), void(*)(const std::string &)> var;
-    // var = &object.function;
-    // (*std::get<0>(var))(); 
+int main(void)
+{
+    std::cout<<std::is_same_v<double, int><<std::endl;
     return 0;
 }

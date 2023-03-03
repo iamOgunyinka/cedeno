@@ -5,6 +5,7 @@
 #include <queue>
 #include <unordered_map>
 #include <memory>
+#include "source_data.hpp"
 
 namespace indicators{
 
@@ -16,14 +17,15 @@ struct avrg_in_t;
 struct avrg_out_t;
 struct qty_in_out_t;
 struct ticks_in_out_t;
-struct bwfs_hndlr_t;
 struct buy_vs_sell_t;
 struct ema_t;
 struct sma_t;
 struct macd_t;
-struct indicator_t;
+struct atr_t;
+struct wma_t;
 
 enum class types_e{
+    BUY_VS_SELL,
     TICK_IN,
     TICK_OUT,
     QTY_IN,
@@ -32,11 +34,18 @@ enum class types_e{
     AVRG_OUT,
     QTY_IN_OUT,
     TICK_IN_OUT,
-    BUY_VS_SELL,
-    BWFS_HANDLER,
     EMA,
     SMA,
     MACD,
+    WMA,
+    ATR,
+    SIZE,
+};
+
+
+enum class source_e{
+    SRC_TRADE,
+    SRC_KLINE,
     SIZE,
 };
 
@@ -64,11 +73,21 @@ struct inf_macd_t{
     double price = 0.0;
 };
 
+struct inf_wma_t{
+    double price = 0.0;
+};
+
+struct inf_atr_t{
+    double price = 0.0;
+};
+
 struct inf_t{
     inf_BWFS_t cab; 
     inf_ema_t ema;
     inf_sma_t sma;
     inf_macd_t macd;
+    inf_wma_t wma;
+    inf_atr_t atr;
 };
 
 struct indcs_vars_t{
@@ -84,6 +103,8 @@ struct indcs_vars_t{
     std::unique_ptr<ema_t> ema_vars = nullptr;
     std::unique_ptr<sma_t> sma_vars = nullptr;
     std::unique_ptr<macd_t> macd_vars = nullptr;
+    std::unique_ptr<wma_t> wma_vars = nullptr;
+    std::unique_ptr<atr_t> atr_vars = nullptr;
 };
 
 struct indicator_t{
@@ -91,7 +112,8 @@ struct indicator_t{
     indcs_vars_t indcs_var;
 };
 
-static std::unordered_map<std::string, uint64_t> indc_list = {
+
+static std::unordered_map<std::string, uint64_t> indc_list_key_string = {
 {"tick_in",     (uint64_t)types_e::TICK_IN},
 {"tick_out",    (uint64_t)types_e::TICK_OUT},
 {"qty_in",      (uint64_t)types_e::QTY_IN},
@@ -103,8 +125,28 @@ static std::unordered_map<std::string, uint64_t> indc_list = {
 {"buy_vs_sell", (uint64_t)types_e::BUY_VS_SELL},
 {"ema",         (uint64_t)types_e::EMA},
 {"sma",         (uint64_t)types_e::SMA},
-{"macd",        (uint64_t)types_e::MACD}
+{"macd",        (uint64_t)types_e::MACD},
+{"wma",         (uint64_t)types_e::WMA},
+{"atr",         (uint64_t)types_e::ATR}
 };
+
+static std::unordered_map<uint64_t, std::string> indc_list_key_number = {
+{(uint64_t)types_e::TICK_IN,        "tick_in"},
+{(uint64_t)types_e::TICK_OUT,       "tick_out"   },
+{(uint64_t)types_e::QTY_IN,         "qty_in"     },
+{(uint64_t)types_e::QTY_OUT,        "qty_out"    },
+{(uint64_t)types_e::AVRG_IN,        "avrg_in"    },
+{(uint64_t)types_e::AVRG_OUT,       "avrg_out"   },
+{(uint64_t)types_e::QTY_IN_OUT,     "qty_in_out" },
+{(uint64_t)types_e::TICK_IN_OUT,    "tick_in_out"},
+{(uint64_t)types_e::BUY_VS_SELL,    "buy_vs_sell"},
+{(uint64_t)types_e::EMA,            "ema"        },
+{(uint64_t)types_e::SMA,            "sma"        },
+{(uint64_t)types_e::MACD,           "macd"       },
+{(uint64_t)types_e::WMA,            "wma"        },
+{(uint64_t)types_e::ATR,            "atr"        }
+};
+
 
 }
 
@@ -121,5 +163,7 @@ static std::unordered_map<std::string, uint64_t> indc_list = {
 #include "indicators/ema.hpp"
 #include "indicators/sma.hpp"
 #include "indicators/macd.hpp"
+#include "indicators/wma.hpp"
+#include "indicators/atr.hpp"
 
 #endif

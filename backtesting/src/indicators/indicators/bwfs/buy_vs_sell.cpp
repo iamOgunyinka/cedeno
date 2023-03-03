@@ -1,7 +1,7 @@
 #include "indicators/bwfs/buy_vs_sell.hpp"
 namespace indicators{
 
-static uint64_t calculate_time_threshold( const indicators::conf_BWFS_t &config, 
+static uint64_t calculate_time_threshold( const conf_BWFS_t &config, 
                                           const uint64_t &timestamp){
 
     time_t time_now = timestamp/1000;
@@ -13,7 +13,7 @@ static uint64_t calculate_time_threshold( const indicators::conf_BWFS_t &config,
 static void reset_info_data(buy_vs_sell_t &handler){
     std::queue<buy_vs_sell_q_t> empty_list;
     std::swap(handler.price_q, empty_list);
-    (*handler.common_db).indc_info.cab = indicators::inf_BWFS_t();
+    (*handler.common_db).indc_info.cab = inf_BWFS_t();
 }
 
 static auto get_user( std::unordered_map<std::string, double> &handler,
@@ -80,7 +80,7 @@ static void increase_quantity( buy_vs_sell_t &handler,
     last_quantity_seller = current_price_seller; 
 }
 
-void buy_vs_sell_callback( const backtesting::trade_data_t &trade_data, 
+void buy_vs_sell_callback( const trade_stream_d &trade_data, 
                           indicator_t &handler_){
 
     buy_vs_sell_t &handler = *handler_.indcs_var.buy_vs_sell_vars;
@@ -98,7 +98,7 @@ void buy_vs_sell_callback( const backtesting::trade_data_t &trade_data,
         handler.last_time_threshold = handler.configuration->time;
     }else{
         if(trade_data.eventTime > handler.time_threshold){
-            if(handler.configuration->mode == indicators::bwfs_mode_e::STATIC){
+            if(handler.configuration->mode == bwfs_mode_e::STATIC){
                 reset_info_data(handler);
                 handler.time_threshold = calculate_time_threshold( *handler.configuration, 
                                                                    trade_data.eventTime);
@@ -113,12 +113,12 @@ void buy_vs_sell_callback( const backtesting::trade_data_t &trade_data,
                                                       "seller_id"));
             }
         }else{
-            if(handler.configuration->mode == indicators::bwfs_mode_e::DYNAMIC){
+            if(handler.configuration->mode == bwfs_mode_e::DYNAMIC){
                 increase_quantity( handler, trade_data.quantityExecuted, 
                                    "buyer_id", "seller_id");
                 handler.price_q.push(buy_vs_sell_q_t( trade_data.quantityExecuted, 
                                                       "buyer_id", 
-                                                      "seller_id"));
+                                                      "seller_id")); 
             }
         }
     }
