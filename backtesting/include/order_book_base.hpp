@@ -22,7 +22,7 @@ class order_book_base_t;
 }
 
 namespace matching_engine {
-void matchOrder(backtesting::order_book_base_t &orderBook,
+void placeOrder(backtesting::order_book_base_t &orderBook,
                 backtesting::order_data_t const &order);
 void cancelOrder(backtesting::order_book_base_t &orderBook,
                  backtesting::order_data_t const &order);
@@ -67,7 +67,7 @@ struct greater_comparator_t {
 class order_book_base_t {
 public:
   friend void
-  matching_engine::matchOrder(backtesting::order_book_base_t &orderBook,
+  matching_engine::placeOrder(backtesting::order_book_base_t &orderBook,
                               backtesting::order_data_t const &order);
   friend void
   matching_engine::cancelOrder(backtesting::order_book_base_t &orderBook,
@@ -86,12 +86,20 @@ public:
 private:
   void updateOrderBook(depth_data_t &&newestData);
   void setNextTimer();
+  void cancelOrder(backtesting::order_data_t order);
+  void placeOrder(backtesting::order_data_t order);
+  [[nodiscard]] trade_list_t
+  getExecutedTradesFromOrders(details::order_meta_data_t &data,
+                              double quantityTraded, double const priceLevel);
+  [[nodiscard]] trade_list_t
+  marketMatcher(std::vector<details::order_meta_data_t> &list,
+                double &amountAvailableToSpend, order_data_t const &order);
+  [[nodiscard]] trade_data_t getNewTrade(order_data_t const &order,
+                                         order_status_e const, double const qty,
+                                         double const amount);
+  void shakeOrderBook();
 
 protected:
-  virtual void match(backtesting::order_data_t order) = 0;
-  virtual void cancel(backtesting::order_data_t order) = 0;
-  virtual void shakeOrderBook() = 0;
-
 #ifdef _DEBUG
   virtual void printOrderBook() = 0;
 #endif
@@ -111,77 +119,5 @@ orderMetaDataFromDepth(depth_data_t::depth_meta_t const &depth,
                        internal_token_data_t *token, trade_side_e const side,
                        trade_type_e const tradeType);
 int64_t getOrderNumber();
-
-template <typename Comparator>
-void updateSidesWithNewOrder(order_data_t const &order,
-                             std::vector<details::order_meta_data_t> &dest,
-                             Comparator comparator) {
-  auto iter =
-      std::lower_bound(dest.begin(), dest.end(), order.priceLevel, comparator);
-  if (iter != dest.end() && iter->priceLevel == order.priceLevel) {
-    if (order.quantity == 0.0)
-      dest.erase(iter);
-    else {
-      iter->totalQuantity += order.quantity;
-      iter->orders.push_back(order);
-    }
-  } else {
-    details::order_meta_data_t newInsert{};
-    newInsert.orders.push_back(std::move(order));
-    newInsert.priceLevel = order.priceLevel;
-    newInsert.totalQuantity = order.quantity;
-    dest.insert(iter, std::move(newInsert));
-  }
-}
-
-template <typename Func>
-void updateSidesWithNewOrder(order_list_t const &src,
-                             std::vector<details::order_meta_data_t> &dest,
-                             Func comparator) {
-  for (auto const &d : src)
-    updateSidesWithNewOrder(d, dest, comparator);
-
-  dest.erase(std::remove_if(dest.begin(), dest.end(),
-                            [](auto const &a) { return a.quantity == 0.0; }),
-             dest.end());
-}
-
-template <typename Comparator>
-void updateSidesWithNewDepth(std::vector<depth_data_t::depth_meta_t> const &src,
-                             std::vector<details::order_meta_data_t> &dest,
-                             trade_side_e const side,
-                             trade_type_e const tradeType,
-                             internal_token_data_t *token,
-                             Comparator comparator) {
-  for (auto const &d : src) {
-    auto iter =
-        std::lower_bound(dest.begin(), dest.end(), d.priceLevel, comparator);
-    if (iter != dest.end() && iter->priceLevel == d.priceLevel) {
-      if (d.quantity == 0.0) {
-        dest.erase(iter);
-        continue;
-      } else {
-        iter->totalQuantity += d.quantity;
-        order_data_t order;
-        order.market = market_type_e::limit;
-        order.priceLevel = d.priceLevel;
-        order.quantity = d.quantity;
-        order.side = side;
-        order.type = tradeType;
-        order.token = token;
-        order.orderID = getOrderNumber();
-        iter->orders.push_back(std::move(order));
-      }
-    } else {
-      dest.insert(iter, orderMetaDataFromDepth(d, token, side, tradeType));
-    }
-  }
-
-  dest.erase(std::remove_if(dest.begin(), dest.end(),
-                            [](details::order_meta_data_t const &a) {
-                              return a.totalQuantity == 0.0;
-                            }),
-             dest.end());
-}
 
 } // namespace backtesting

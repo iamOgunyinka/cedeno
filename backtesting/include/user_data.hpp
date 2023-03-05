@@ -19,11 +19,14 @@ struct internal_token_data_t {
 using token_data_list_t = std::vector<internal_token_data_t>;
 
 struct position_t {
+  internal_token_data_t *token = nullptr;
   double entry_price = 0.0;
   double quantity = 0.0;
   double leverage = 0.0;
+  double pnl = 0.0;
   trade_side_e side = trade_side_e::none;
 
+  position_t() = default;
   position_t(double const entry_price_, double const qty_,
              double const leverage_, trade_side_e const side_)
       : entry_price(entry_price_), quantity(qty_), leverage(leverage_),
@@ -52,8 +55,6 @@ struct wallet_asset_t {
 };
 using wallet_asset_list_t = std::vector<wallet_asset_t>;
 
-struct futures_wallet_asset_t {};
-
 struct user_data_t;
 struct order_data_t {
   uint64_t orderID = 0;
@@ -70,8 +71,12 @@ struct order_data_t {
 using order_list_t = std::vector<order_data_t>;
 
 struct user_data_t {
+  friend class order_book_base_t;
+
   uint64_t userID = 0;
   double leverage = 1.0;
+  double m_makerFeeRate = 0.0;
+  double m_takerFeeRate = 0.0;
   trade_list_t trades;
   order_list_t orders;
   wallet_asset_list_t assets;
@@ -115,25 +120,38 @@ struct user_data_t {
       trade_type_e const tradeType = trade_type_e::spot);
   void setLeverage(double const leverage_);
   double getLeverage() const { return leverage; }
-
   bool cancelOrderWithID(uint64_t const orderID);
-  void OnNewTrade(trade_data_t const &trade);
 
 private:
-  void OnNewSpotTrade(trade_data_t const &trade);
-  void OnNewFuturesTrade(trade_data_t const &trade);
-  bool isBuyOrSell(trade_type_e const tt, trade_side_e const side) const;
+  // this function is called from the order book AND the orderbook only
+  void OnNewTrade(trade_data_t const &trade);
+
+  void onNoTrade(order_data_t const &order);
+  void noSpotTrade(order_data_t const &order);
+  void noFuturesTrade(order_data_t const &order);
+  void onNewSpotTrade(trade_data_t const &trade);
+  void onNewFuturesTrade(trade_data_t const &trade);
   void issueRefund(order_data_t const &order);
   void issueCancelledRefund(wallet_asset_t &asset, order_data_t const &order);
-  int64_t sendOrderToBook(std::optional<order_data_t> &&order);
-  wallet_asset_t *getUserAsset(std::string const &name);
-  bool hasTradableBalance(internal_token_data_t const *const,
-                          trade_side_e const side, double const quantity,
-                          double const amount, double const leverage);
-  order_data_t createOrderImpl(internal_token_data_t *, double const quantity,
-                               double const price, double const leverage,
-                               trade_type_e const type, trade_side_e const side,
-                               trade_market_e const market);
+  [[nodiscard]] bool isBuyOrSell(trade_type_e const tt,
+                                 trade_side_e const side) const;
+  [[nodiscard]] bool updateOpenPositions(order_data_t const &order);
+  [[nodiscard]] int64_t sendOrderToBook(std::optional<order_data_t> &&order);
+  [[nodiscard]] wallet_asset_t *getUserAsset(std::string const &name);
+  [[nodiscard]] bool hasTradableBalance(internal_token_data_t const *const,
+                                        trade_side_e const side,
+                                        double const quantity,
+                                        double const amount,
+                                        double const leverage);
+  [[nodiscard]] bool
+  hasFuturesTradableBalance(internal_token_data_t const *const,
+                            trade_side_e const side, double const quantity,
+                            double const amount, double const leverage);
+  [[nodiscard]] order_data_t
+  createOrderImpl(internal_token_data_t *, double const quantity,
+                  double const price, double const leverage,
+                  trade_type_e const type, trade_side_e const side,
+                  trade_market_e const market);
 };
 
 using user_data_list_t = std::vector<std::shared_ptr<user_data_t>>;
