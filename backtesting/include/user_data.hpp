@@ -125,8 +125,8 @@ struct user_data_t {
 private:
   // this function is called from the order book AND the orderbook only
   void OnNewTrade(trade_data_t const &trade);
+  void OnNoTrade(order_data_t const &order);
 
-  void onNoTrade(order_data_t const &order);
   void noSpotTrade(order_data_t const &order);
   void noFuturesTrade(order_data_t const &order);
   void onNewSpotTrade(trade_data_t const &trade);

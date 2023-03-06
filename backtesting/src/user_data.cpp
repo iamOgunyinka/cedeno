@@ -49,7 +49,7 @@ void user_data_t::onNewFuturesTrade(trade_data_t const &trade) {
   (void)trade;
 }
 
-void user_data_t::onNoTrade(order_data_t const &order) {
+void user_data_t::OnNoTrade(order_data_t const &order) {
   if (order.type == trade_type_e::none)
     return;
   else if (order.type == trade_type_e::spot)
