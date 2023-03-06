@@ -33,6 +33,8 @@ wallet_asset_t *user_data_t::getUserAsset(std::string const &name) {
 }
 
 void user_data_t::setLeverage(double const leverage_) {
+  if (!openPositions.empty())
+    throw std::runtime_error("cannot set leverage when a position is open");
   leverage = std::clamp(leverage_, 1.0, 125.0);
 }
 
@@ -45,32 +47,91 @@ void user_data_t::OnNewTrade(trade_data_t const &trade) {
 }
 
 void user_data_t::onNewFuturesTrade(trade_data_t const &trade) {
-  // TODO:
-  (void)trade;
+  auto findOrderIter = std::find_if(orders.begin(), orders.end(),
+                                    [orderID = trade.orderID](order_data_t const &order) {
+                                      return order.orderID == orderID;
+                                    });
+  if (findOrderIter == orders.end()) // there's a problem
+    return;
+
+  auto iter = std::find_if(openPositions.begin(), openPositions.end(),
+                           [token = findOrderIter->token](position_t const &pos) {
+                             return pos.token == token;
+                           });
+  if (iter == openPositions.end()) { // new position
+    position_t newPosition;
+    newPosition.token = findOrderIter->token;
+    newPosition.entryPrice = trade.amountPerPiece;
+    newPosition.side = trade.side;
+    newPosition.leverage = findOrderIter->leverage;
+    newPosition.size = findOrderIter->quantity;
+    newPosition.status = trade.status;
+    return openPositions.push_back(std::move(newPosition));
+  }
+
+  if (iter->side == trade.side) { // buying or selling more
+    double const newEntryPrice = ((iter->entryPrice * iter->size) +
+        (trade.quantityExecuted * trade.amountPerPiece)) /
+        (iter->size + trade.quantityExecuted);
+    iter->size += trade.quantityExecuted;
+    iter->entryPrice = newEntryPrice;
+    iter->status = trade.status;
+  } else {
+    auto const sizeExecuted = (std::min)(iter->size, trade.quantityExecuted);
+    calculatePNL(trade.amountPerPiece, sizeExecuted, *iter);
+
+    if (auto const difference = iter->size - trade.quantityExecuted; difference == 0.0) { // close position
+      openPositions.erase(iter);
+    } else if (difference > 0.0) { // partial sale
+      iter->size -= trade.quantityExecuted;
+    } else {
+      position_t newPosition;
+      newPosition.token = findOrderIter->token;
+      newPosition.entryPrice = trade.amountPerPiece;
+      newPosition.side = trade.side;
+      newPosition.leverage = findOrderIter->leverage;
+      newPosition.size = difference;
+      newPosition.status = trade.status;
+      openPositions.erase(iter);
+      return openPositions.push_back(std::move(newPosition));
+    }
+  }
+}
+
+void user_data_t::calculatePNL(double const currentPrice, double const qty,
+                               position_t const &position) {
+  double profitAndLoss = 0.0;
+  if (position.side == trade_side_e::long_) {
+    profitAndLoss = (currentPrice - position.entryPrice) * qty * position.leverage;
+  } else {
+    profitAndLoss = (position.entryPrice - currentPrice) * qty * position.leverage;
+  }
+  auto asset = getUserAsset(position.token->quoteAsset);
+  if (!asset)
+    return;
+  asset->amountAvailable += profitAndLoss;
+}
+
+bool user_data_t::isActiveOrder(const order_data_t &order) {
+  return order.status == order_status_e::partially_filled ||
+      order.status == order_status_e::new_order;
 }
 
 void user_data_t::OnNoTrade(order_data_t const &order) {
   if (order.type == trade_type_e::none)
     return;
-  else if (order.type == trade_type_e::spot)
-    return noSpotTrade(order);
-  return noFuturesTrade(order);
-}
 
-void user_data_t::noFuturesTrade(order_data_t const &order) {
-  // TODO:
-}
-
-void user_data_t::noSpotTrade(order_data_t const &order) {
   auto userOrderIter =
       std::find_if(orders.begin(), orders.end(),
                    [orderID = order.orderID](order_data_t const &order) {
                      return orderID == order.orderID;
                    });
-  if (userOrderIter != orders.end()) { // nothing to do here
-    userOrderIter->status = order_status_e::expired;
+  if (userOrderIter == orders.end() || !isActiveOrder(*userOrderIter))
+    return;
+  userOrderIter->status = order_status_e::expired;
+  if (order.type == trade_type_e::spot)
     return issueRefund(order);
-  }
+  return issueFuturesRefund(order);
 }
 
 void user_data_t::onNewSpotTrade(trade_data_t const &trade) {
@@ -119,40 +180,29 @@ bool user_data_t::isBuyOrSell(trade_type_e const tt,
 bool user_data_t::hasFuturesTradableBalance(
     internal_token_data_t const *const token, trade_side_e const side,
     double const quantity, double const price, double const leverage) {
-  double const takerFee = quantity * m_makerFeeRate;
-  double const makerFee = quantity * m_takerFeeRate;
-  bool const isBuying = side == trade_side_e::long_;
-
-  double orderMargin = (quantity * (1.0 + takerFee)) + makerFee;
-  if (isBuying)
-    orderMargin = (price * quantity * (1.0 + takerFee)) + makerFee;
+  double cost = (quantity * price) / leverage;
+  auto asset = getUserAsset(token->quoteAsset);
+  if (!asset || asset->amountAvailable < cost) {
+    return false;
+  }
 
   auto positionIter = std::find_if(
       openPositions.begin(), openPositions.end(),
       [token](position_t const &position) { return position.token == token; });
-  auto asset = getUserAsset(token->quoteAsset);
-  if (!asset || asset->amountAvailable < orderMargin)
-    return false;
-
   if (positionIter == openPositions.end() || positionIter->side == side) {
-    asset->amountAvailable -= orderMargin;
-    asset->amountInUse += orderMargin;
+    asset->amountAvailable -= cost;
     return true;
   }
 
-  double const quantityDifference = positionIter->quantity - quantity;
-  if (quantityDifference <= 0.0) { // a close position
+  double const quantityDifference = positionIter->size - quantity;
+  if (quantityDifference == 0.0) // a close position
     return true;
-  }
+
   // another open position
-  if (isBuying)
-    orderMargin = (price * quantityDifference * (1.0 + takerFee)) + makerFee;
-  else
-    orderMargin = (quantityDifference * (1.0 + takerFee)) + makerFee;
-  if (asset->amountAvailable < orderMargin)
+  cost = (std::abs(quantityDifference) * price) / leverage;
+  if (asset->amountAvailable < cost)
     return false;
-  asset->amountAvailable -= orderMargin;
-  asset->amountInUse += orderMargin;
+  asset->amountAvailable -= cost;
   return true;
 }
 
@@ -178,21 +228,32 @@ bool user_data_t::hasTradableBalance(internal_token_data_t const *const token,
   return true;
 }
 
+void user_data_t::issueFuturesRefund(order_data_t const &order) {
+  if (auto asset = getUserAsset(order.token->quoteAsset); asset) {
+    double const cost = (order.quantity * order.priceLevel) / order.leverage;
+    asset->amountAvailable += cost;
+  }
+}
+
 void user_data_t::issueCancelledRefund(wallet_asset_t &asset,
                                        order_data_t const &order) {
-  auto const lot = order.priceLevel * order.quantity;
-  asset.amountAvailable += lot;
-  asset.amountInUse -= lot;
+  if (isActiveOrder(order)) {
+    auto const lot = order.priceLevel * order.quantity;
+    asset.amountAvailable += lot;
+    asset.amountInUse -= lot;
+  }
 }
 
 void user_data_t::issueRefund(order_data_t const &order) {
-  auto const lot = order.quantity * order.priceLevel * order.leverage;
-  std::string const &symbol = (order.side == trade_side_e::buy)
-                                  ? order.token->quoteAsset
-                                  : order.token->baseAsset;
-  auto asset = getUserAsset(symbol);
-  asset->amountAvailable += lot;
-  asset->amountInUse -= lot;
+  if (isActiveOrder(order)) {
+    auto const lot = order.quantity * order.priceLevel;
+    std::string const &symbol = (order.side == trade_side_e::buy)
+                                ? order.token->quoteAsset
+                                : order.token->baseAsset;
+    auto asset = getUserAsset(symbol);
+    asset->amountAvailable += lot;
+    asset->amountInUse -= lot;
+  }
 }
 
 std::optional<order_data_t>
@@ -238,32 +299,6 @@ order_data_t user_data_t::createOrderImpl(
   order.user = this;
   order.status = order_status_e::new_order;
   return order;
-}
-
-bool user_data_t::updateOpenPositions(order_data_t const &order) {
-  if (!order.token)
-    return false;
-  auto iter = std::find_if(openPositions.begin(), openPositions.end(),
-                           [&order](position_t const &position) {
-                             return position.token == order.token;
-                           });
-  if (iter == openPositions.end()) {
-    position_t pos;
-    pos.token = order.token;
-    pos.quantity = order.quantity;
-    pos.leverage = order.leverage;
-    openPositions.push_back(std::move(pos));
-    return true;
-  }
-  // all the open positions should have the same leverage...for now.
-  // TODO: Improve
-  if (order.leverage != iter->leverage)
-    return false;
-
-  if (iter->side == iter->side) {
-    // if (iter->leverage)
-  }
-  return true;
 }
 
 int64_t user_data_t::sendOrderToBook(std::optional<order_data_t> &&order) {
@@ -356,7 +391,7 @@ bool user_data_t::cancelOrderWithID(uint64_t const orderID) {
                         [orderID](order_data_t const &order) {
                           return order.orderID == orderID;
                         });
-    if (orders.end() != iter) {
+    if (orders.end() != iter && isActiveOrder(*iter)) {
       iter->status = order_status_e::pending_cancel;
       cancelledOrders.push_back(*iter);
     }

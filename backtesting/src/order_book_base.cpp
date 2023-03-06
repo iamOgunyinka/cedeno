@@ -278,7 +278,7 @@ trade_data_t order_book_base_t::getNewTrade(order_data_t const &order,
   trade.tradeType = order.type;
   trade.status = status;
 
-  if (order.user) // send notification to the "orderer"
+  if (order.user) // send notification to the order owner
     order.user->OnNewTrade(trade);
   return trade;
 }
@@ -289,7 +289,8 @@ void order_book_base_t::placeOrder(order_data_t order) {
   auto &asks = m_orderBook.asks;
 
   auto broadcastTradeSignal = [this](trade_list_t &&result) {
-    NewTradesCreated(std::move(result));
+    if (!result.empty())
+      NewTradesCreated(std::move(result));
   };
 
   trade_list_t result;
@@ -393,8 +394,7 @@ void order_book_base_t::placeOrder(order_data_t order) {
     }
   } // end of limit order
 
-  if (!result.empty())
-    return broadcastTradeSignal(std::move(result));
+  broadcastTradeSignal(std::move(result));
 }
 
 void order_book_base_t::cancelOrder(order_data_t order) {
