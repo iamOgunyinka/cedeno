@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Signals/Delegate.h>
 #include <memory>
 #include <optional>
 #include <string>
@@ -15,6 +16,8 @@ struct internal_token_data_t {
   std::string baseAsset;
   std::string quoteAsset;
   trade_type_e tradeType = trade_type_e::none;
+  double maintenanceMarginRate = 1.0;
+  double maintenanceAmount = 0.0;
 };
 using token_data_list_t = std::vector<internal_token_data_t>;
 
@@ -25,13 +28,15 @@ struct position_t {
   double entryPrice = 0.0;
   double size = 0.0;
   double leverage = 0.0;
+  double liquidationPrice = 0.0;
   trade_side_e side = trade_side_e::none;
-  position_t() = default;
 
+  position_t() = default;
   inline double value(double const currentPrice) const {
     return size * currentPrice;
   }
   inline double margin() const { return value(entryPrice) / leverage; }
+
 private:
   // used only internally
   order_status_e status = order_status_e::new_order;
@@ -54,7 +59,7 @@ struct wallet_asset_t {
 };
 using wallet_asset_list_t = std::vector<wallet_asset_t>;
 
-struct user_data_t;
+class user_data_t;
 struct order_data_t {
   uint64_t orderID = 0;
   user_data_t *user = nullptr;
@@ -69,17 +74,22 @@ struct order_data_t {
 };
 using order_list_t = std::vector<order_data_t>;
 
-struct user_data_t {
+class user_data_t {
   friend class order_book_base_t;
+  friend void liquidationOfPositionsImpl();
 
-  uint64_t userID = 0;
-  double leverage = 1.0;
+  double m_leverage = 1.0;
   double m_makerFeeRate = 0.0;
   double m_takerFeeRate = 0.0;
-  trade_list_t trades;
-  order_list_t orders;
-  wallet_asset_list_t assets;
-  position_list_t openPositions;
+
+public:
+  uint64_t m_userID = 0;
+  trade_list_t m_trades;
+  order_list_t m_orders;
+  wallet_asset_list_t m_assets;
+  position_list_t m_openPositions;
+
+  user_data_t() = default;
 
   int64_t createSpotLimitOrder(std::string const &base,
                                std::string const &quote, double const price,
@@ -117,9 +127,9 @@ struct user_data_t {
       std::string const &tokenName, double const amountOrQuantityToSpend,
       double const leverage = 1.0, trade_side_e const side = trade_side_e::buy,
       trade_type_e const tradeType = trade_type_e::spot);
-  void setLeverage(double const leverage_);
-  double getLeverage() const { return leverage; }
   bool cancelOrderWithID(uint64_t const orderID);
+  double getLeverage() const { return m_leverage; }
+  void setLeverage(double const leverage_);
 
 private:
   // this function is called from the order book AND the orderbook only
@@ -130,7 +140,9 @@ private:
   void onNewFuturesTrade(trade_data_t const &trade);
   void issueRefund(order_data_t const &order);
   void issueCancelledRefund(wallet_asset_t &asset, order_data_t const &order);
-  void calculatePNL(double const price, double const qty, position_t const &position);
+  void calculatePNL(double const price, double const qty,
+                    position_t const &position);
+  void liquidatePosition(position_t const &);
   [[nodiscard]] bool isBuyOrSell(trade_type_e const tt,
                                  trade_side_e const side) const;
   [[nodiscard]] bool isActiveOrder(order_data_t const &order);

@@ -10,8 +10,7 @@ namespace backtesting {
 spot_order_book_t::spot_order_book_t(net::io_context &ioContext,
                                      data_streamer_t<depth_data_t> dataStreamer,
                                      internal_token_data_t *symbol)
-    : order_book_base_t(ioContext, std::move(dataStreamer), symbol,
-                        trade_type_e::spot) {}
+    : order_book_base_t(ioContext, std::move(dataStreamer), symbol) {}
 
 #ifdef _DEBUG
 void spot_order_book_t::printOrderBook() {

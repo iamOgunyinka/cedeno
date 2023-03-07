@@ -1,6 +1,7 @@
 #include "user_data.hpp"
 #include "global_data.hpp"
 #include <algorithm>
+#include <thread>
 
 namespace backtesting {
 namespace utils {
@@ -26,16 +27,16 @@ void wallet_asset_t::setTokenName(std::string const &name) {
 }
 
 wallet_asset_t *user_data_t::getUserAsset(std::string const &name) {
-  for (auto &asset : assets)
+  for (auto &asset : m_assets)
     if (utils::isCaseInsensitiveStringCompare(asset.tokenName, name))
       return &asset;
   return nullptr;
 }
 
 void user_data_t::setLeverage(double const leverage_) {
-  if (!openPositions.empty())
+  if (!m_openPositions.empty())
     throw std::runtime_error("cannot set leverage when a position is open");
-  leverage = std::clamp(leverage_, 1.0, 125.0);
+  m_leverage = std::clamp(leverage_, 1.0, 125.0);
 }
 
 void user_data_t::OnNewTrade(trade_data_t const &trade) {
@@ -47,31 +48,44 @@ void user_data_t::OnNewTrade(trade_data_t const &trade) {
 }
 
 void user_data_t::onNewFuturesTrade(trade_data_t const &trade) {
-  auto findOrderIter = std::find_if(orders.begin(), orders.end(),
-                                    [orderID = trade.orderID](order_data_t const &order) {
-                                      return order.orderID == orderID;
-                                    });
-  if (findOrderIter == orders.end()) // there's a problem
+  auto findOrderIter =
+      std::find_if(m_orders.begin(), m_orders.end(),
+                   [orderID = trade.orderID](order_data_t const &order) {
+                     return order.orderID == orderID;
+                   });
+  if (findOrderIter == m_orders.end()) // there's a problem
     return;
 
-  auto iter = std::find_if(openPositions.begin(), openPositions.end(),
-                           [token = findOrderIter->token](position_t const &pos) {
-                             return pos.token == token;
-                           });
-  if (iter == openPositions.end()) { // new position
+  auto iter =
+      std::find_if(m_openPositions.begin(), m_openPositions.end(),
+                   [token = findOrderIter->token](position_t const &pos) {
+                     return pos.token == token;
+                   });
+  if (iter == m_openPositions.end()) { // new position
     position_t newPosition;
     newPosition.token = findOrderIter->token;
     newPosition.entryPrice = trade.amountPerPiece;
     newPosition.side = trade.side;
     newPosition.leverage = findOrderIter->leverage;
-    newPosition.size = findOrderIter->quantity;
+    newPosition.size = trade.quantityExecuted;
     newPosition.status = trade.status;
-    return openPositions.push_back(std::move(newPosition));
+    newPosition.liquidationPrice = 0.0;
+
+    // TODO: calculate the liquidation price
+    double const notionalPositionValue =
+        newPosition.size * newPosition.entryPrice;
+    double const initialMargin = notionalPositionValue / newPosition.leverage;
+    double const maintenanceMargin =
+        notionalPositionValue * newPosition.token->maintenanceMarginRate -
+        newPosition.token->maintenanceAmount;
+
+    return m_openPositions.push_back(std::move(newPosition));
   }
 
   if (iter->side == trade.side) { // buying or selling more
-    double const newEntryPrice = ((iter->entryPrice * iter->size) +
-        (trade.quantityExecuted * trade.amountPerPiece)) /
+    double const newEntryPrice =
+        ((iter->entryPrice * iter->size) +
+         (trade.quantityExecuted * trade.amountPerPiece)) /
         (iter->size + trade.quantityExecuted);
     iter->size += trade.quantityExecuted;
     iter->entryPrice = newEntryPrice;
@@ -80,8 +94,9 @@ void user_data_t::onNewFuturesTrade(trade_data_t const &trade) {
     auto const sizeExecuted = (std::min)(iter->size, trade.quantityExecuted);
     calculatePNL(trade.amountPerPiece, sizeExecuted, *iter);
 
-    if (auto const difference = iter->size - trade.quantityExecuted; difference == 0.0) { // close position
-      openPositions.erase(iter);
+    if (auto const difference = iter->size - trade.quantityExecuted;
+        difference == 0.0) { // close position
+      m_openPositions.erase(iter);
     } else if (difference > 0.0) { // partial sale
       iter->size -= trade.quantityExecuted;
     } else {
@@ -92,29 +107,32 @@ void user_data_t::onNewFuturesTrade(trade_data_t const &trade) {
       newPosition.leverage = findOrderIter->leverage;
       newPosition.size = difference;
       newPosition.status = trade.status;
-      openPositions.erase(iter);
-      return openPositions.push_back(std::move(newPosition));
+      m_openPositions.erase(iter);
+      return m_openPositions.push_back(std::move(newPosition));
     }
   }
 }
 
 void user_data_t::calculatePNL(double const currentPrice, double const qty,
                                position_t const &position) {
-  double profitAndLoss = 0.0;
-  if (position.side == trade_side_e::long_) {
-    profitAndLoss = (currentPrice - position.entryPrice) * qty * position.leverage;
-  } else {
-    profitAndLoss = (position.entryPrice - currentPrice) * qty * position.leverage;
-  }
   auto asset = getUserAsset(position.token->quoteAsset);
   if (!asset)
     return;
+
+  double profitAndLoss = 0.0;
+  if (position.side == trade_side_e::long_) {
+    profitAndLoss =
+        (currentPrice - position.entryPrice) * qty * position.leverage;
+  } else {
+    profitAndLoss =
+        (position.entryPrice - currentPrice) * qty * position.leverage;
+  }
   asset->amountAvailable += profitAndLoss;
 }
 
 bool user_data_t::isActiveOrder(const order_data_t &order) {
   return order.status == order_status_e::partially_filled ||
-      order.status == order_status_e::new_order;
+         order.status == order_status_e::new_order;
 }
 
 void user_data_t::OnNoTrade(order_data_t const &order) {
@@ -122,11 +140,11 @@ void user_data_t::OnNoTrade(order_data_t const &order) {
     return;
 
   auto userOrderIter =
-      std::find_if(orders.begin(), orders.end(),
+      std::find_if(m_orders.begin(), m_orders.end(),
                    [orderID = order.orderID](order_data_t const &order) {
                      return orderID == order.orderID;
                    });
-  if (userOrderIter == orders.end() || !isActiveOrder(*userOrderIter))
+  if (userOrderIter == m_orders.end() || !isActiveOrder(*userOrderIter))
     return;
   userOrderIter->status = order_status_e::expired;
   if (order.type == trade_type_e::spot)
@@ -136,14 +154,14 @@ void user_data_t::OnNoTrade(order_data_t const &order) {
 
 void user_data_t::onNewSpotTrade(trade_data_t const &trade) {
   if (isBuyOrSell(trade.tradeType, trade.side))
-    trades.push_back(trade);
+    m_trades.push_back(trade);
 
   auto userOrderIter =
-      std::find_if(orders.begin(), orders.end(),
+      std::find_if(m_orders.begin(), m_orders.end(),
                    [orderID = trade.orderID](order_data_t const &order) {
                      return orderID == order.orderID;
                    });
-  if (userOrderIter == orders.end()) // nothing to do here
+  if (userOrderIter == m_orders.end()) // nothing to do here
     return;
 
   auto &order = *userOrderIter;
@@ -177,6 +195,21 @@ bool user_data_t::isBuyOrSell(trade_type_e const tt,
   return false;
 }
 
+void user_data_t::liquidatePosition(position_t const &position) {
+  auto iter = std::find_if(m_openPositions.begin(), m_openPositions.end(),
+                           [symbol = position.token](position_t const &pos) {
+                             return pos.token == symbol;
+                           });
+  auto asset = getUserAsset(position.token->quoteAsset);
+  if (iter == m_openPositions.end() || asset == nullptr)
+    return;
+
+  // TODO: Sell the position and liquidate asset
+
+  asset->amountAvailable = 0.0;
+  m_openPositions.erase(iter);
+}
+
 bool user_data_t::hasFuturesTradableBalance(
     internal_token_data_t const *const token, trade_side_e const side,
     double const quantity, double const price, double const leverage) {
@@ -187,9 +220,9 @@ bool user_data_t::hasFuturesTradableBalance(
   }
 
   auto positionIter = std::find_if(
-      openPositions.begin(), openPositions.end(),
+      m_openPositions.begin(), m_openPositions.end(),
       [token](position_t const &position) { return position.token == token; });
-  if (positionIter == openPositions.end() || positionIter->side == side) {
+  if (positionIter == m_openPositions.end() || positionIter->side == side) {
     asset->amountAvailable -= cost;
     return true;
   }
@@ -248,8 +281,8 @@ void user_data_t::issueRefund(order_data_t const &order) {
   if (isActiveOrder(order)) {
     auto const lot = order.quantity * order.priceLevel;
     std::string const &symbol = (order.side == trade_side_e::buy)
-                                ? order.token->quoteAsset
-                                : order.token->baseAsset;
+                                    ? order.token->quoteAsset
+                                    : order.token->baseAsset;
     auto asset = getUserAsset(symbol);
     asset->amountAvailable += lot;
     asset->amountInUse -= lot;
@@ -309,7 +342,7 @@ int64_t user_data_t::sendOrderToBook(std::optional<order_data_t> &&order) {
 
   if (bool const isSuccess = initiateOrder(*order); isSuccess) {
     orderNumber = order->orderID;
-    orders.push_back(std::move(*order));
+    m_orders.push_back(std::move(*order));
   } else {
     issueRefund(*order);
   }
@@ -363,7 +396,7 @@ int64_t user_data_t::createFuturesLimitOrder(std::string const &tokenName,
                                              double const price,
                                              double const quantity,
                                              trade_side_e const side) {
-  auto order = getLimitOrder(tokenName, quantity, price, leverage, side,
+  auto order = getLimitOrder(tokenName, quantity, price, m_leverage, side,
                              trade_type_e::futures);
   return sendOrderToBook(std::move(order));
 }
@@ -379,23 +412,23 @@ int64_t user_data_t::createFuturesMarketOrder(std::string const &base,
 int64_t user_data_t::createFuturesMarketOrder(std::string const &tokenName,
                                               double const amountOrQtyToSpend,
                                               trade_side_e const side) {
-  auto order = getMarketOrder(tokenName, amountOrQtyToSpend, leverage, side);
+  auto order = getMarketOrder(tokenName, amountOrQtyToSpend, m_leverage, side);
   return sendOrderToBook(std::move(order));
 }
 
 bool user_data_t::cancelOrderWithID(uint64_t const orderID) {
   order_list_t cancelledOrders;
-  auto iter = orders.end();
+  auto iter = m_orders.end();
   do {
-    iter = std::find_if(orders.begin(), orders.end(),
+    iter = std::find_if(m_orders.begin(), m_orders.end(),
                         [orderID](order_data_t const &order) {
                           return order.orderID == orderID;
                         });
-    if (orders.end() != iter && isActiveOrder(*iter)) {
+    if (m_orders.end() != iter && isActiveOrder(*iter)) {
       iter->status = order_status_e::pending_cancel;
       cancelledOrders.push_back(*iter);
     }
-  } while (iter != orders.end());
+  } while (iter != m_orders.end());
   if (cancelledOrders.empty())
     return false;
   return cancelAllOrders(cancelledOrders);

@@ -16,7 +16,7 @@ std::optional<backtesting::user_data_t> findUserByID(int64_t userID) {
   auto const &users = global_data_t::instance().allUserAccounts;
   auto iter =
       std::find_if(users.cbegin(), users.cend(), [userID](auto const &user) {
-        return user->userID == userID;
+        return user->m_userID == userID;
       });
   if (iter == users.cend())
     return std::nullopt;
@@ -161,10 +161,10 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readonly("side", &backtesting::trade_data_t::side);
 
   py::class_<backtesting::user_data_t>(m, "UserData")
-      .def_readonly("userID", &backtesting::user_data_t::userID)
-      .def_readonly("trades", &backtesting::user_data_t::trades)
-      .def_readonly("orders", &backtesting::user_data_t::orders)
-      .def_readonly("assets", &backtesting::user_data_t::assets)
+      .def_readonly("userID", &backtesting::user_data_t::m_userID)
+      .def_readonly("trades", &backtesting::user_data_t::m_trades)
+      .def_readonly("orders", &backtesting::user_data_t::m_orders)
+      .def_readonly("assets", &backtesting::user_data_t::m_assets)
       .def_property("leverage", &backtesting::user_data_t::getLeverage,
                     &backtesting::user_data_t::setLeverage)
       .def("cancelOrder", &backtesting::user_data_t::cancelOrderWithID)

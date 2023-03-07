@@ -30,7 +30,7 @@ int64_t global_data_t::newUser(backtesting::wallet_asset_list_t assets) {
       return userID;
     }
   }
-  user->assets = std::move(assets);
+  user->m_assets = std::move(assets);
 
 #ifdef BT_USE_WITH_DB
   auto databaseConnector =
@@ -58,9 +58,9 @@ int64_t global_data_t::newUser(backtesting::wallet_asset_list_t assets) {
           globalRtData.allUserAccounts.cbegin(),
           globalRtData.allUserAccounts.cend(),
           [userID](std::shared_ptr<backtesting::user_data_t> const &user) {
-            return user->userID == userID;
+            return user->m_userID == userID;
           });
-      user->userID = userID;
+      user->m_userID = userID;
     } while (iter != globalRtData.allUserAccounts.cend());
   }
 #endif

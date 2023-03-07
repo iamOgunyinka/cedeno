@@ -61,10 +61,6 @@ depth_signal_handler_t::GetDepthDelegate() {
 
 void registerDepthCallback(backtesting::trade_type_e const tt,
                            depth_event_callback_t cb, bool const pushToFront) {
-  // TODO: will be removed when the futures orderBook is implemented
-  if (tt != backtesting::trade_type_e::spot)
-    return;
-
   auto &callbackList = depthCallbackList[(int)tt];
   if (!pushToFront)
     return callbackList.push_back(cb);
@@ -74,10 +70,6 @@ void registerDepthCallback(backtesting::trade_type_e const tt,
 void registerTradesCallback(backtesting::trade_type_e const tt,
                             trades_event_callback_t cb,
                             bool const pushToFront) {
-  // TODO: will also be removed when the futures orderBook is implemented
-  if (tt != backtesting::trade_type_e::spot)
-    return;
-
   std::visit(
       [t = (int)tt, pushToFront](auto &&cb) {
         using T = std::decay_t<decltype(cb)>;

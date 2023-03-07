@@ -100,7 +100,6 @@ template <typename Comparator>
 void updateSidesWithNewDepth(std::vector<depth_data_t::depth_meta_t> const &src,
                              std::vector<details::order_meta_data_t> &dest,
                              trade_side_e const side,
-                             trade_type_e const tradeType,
                              internal_token_data_t *token,
                              Comparator comparator) {
   for (auto const &d : src) {
@@ -117,13 +116,14 @@ void updateSidesWithNewDepth(std::vector<depth_data_t::depth_meta_t> const &src,
         order.priceLevel = d.priceLevel;
         order.quantity = d.quantity;
         order.side = side;
-        order.type = tradeType;
+        order.type = token->tradeType;
         order.token = token;
         order.orderID = getOrderNumber();
         iter->orders.push_back(std::move(order));
       }
     } else {
-      dest.insert(iter, orderMetaDataFromDepth(d, token, side, tradeType));
+      dest.insert(iter,
+                  orderMetaDataFromDepth(d, token, side, token->tradeType));
     }
   }
 
@@ -155,6 +155,7 @@ void order_book_base_t::shakeOrderBook() {
       otherTrades = getExecutedTradesFromOrders(ask, execQty, price);
       result.insert(result.end(), otherTrades.begin(), otherTrades.end());
 
+      NewMarketPrice(m_symbol, price);
       ask.totalQuantity -= execQty;
       if (ask.totalQuantity == 0.0)
         asks.erase(asks.begin());
@@ -217,6 +218,10 @@ order_book_base_t::marketMatcher(std::vector<details::order_meta_data_t> &list,
       status = order_status_e::filled;
     auto trade = getNewTrade(order, status, execQty, price);
     auto otherTrades = getExecutedTradesFromOrders(front, execQty, price);
+
+    // broadcast current market price of symbol
+    NewMarketPrice(m_symbol, price);
+
     front.totalQuantity -= execQty;
     amountAvailableToSpend -= amountSpent;
 
@@ -231,17 +236,16 @@ order_book_base_t::marketMatcher(std::vector<details::order_meta_data_t> &list,
 
 order_book_base_t::order_book_base_t(net::io_context &ioContext,
                                      data_streamer_t<depth_data_t> dataStreamer,
-                                     internal_token_data_t *symbol,
-                                     trade_type_e const tradeType)
+                                     internal_token_data_t *symbol)
     : m_ioContext(ioContext), m_dataStreamer(std::move(dataStreamer)),
-      m_symbol(symbol), m_tradeType(tradeType) {
+      m_symbol(symbol) {
   auto firstData = m_dataStreamer.getNextData();
-  firstData.tradeType = m_tradeType;
+  firstData.tradeType = m_symbol->tradeType;
 
   insertAndSort(firstData.bids, m_orderBook.bids, trade_side_e::buy,
-                m_tradeType, symbol, isGreater);
+                firstData.tradeType, symbol, isGreater);
   insertAndSort(firstData.asks, m_orderBook.asks, trade_side_e::sell,
-                m_tradeType, symbol, isLesser);
+                firstData.tradeType, symbol, isLesser);
   m_currentTimer = firstData.eventTime;
 
   NewDepthObtained(firstData);
@@ -321,6 +325,9 @@ void order_book_base_t::placeOrder(order_data_t order) {
           auto trade = getNewTrade(order, status, execQty, price);
           auto otherTrades = getExecutedTradesFromOrders(ask, execQty, price);
 
+          // broadcast symbol's latest market value
+          NewMarketPrice(m_symbol, price);
+
           ask.totalQuantity -= execQty;
           order.quantity -= execQty;
 
@@ -373,6 +380,9 @@ void order_book_base_t::placeOrder(order_data_t order) {
             bids.erase(bids.begin());
           result.push_back(std::move(trade));
           result.insert(result.end(), otherTrades.begin(), otherTrades.end());
+
+          // broadcast symbol's latest market value
+          NewMarketPrice(m_symbol, price);
 
           if (order.quantity == 0.0)
             return broadcastTradeSignal(std::move(result));
@@ -432,7 +442,7 @@ void order_book_base_t::setNextTimer() {
     m_periodicTimer.reset(new net::deadline_timer(m_ioContext));
 
   m_nextData = m_dataStreamer.getNextData();
-  m_nextData.tradeType = m_tradeType;
+  m_nextData.tradeType = m_symbol->tradeType;
   NewDepthObtained(m_nextData);
 
   // no more data but we need to keep the simulator running
@@ -449,7 +459,6 @@ void order_book_base_t::setNextTimer() {
 #endif // _DEBUG
 
   m_currentTimer = m_nextData.eventTime;
-
   m_periodicTimer->expires_from_now(boost::posix_time::milliseconds(timeDiff));
   m_periodicTimer->async_wait([this](boost::system::error_code const ec) {
     updateOrderBook(std::move(m_nextData));
@@ -459,9 +468,9 @@ void order_book_base_t::setNextTimer() {
 
 void order_book_base_t::updateOrderBook(depth_data_t &&newestData) {
   updateSidesWithNewDepth(newestData.asks, m_orderBook.asks, trade_side_e::sell,
-                          m_tradeType, m_symbol, lesserComparator);
+                          m_symbol, lesserComparator);
   updateSidesWithNewDepth(newestData.bids, m_orderBook.bids, trade_side_e::buy,
-                          m_tradeType, m_symbol, greaterComparator);
+                          m_symbol, greaterComparator);
   shakeOrderBook();
 #ifdef _DEBUG
   printOrderBook();

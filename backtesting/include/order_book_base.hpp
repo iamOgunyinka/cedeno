@@ -75,13 +75,13 @@ public:
 
   order_book_base_t(net::io_context &ioContext,
                     data_streamer_t<depth_data_t> dataStreamer,
-                    internal_token_data_t *symbol,
-                    trade_type_e const tradeType);
+                    internal_token_data_t *symbol);
   virtual ~order_book_base_t();
   void run();
 
   Gallant::Signal1<trade_list_t> NewTradesCreated;
   Gallant::Signal1<depth_data_t> NewDepthObtained;
+  Gallant::Signal2<internal_token_data_t *, double> NewMarketPrice;
 
 private:
   void updateOrderBook(depth_data_t &&newestData);
@@ -111,7 +111,6 @@ protected:
   details::order_book_meta_t m_orderBook;
   depth_data_t m_nextData;
   time_t m_currentTimer = 0;
-  trade_type_e const m_tradeType;
 };
 
 details::order_meta_data_t

@@ -166,6 +166,7 @@
     <ClInclude Include="include\matching_engine.hpp" />
     <ClInclude Include="include\order_book_base.hpp" />
     <ClInclude Include="include\py_wrapper.hpp" />
+    <ClInclude Include="include\signals.hpp" />
     <ClInclude Include="include\spot_order_book.hpp" />
     <ClInclude Include="include\trades_data.hpp" />
     <ClInclude Include="include\user_data.hpp" />
@@ -186,6 +187,7 @@
     <ClCompile Include="src\matching_engine.cpp" />
     <ClCompile Include="src\order_book_base.cpp" />
     <ClCompile Include="src\py_wrapper.cpp" />
+    <ClCompile Include="src\signals.cpp" />
     <ClCompile Include="src\spot_order_book.cpp" />
     <ClCompile Include="src\trades_data.cpp" />
     <ClCompile Include="src\user_data.cpp" />

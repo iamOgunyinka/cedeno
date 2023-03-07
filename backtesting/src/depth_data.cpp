@@ -5,6 +5,7 @@
 #include "depth_data.hpp"
 #include "futures_order_book.hpp"
 #include "matching_engine.hpp"
+#include "signals.hpp"
 #include "spot_order_book.hpp"
 
 namespace backtesting {
@@ -63,11 +64,13 @@ void processDepthStream(trade_map_td &tradeMap) {
 
   auto &newTradesDelegate = trade_signal_handler_t::GetTradesDelegate();
   auto &newDepthDelegate = depth_signal_handler_t::GetDepthDelegate();
+  auto &priceDelegate = signals_t::GetPriceDelegate();
 
   for (auto &orderBook : globalOrderBooks) {
     if (orderBook.futures) {
       orderBook.futures->NewDepthObtained.Connect(newDepthDelegate);
       orderBook.futures->NewTradesCreated.Connect(newTradesDelegate);
+      orderBook.futures->NewMarketPrice.Connect(priceDelegate);
       orderBook.futures->run();
     }
     if (orderBook.spot) {
