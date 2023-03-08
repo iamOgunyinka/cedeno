@@ -17,7 +17,10 @@ def onNewTrades(trades):
 
 
 def onNewDepthData(depth):
-    print(depth)
+    pass
+    # print(f"BTCUSDT(Futures) -> {jb.getCurrentPrice('BTCUSDT', jb.TradeType.futures)}")
+    # print(f"BTCUSDT(Spot) -> {jb.getCurrentPrice('BTCUSDT', jb.TradeType.spot)}")
+    # print('')
 
 
 def spinPrint():
@@ -65,33 +68,25 @@ def testSpotLimitOrder():
 def createBacktestObject(nowDt, nowTs, tenDaysAgo):
     os.chdir(os.path.dirname(__file__))
     appConfig = jb.AppConfig()
-    appConfig.symbols = ["BTCUSDT"]
-    appConfig.trades = ["SPOT"]
+    appConfig.symbols = ["BTCUSDT", "ETHUSDT"]
+    appConfig.trades = ["FUTURES", "SPOT"]
     appConfig.path = f'{os.getcwd()}/backtestingFiles'
     appConfig.dateStart = tenDaysAgo.strftime('%Y-%m-%d %H:%M:%S')
     appConfig.dateEnd = nowDt.strftime('%Y-%m-%d %H:%M:%S')
-
-    # appConfig.klineConfig = klineConfig
-    # appConfig.booktickerConfig = btConfig
 
     backTest = jb.Backtesting.instance(appConfig)
     assert backTest is not None
     return backTest
 
 
-def main():
+def testSpotWallet():
     nowDt = dt.datetime.utcnow()
     nowTs = nowDt.timestamp()
     tenDaysAgo = nowDt - dt.timedelta(seconds=36000 * 24)
-    
-    backTest = createBacktestObject(nowDt, nowTs, tenDaysAgo)
-    backTest.run()
 
-    # allow some time for the backtest object to call run()
-    time.sleep(2)
-    assets = [jb.SpotWalletAsset("USDT", 1000), jb.SpotWalletAsset("ETH", 11), jb.SpotWalletAsset("BTC", 1)]
+    assets = [jb.Asset("USDT", 1000), jb.Asset("ETH", 11), jb.Asset("BTC", 1)]
     for a in assets:
-      print(f"{a.symbolName}, {a.available}, {a.inUse}")
+      print(f"{a.name}, {a.available}, {a.inUse}")
 
     newUser = jb.addUser(assets)
     assert newUser is not None
@@ -104,13 +99,13 @@ def main():
     orderNumber = newUser.createSpotLimitOrder("BTCUSDT", 16000, 0.05, jb.TradeSide.buy)
     assert(orderNumber > 0)
 
-    orderNumber = newUser.createSpotMarketOrder("ETHUSDT", 1.0, jb.TradeSide.buy)
+    orderNumber = newUser.createSpotMarketOrder("ETCUSDT", 1.0, jb.TradeSide.buy)
     assert(orderNumber == -1 and (newUser.orders is not None))
     print(orderNumber)
     
     orders = newUser.orders
     print(len(orders))
-    assert(len(orders) == 2)
+    assert(len(orders) == 1)
     
     spotTrade = jb.TradeType.spot
     klineConfig = jb.KlineConfig()
@@ -126,7 +121,8 @@ def main():
     btConfig.tradeType = jb.TradeType.futures
     btConfig.startTime = int(tenDaysAgo.timestamp())
     btConfig.endTime = int(nowTs)
-    btConfig.setCallback(bookTickerCallback)
+    # partialFunc = partial(bookTickerCallback, newUser)
+    btConfig.setCallback(onNewDepthData)
     
     jb.getContinuousKline(klineConfig)
     jb.getContinuousBookTicker(btConfig)
@@ -137,9 +133,80 @@ def main():
     testDiscreteBookticker(nowDt, nowTs, tenDaysAgo)
     testSpotMarketOrder()
     testSpotLimitOrder()
+
+
+def testFuturesWallet():
+    assets = [jb.Asset("USDT", 5000), jb.Asset("BNB", 10)]
+    for a in assets:
+      print(f"FuturesAsset: {a.name}, {a.available}, {a.inUse}")
+
+    newUser = jb.addUser(assets)
+    assert newUser is not None
     
+    futures = jb.TradeType.futures
+    
+    newUser.leverage = 5
+    assert(newUser.leverage == 5)
+    
+    newUser.leverage = 0.1
+    assert(newUser.leverage == 1)
+    
+    newUser.leverage = 125
+    assert(newUser.leverage == 125)
+    
+    newUser.leverage = 126
+    assert(newUser.leverage == 125)
+    
+    newUser.leverage = 5
+    assert(newUser.leverage == 5)
+
+    assert(len(newUser.orders) == 0) # should be 0
+    btcusdtPrice = 22000
+
+    # buy 0.2 worth of BTCUSDT at price 22'000 at leverage 5 -> should cost (22'000 * 0.2) / 5 == 880
+    orderNumber = newUser.createFuturesLimitOrder("BTCUSDT", btcusdtPrice, 0.2, jb.TradeSide.long)
+    print(orderNumber)
+    assert(orderNumber > 1)
+    assert(len(newUser.orders) == 1)
+    
+    ## balance should be 5000 - 880 == $4120
+    assert(newUser.assets[0].available == 4120)
+    
+    ## after this order, balance should be $4120 - $210 == $3910
+    orderNumber = newUser.createFuturesLimitOrder("BTCUSDT", btcusdtPrice - 1000, 0.05, jb.TradeSide.long)
+    assert(orderNumber > 1) # successful
+    assert(len(newUser.orders) == 2)
+    assert(newUser.assets[0].available == 3910)
+    
+    ## after this order, balance should be $3910 - $500 == $3410
+    orderNumber = newUser.createFuturesMarketOrder("ETHUSDT", 500, jb.TradeSide.long)
+    # time.sleep(20)
+    assert(orderNumber > 1)
+    assert(newUser.assets[0].available == 3410)
+    assert(len(newUser.orders) == 3)
+
+
+def main():
+    nowDt = dt.datetime.utcnow()
+    nowTs = nowDt.timestamp()
+    tenDaysAgo = nowDt - dt.timedelta(seconds=36000 * 24)
+    
+    backTest = createBacktestObject(nowDt, nowTs, tenDaysAgo)
+    backTest.run()
+
+    # allow some time for the backtest object to call run()
+    time.sleep(2)
+    
+    spotThread = Thread(target=testFuturesWallet)
+    futuresThread = Thread(target=testSpotWallet)
     bgThread = Thread(target=spinPrint)
+    
+    spotThread.start()
+    futuresThread.start()
     bgThread.start()
+    
+    spotThread.join()
+    futuresThread.join()
     bgThread.join()
     print ("End of test")
 

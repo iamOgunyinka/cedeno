@@ -6,6 +6,8 @@
 namespace backtesting {
 
 std::unordered_map<internal_token_data_t *, double> signals_t::latestPrices{};
+internal_token_data_t *getTokenWithName(std::string const &tokenName,
+                                        trade_type_e const tradeType);
 
 void liquidationOfPositionsImpl() {
   auto &users = global_data_t::instance().allUserAccounts;
@@ -57,10 +59,19 @@ signals_t::price_delegate_t &signals_t::GetPriceDelegate() {
   return *priceDelegate;
 }
 
-double signals_t::currentPrice(internal_token_data_t *token) {
-  if (auto iter = latestPrices.find(token); iter != latestPrices.end())
+double currentPrice(internal_token_data_t* const token) {
+  auto& prices = signals_t::latestPrices;
+  if (auto iter = prices.find(token); iter != prices.end())
     return iter->second;
   return 0.0;
+}
+
+double currentPrice(std::string const &tokenName, trade_type_e const tt)
+{
+  auto token = getTokenWithName(tokenName, tt);
+  if (!token)
+    return 0.0;
+  return currentPrice(token);
 }
 
 } // namespace backtesting

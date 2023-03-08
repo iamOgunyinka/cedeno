@@ -8,6 +8,10 @@
 #include <pybind11/functional.h>
 
 namespace py = pybind11;
+namespace backtesting
+{
+  double currentPrice(std::string const &, trade_type_e const);
+}
 
 std::optional<backtesting::user_data_t> findUserByID(int64_t userID) {
   if (userID < 0)
@@ -148,6 +152,13 @@ PYBIND11_MODULE(jbacktest, m) {
         return a.token != nullptr ? a.token->name : std::string{};
       });
 
+  py::class_<backtesting::position_t>(m, "Position")
+      .def_readonly("entryPrice", &backtesting::position_t::entryPrice)
+      .def_readonly("size", &backtesting::position_t::size)
+      .def_readonly("leverage", &backtesting::position_t::leverage)
+      .def_readonly("liquidationPrice", &backtesting::position_t::liquidationPrice)
+      .def_readonly("side", &backtesting::position_t::side);
+
   py::class_<backtesting::trade_data_t>(m, "TradeData")
       .def_readonly("symbolName", &backtesting::trade_data_t::tokenName)
       .def_readonly("tradeID", &backtesting::trade_data_t::tradeID)
@@ -165,6 +176,7 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readonly("trades", &backtesting::user_data_t::m_trades)
       .def_readonly("orders", &backtesting::user_data_t::m_orders)
       .def_readonly("assets", &backtesting::user_data_t::m_assets)
+      .def_readonly("positions", &backtesting::user_data_t::m_openPositions)
       .def_property("leverage", &backtesting::user_data_t::getLeverage,
                     &backtesting::user_data_t::setLeverage)
       .def("cancelOrder", &backtesting::user_data_t::cancelOrderWithID)
@@ -280,5 +292,10 @@ PYBIND11_MODULE(jbacktest, m) {
     if (!config.callback)
       return false;
     return backtesting::getContinuousBTickerData(std::move(config));
+  });
+
+  m.def("getCurrentPrice", [](std::string const &symbol, backtesting::trade_type_e const tt)
+  {
+    return backtesting::currentPrice(symbol, tt);
   });
 }

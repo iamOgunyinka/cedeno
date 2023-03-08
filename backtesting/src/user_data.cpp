@@ -211,8 +211,16 @@ void user_data_t::liquidatePosition(position_t const &position) {
 }
 
 bool user_data_t::hasFuturesTradableBalance(
-    internal_token_data_t const *const token, trade_side_e const side,
-    double const quantity, double const price, double const leverage) {
+    internal_token_data_t *const token, trade_side_e const side,
+    double quantity, double const amountToSpend, double const leverage) {
+  double price = amountToSpend;
+  if (quantity == 0.0) {
+    price = currentPrice(token);
+    if (price == 0.0)
+      return false;
+    quantity = (amountToSpend * leverage) / price;
+  }
+
   double cost = (quantity * price) / leverage;
   auto asset = getUserAsset(token->quoteAsset);
   if (!asset || asset->amountAvailable < cost) {
@@ -239,7 +247,7 @@ bool user_data_t::hasFuturesTradableBalance(
   return true;
 }
 
-bool user_data_t::hasTradableBalance(internal_token_data_t const *const token,
+bool user_data_t::hasTradableBalance(internal_token_data_t *const token,
                                      trade_side_e const side,
                                      double const quantity, double const price,
                                      double const leverage) {
@@ -249,7 +257,7 @@ bool user_data_t::hasTradableBalance(internal_token_data_t const *const token,
   if (token->tradeType == trade_type_e::futures)
     return hasFuturesTradableBalance(token, side, quantity, price, leverage);
 
-  double const lot = quantity * price;
+  double const lot = (quantity == 0.0 ? 1.0 : quantity) * price;
   std::string const &symbol =
       (side == trade_side_e::buy) ? token->quoteAsset : token->baseAsset;
   auto asset = getUserAsset(symbol);
@@ -306,9 +314,8 @@ std::optional<order_data_t> user_data_t::getMarketOrder(
     double const leverage, trade_side_e const side, trade_type_e const type) {
   if (!isBuyOrSell(type, side))
     return std::nullopt;
-
   auto token = getTokenWithName(tokenName, type);
-  if (!(token && hasTradableBalance(token, side, 1.0, amountOrQuantityToSpend,
+  if (!(token && hasTradableBalance(token, side, 0.0, amountOrQuantityToSpend,
                                     leverage)))
     return std::nullopt;
 
@@ -379,7 +386,7 @@ int64_t user_data_t::createSpotMarketOrder(std::string const &tokenName,
                                            double const amountOrQtyToSpend,
                                            trade_side_e const side) {
   // in the case of spot trading, leverage is always 1.0
-  auto order = getMarketOrder(tokenName, amountOrQtyToSpend, 1.0, side);
+  auto order = getMarketOrder(tokenName, amountOrQtyToSpend, 1.0, side, trade_type_e::spot);
   return sendOrderToBook(std::move(order));
 }
 
@@ -396,8 +403,9 @@ int64_t user_data_t::createFuturesLimitOrder(std::string const &tokenName,
                                              double const price,
                                              double const quantity,
                                              trade_side_e const side) {
-  auto order = getLimitOrder(tokenName, quantity, price, m_leverage, side,
-                             trade_type_e::futures);
+  auto order =
+      getLimitOrder(tokenName, quantity, price, m_leverage, side,
+                    trade_type_e::futures);
   return sendOrderToBook(std::move(order));
 }
 
@@ -412,7 +420,9 @@ int64_t user_data_t::createFuturesMarketOrder(std::string const &base,
 int64_t user_data_t::createFuturesMarketOrder(std::string const &tokenName,
                                               double const amountOrQtyToSpend,
                                               trade_side_e const side) {
-  auto order = getMarketOrder(tokenName, amountOrQtyToSpend, m_leverage, side);
+  auto order =
+      getMarketOrder(tokenName, amountOrQtyToSpend,
+                     m_leverage, side, trade_type_e::futures);
   return sendOrderToBook(std::move(order));
 }
 

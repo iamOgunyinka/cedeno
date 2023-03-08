@@ -125,8 +125,8 @@ public:
                 trade_type_e const type = trade_type_e::spot);
   std::optional<order_data_t> getMarketOrder(
       std::string const &tokenName, double const amountOrQuantityToSpend,
-      double const leverage = 1.0, trade_side_e const side = trade_side_e::buy,
-      trade_type_e const tradeType = trade_type_e::spot);
+      double const leverage, trade_side_e const side,
+      trade_type_e const tradeType);
   bool cancelOrderWithID(uint64_t const orderID);
   double getLeverage() const { return m_leverage; }
   void setLeverage(double const leverage_);
@@ -148,14 +148,14 @@ private:
   [[nodiscard]] bool isActiveOrder(order_data_t const &order);
   [[nodiscard]] int64_t sendOrderToBook(std::optional<order_data_t> &&order);
   [[nodiscard]] wallet_asset_t *getUserAsset(std::string const &name);
-  [[nodiscard]] bool hasTradableBalance(internal_token_data_t const *const,
+  [[nodiscard]] bool hasTradableBalance(internal_token_data_t *const,
                                         trade_side_e const side,
                                         double const quantity,
                                         double const amount,
                                         double const leverage);
   [[nodiscard]] bool
-  hasFuturesTradableBalance(internal_token_data_t const *const,
-                            trade_side_e const side, double const quantity,
+  hasFuturesTradableBalance(internal_token_data_t *const,
+                            trade_side_e const side, double quantity,
                             double const amount, double const leverage);
   [[nodiscard]] order_data_t
   createOrderImpl(internal_token_data_t *, double const quantity,
@@ -169,6 +169,7 @@ using user_data_list_t = std::vector<std::shared_ptr<user_data_t>>;
 
 bool initiateOrder(order_data_t const &order);
 bool cancelAllOrders(order_list_t const &orders);
+double currentPrice(internal_token_data_t *const);
 internal_token_data_t *getTokenWithName(std::string const &tokenName,
                                         trade_type_e const tradeType);
 } // namespace backtesting

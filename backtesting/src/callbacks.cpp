@@ -96,8 +96,6 @@ void onNewDepthThreadImpl() {
   while (true) {
     auto data = depthDataList.get();
 
-    spdlog::info("Asks: {}, Bids: {}", data.asks.size(), data.bids.size());
-
     if (!(recentTradesCallbacks.empty() && data.eventTime > 0)) {
       auto &callbacks = depthCallbackList[(int)data.tradeType];
       for (auto const &callback : callbacks) {

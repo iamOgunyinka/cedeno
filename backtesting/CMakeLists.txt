@@ -115,6 +115,7 @@ set(SRC_FILES
   src/matching_engine.cpp
   src/order_book_base.cpp
   src/py_wrapper.cpp
+  src/signals.cpp
   src/spot_order_book.cpp
   src/trades_data.cpp
   src/user_data.cpp
@@ -143,6 +144,7 @@ set(HEADERS_FILES
   include/matching_engine.hpp
   include/order_book_base.hpp
   include/py_wrapper.hpp
+  include/signals.hpp
   include/spot_order_book.hpp
   include/trades_data.hpp
   include/user_data.hpp

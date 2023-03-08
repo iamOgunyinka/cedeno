@@ -138,8 +138,7 @@ void order_book_base_t::shakeOrderBook() {
   auto &bids = m_orderBook.bids;
   auto &asks = m_orderBook.asks;
 
-  if (asks.empty() || bids.empty() ||
-      bids.front().priceLevel < asks.front().priceLevel)
+  if (asks.empty() || bids.empty() || bids.front().priceLevel < asks.front().priceLevel)
     return;
 
   trade_list_t result{};
