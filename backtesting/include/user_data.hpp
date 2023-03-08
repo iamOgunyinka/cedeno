@@ -123,10 +123,10 @@ public:
                 double const price, double const leverage = 1.0,
                 trade_side_e const side = trade_side_e::buy,
                 trade_type_e const type = trade_type_e::spot);
-  std::optional<order_data_t> getMarketOrder(
-      std::string const &tokenName, double const amountOrQuantityToSpend,
-      double const leverage, trade_side_e const side,
-      trade_type_e const tradeType);
+  std::optional<order_data_t>
+  getMarketOrder(std::string const &tokenName,
+                 double const amountOrQuantityToSpend, double const leverage,
+                 trade_side_e const side, trade_type_e const tradeType);
   bool cancelOrderWithID(uint64_t const orderID);
   double getLeverage() const { return m_leverage; }
   void setLeverage(double const leverage_);
@@ -153,10 +153,11 @@ private:
                                         double const quantity,
                                         double const amount,
                                         double const leverage);
-  [[nodiscard]] bool
-  hasFuturesTradableBalance(internal_token_data_t *const,
-                            trade_side_e const side, double quantity,
-                            double const amount, double const leverage);
+  [[nodiscard]] bool hasFuturesTradableBalance(internal_token_data_t *const,
+                                               trade_side_e const side,
+                                               double quantity,
+                                               double const amount,
+                                               double const leverage);
   [[nodiscard]] order_data_t
   createOrderImpl(internal_token_data_t *, double const quantity,
                   double const price, double const leverage,

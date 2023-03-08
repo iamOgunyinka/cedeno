@@ -1,3 +1,7 @@
+# Backtesting
+# Copyright (C) 2022-2023 Cread and Bear LLC
+# Copyright (C) 2022-2023 Joshua Ogunyinka
+
 cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 
 # Project
@@ -95,7 +99,7 @@ message("${PROJECT_NAME}: CURR BIN DIR: ${CMAKE_CURRENT_BINARY_DIR}")
 ############################################################
 
 if (ENABLE_BT_DATABASE)
-  add_definitions( -DBT_USE_WITH_DB)
+  add_definitions(-DBT_USE_WITH_DB)
 endif()
 
 # Source Files
@@ -120,6 +124,30 @@ set(SRC_FILES
   src/trades_data.cpp
   src/user_data.cpp
 )
+
+if (ENABLE_INDICATOR)
+  message("ENABLE_INDICATOR is enabled")
+  list(APPEND SRC_FILES
+       src/indicators/helpers/indcs_utils.cpp
+       src/indicators/indicators/atr.cpp
+       src/indicators/indicators/ema.cpp
+       src/indicators/indicators/indicator.cpp
+       src/indicators/indicators/macd.cpp
+       src/indicators/indicators/sma.cpp
+       src/indicators/indicators/wma.cpp
+       src/indicators/indicators/bwfs/avrg_in.cpp
+       src/indicators/indicators/bwfs/avrg_out.cpp
+       src/indicators/indicators/bwfs/buy_vs_sell.cpp
+       src/indicators/indicators/bwfs/bwfs.cpp
+       src/indicators/indicators/bwfs/qty_in.cpp
+       src/indicators/indicators/bwfs/qty_in_out.cpp
+       src/indicators/indicators/bwfs/qty_out.cpp
+       src/indicators/indicators/bwfs/ticks_in.cpp
+       src/indicators/indicators/bwfs/ticks_in_out.cpp
+       src/indicators/indicators/bwfs/ticks_out.cpp
+       src/indicators/manager/indc_config.cpp
+       src/indicators/manager/indc_mnger.cpp)
+endif()
 
 source_group("Sources" FILES ${SRC_FILES})
 
@@ -149,6 +177,34 @@ set(HEADERS_FILES
   include/trades_data.hpp
   include/user_data.hpp
 )
+
+if (ENABLE_INDICATOR)
+  include_directories(${PROJECT_DIR}/include/indicators)
+
+  list(APPEND HEADERS_FILES
+       include/indicators/indc_data.hpp
+       include/indicators/source_data.hpp
+       include/indicators/helpers/indcs_utils.hpp
+       include/indicators/helpers/cllbck_iterator.hpp
+       include/indicators/indicators/atr.hpp
+       include/indicators/indicators/ema.hpp
+       include/indicators/indicators/indicator.hpp
+       include/indicators/indicators/macd.hpp
+       include/indicators/indicators/sma.hpp
+       include/indicators/indicators/wma.hpp
+       include/indicators/indicators/bwfs/avrg_in.hpp
+       include/indicators/indicators/bwfs/avrg_out.hpp
+       include/indicators/indicators/bwfs/buy_vs_sell.hpp
+       include/indicators/indicators/bwfs/bwfs.hpp
+       include/indicators/indicators/bwfs/qty_in.hpp
+       include/indicators/indicators/bwfs/qty_in_out.hpp
+       include/indicators/indicators/bwfs/qty_out.hpp
+       include/indicators/indicators/bwfs/ticks_in.hpp
+       include/indicators/indicators/bwfs/ticks_in_out.hpp
+       include/indicators/indicators/bwfs/ticks_out.hpp
+       include/indicators/manager/indc_config.hpp
+       include/indicators/manager/indc_mnger.hpp)
+endif()
 
 source_group("Headers" FILES ${HEADERS_FILES})
 

@@ -15,6 +15,7 @@ static double atr_get_max_value( const kline_d &kline_data,
     }else if(L_Cp >= H_L && L_Cp >= H_Cp){
         return L_Cp;
     }
+    return 0.0;
 }
 
 static void atr_calculate(const kline_d &kline_data, 

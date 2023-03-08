@@ -59,15 +59,14 @@ signals_t::price_delegate_t &signals_t::GetPriceDelegate() {
   return *priceDelegate;
 }
 
-double currentPrice(internal_token_data_t* const token) {
-  auto& prices = signals_t::latestPrices;
+double currentPrice(internal_token_data_t *const token) {
+  auto &prices = signals_t::latestPrices;
   if (auto iter = prices.find(token); iter != prices.end())
     return iter->second;
   return 0.0;
 }
 
-double currentPrice(std::string const &tokenName, trade_type_e const tt)
-{
+double currentPrice(std::string const &tokenName, trade_type_e const tt) {
   auto token = getTokenWithName(tokenName, tt);
   if (!token)
     return 0.0;

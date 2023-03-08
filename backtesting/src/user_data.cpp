@@ -210,9 +210,11 @@ void user_data_t::liquidatePosition(position_t const &position) {
   m_openPositions.erase(iter);
 }
 
-bool user_data_t::hasFuturesTradableBalance(
-    internal_token_data_t *const token, trade_side_e const side,
-    double quantity, double const amountToSpend, double const leverage) {
+bool user_data_t::hasFuturesTradableBalance(internal_token_data_t *const token,
+                                            trade_side_e const side,
+                                            double quantity,
+                                            double const amountToSpend,
+                                            double const leverage) {
   double price = amountToSpend;
   if (quantity == 0.0) {
     price = currentPrice(token);
@@ -386,7 +388,8 @@ int64_t user_data_t::createSpotMarketOrder(std::string const &tokenName,
                                            double const amountOrQtyToSpend,
                                            trade_side_e const side) {
   // in the case of spot trading, leverage is always 1.0
-  auto order = getMarketOrder(tokenName, amountOrQtyToSpend, 1.0, side, trade_type_e::spot);
+  auto order = getMarketOrder(tokenName, amountOrQtyToSpend, 1.0, side,
+                              trade_type_e::spot);
   return sendOrderToBook(std::move(order));
 }
 
@@ -403,9 +406,8 @@ int64_t user_data_t::createFuturesLimitOrder(std::string const &tokenName,
                                              double const price,
                                              double const quantity,
                                              trade_side_e const side) {
-  auto order =
-      getLimitOrder(tokenName, quantity, price, m_leverage, side,
-                    trade_type_e::futures);
+  auto order = getLimitOrder(tokenName, quantity, price, m_leverage, side,
+                             trade_type_e::futures);
   return sendOrderToBook(std::move(order));
 }
 
@@ -420,9 +422,8 @@ int64_t user_data_t::createFuturesMarketOrder(std::string const &base,
 int64_t user_data_t::createFuturesMarketOrder(std::string const &tokenName,
                                               double const amountOrQtyToSpend,
                                               trade_side_e const side) {
-  auto order =
-      getMarketOrder(tokenName, amountOrQtyToSpend,
-                     m_leverage, side, trade_type_e::futures);
+  auto order = getMarketOrder(tokenName, amountOrQtyToSpend, m_leverage, side,
+                              trade_type_e::futures);
   return sendOrderToBook(std::move(order));
 }
 

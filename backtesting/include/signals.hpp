@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Signals/Delegate.h>
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 
 namespace backtesting {
 struct internal_token_data_t;
@@ -15,7 +15,7 @@ struct signals_t {
   static price_delegate_t &GetPriceDelegate();
 };
 
-double currentPrice(internal_token_data_t* const);
+double currentPrice(internal_token_data_t *const);
 double currentPrice(std::string const &, trade_type_e const);
 void liquidationOfPositionsImpl();
 } // namespace backtesting

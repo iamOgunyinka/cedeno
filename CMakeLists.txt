@@ -1,6 +1,6 @@
 # Backtesting
-# Copyright (C) 2022 Cread and Bear LLC
-# Copyright (C) 2022 Joshua Ogunyinka
+# Copyright (C) 2022-2023 Cread and Bear LLC
+# Copyright (C) 2022-2023 Joshua Ogunyinka
 
 cmake_minimum_required(VERSION 3.16)
 
@@ -66,6 +66,7 @@ option(ENABLE_TEST_DATA_EXT   "Compile TestDataExtractor" on)
 option(ENABLE_TEST_BACKTNG    "Compile TestBacktesting" off)
 option(ENABLE_BT_DATABASE     "Enable database support for backtesting" off)
 option(ENABLE_LIBS_FOR_TEST   "Compile the libraries for testing" off)
+option(ENABLE_INDICATOR       "Compile the library with indicators" off)
 
 # Select openssl
 if(REQUIRE_SSL)
@@ -154,6 +155,10 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug)
   add_definitions(-DDEBUGMODE -D_DEBUG)
 else()
   add_definitions(-DNDEBUG)
+endif()
+
+if(ENABLE_INDICATOR)
+  add_definitions(-DBT_USE_WITH_INDICATORS)
 endif()
 
 if (ENABLE_BACKTNG_LIB)
