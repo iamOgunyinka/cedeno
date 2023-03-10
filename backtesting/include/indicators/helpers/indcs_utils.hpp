@@ -15,7 +15,7 @@ enum num_types{
 std::pair<std::string, std::string> split_string( const std::string &config, 
                                                   const std::string &separator);
 
-num_types get_number_type_from_string(const std::string &str);
+num_types check_if_string_is_valid_number(const std::string &str);
 
 void split_string_by_delimiter( const std::string &str, 
                                 const char &delimiter,

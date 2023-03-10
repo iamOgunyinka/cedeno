@@ -16,7 +16,7 @@ std::pair<std::string, std::string> split_string( const std::string &str,
     );
 }
 
-num_types get_number_type_from_string(const std::string &str){
+num_types check_if_string_is_valid_number(const std::string &str){
     size_t sz = str.size();
     if(sz == 1){
         return num_types::INTEGER;

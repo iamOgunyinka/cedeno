@@ -34,7 +34,7 @@ static uint64_t get_n_parameter(const std::string &config){
     auto config_pair = utils::split_string(config, ":");
     uint64_t n = 0;
     if(config_pair.first == "n"){
-        if(!(bool)utils::get_number_type_from_string(config_pair.second)){
+        if(!(bool)utils::check_if_string_is_valid_number(config_pair.second)){
             std::__throw_runtime_error("Wrong wma config, n must be a number");
         }
         n = strtoul(config_pair.second.c_str(), nullptr, 10);
@@ -54,7 +54,7 @@ static void get_wi_parameter( const std::string &config,
         std::vector<std::string> config_split;
         utils::split_string_by_delimiter(config_pair.second, ',', config_split);
         for(auto &num_str : config_split){
-            if(!(bool)utils::get_number_type_from_string(num_str))
+            if(!(bool)utils::check_if_string_is_valid_number(num_str))
                 std::__throw_runtime_error("Wrong wma config, w config must be only numbers");
             result.push_back(std::stod(num_str));
         }

@@ -45,6 +45,7 @@ class c_indc_config{
         conf_macd_t  m_macd_config;
         conf_wma_t  m_wma_config;
         conf_atr_t  m_atr_config;
+        conf_sar_t  m_sar_config;
 
         void set(const std::vector<std::vector<std::string>> &indcs,
                                 std::array<bool, (uint64_t)types_e::SIZE> &indcs_state,

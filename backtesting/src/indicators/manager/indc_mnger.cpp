@@ -10,7 +10,9 @@
 
 namespace indicators{
 
-indicators_c::indicators_c(){
+indicators_c::indicators_c(const std::string &id){
+    m_id = id;
+
     m_indcs_trade_mngr = new ind_mngr_c<trade_stream_d, indicator_t>;
 
     m_handler.indcs_var.ticks_in_vars = std::make_unique<ticks_in_t>(m_handler, m_indc_config.m_BWFS_config); 
@@ -27,6 +29,7 @@ indicators_c::indicators_c(){
     m_handler.indcs_var.macd_vars = std::make_unique<macd_t>(m_handler, m_indc_config.m_macd_config); 
     m_handler.indcs_var.wma_vars = std::make_unique<wma_t>(m_handler, m_indc_config.m_wma_config); 
     m_handler.indcs_var.atr_vars = std::make_unique<atr_t>(m_handler, m_indc_config.m_atr_config); 
+    m_handler.indcs_var.sar_vars = std::make_unique<sar_t>(m_handler, m_indc_config.m_sar_config); 
 }
 
 indicators_c::~indicators_c(){
@@ -45,11 +48,11 @@ void indicators_c::set_indicators_callback(const std::array<bool, (uint64_t)type
             auto indc_config = m_indc_config.indcs_config_list.find(indc_list_key_number[indc_idx]);
             for(auto &source : indc_config->second.source){
                 if(source == source_e::SRC_TRADE){
-                    std::cout<<"Adding " + indc_config->first<<std::endl;
+                    // std::cout<<"Adding " + indc_config->first<<std::endl;
                     m_indcs_trade_mngr->add_indicator(indc_config->second.trade_callback);
                 }
                 if(source == source_e::SRC_KLINE){
-                    std::cout<<"Adding " + indc_config->first<<std::endl;
+                    // std::cout<<"Adding " + indc_config->first<<std::endl;
                     m_indcs_kline_mngr->add_indicator(indc_config->second.kline_callback);
                 }
             }

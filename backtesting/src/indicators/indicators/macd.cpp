@@ -53,7 +53,7 @@ void get_config( const std::vector<std::string> &indcs,
         std::for_each(indcs.begin() + 1, indcs.end(), [&](const std::string &str){
             auto config_pair = utils::split_string(str, ":");
 
-            if(!(bool)utils::get_number_type_from_string(config_pair.second))
+            if(!(bool)utils::check_if_string_is_valid_number(config_pair.second))
                 std::__throw_runtime_error("Wrong ema config, n must be a number");
 
             if(config_pair.first == "high"){

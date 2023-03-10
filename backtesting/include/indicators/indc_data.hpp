@@ -22,6 +22,7 @@ struct ema_t;
 struct sma_t;
 struct macd_t;
 struct atr_t;
+struct sar_t;
 struct wma_t;
 
 enum class types_e{
@@ -39,6 +40,7 @@ enum class types_e{
     MACD,
     WMA,
     ATR,
+    SAR,
     SIZE,
 };
 
@@ -81,6 +83,10 @@ struct inf_atr_t{
     double price = 0.0;
 };
 
+struct inf_sar_t{
+    double price = 0.0;
+};
+
 struct inf_t{
     inf_BWFS_t cab; 
     inf_ema_t ema;
@@ -88,6 +94,7 @@ struct inf_t{
     inf_macd_t macd;
     inf_wma_t wma;
     inf_atr_t atr;
+    inf_sar_t sar;
 };
 
 struct indcs_vars_t{
@@ -105,6 +112,7 @@ struct indcs_vars_t{
     std::unique_ptr<macd_t> macd_vars = nullptr;
     std::unique_ptr<wma_t> wma_vars = nullptr;
     std::unique_ptr<atr_t> atr_vars = nullptr;
+    std::unique_ptr<sar_t> sar_vars = nullptr;
 };
 
 struct indicator_t{
@@ -127,7 +135,8 @@ static std::unordered_map<std::string, uint64_t> indc_list_key_string = {
 {"sma",         (uint64_t)types_e::SMA},
 {"macd",        (uint64_t)types_e::MACD},
 {"wma",         (uint64_t)types_e::WMA},
-{"atr",         (uint64_t)types_e::ATR}
+{"atr",         (uint64_t)types_e::ATR},
+{"sar",         (uint64_t)types_e::SAR}
 };
 
 static std::unordered_map<uint64_t, std::string> indc_list_key_number = {
@@ -144,7 +153,8 @@ static std::unordered_map<uint64_t, std::string> indc_list_key_number = {
 {(uint64_t)types_e::SMA,            "sma"        },
 {(uint64_t)types_e::MACD,           "macd"       },
 {(uint64_t)types_e::WMA,            "wma"        },
-{(uint64_t)types_e::ATR,            "atr"        }
+{(uint64_t)types_e::ATR,            "atr"        },
+{(uint64_t)types_e::SAR,            "sar"        }
 };
 
 
@@ -165,5 +175,6 @@ static std::unordered_map<uint64_t, std::string> indc_list_key_number = {
 #include "indicators/macd.hpp"
 #include "indicators/wma.hpp"
 #include "indicators/atr.hpp"
+#include "indicators/sar.hpp"
 
 #endif

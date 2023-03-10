@@ -7,7 +7,7 @@
 #include <array>
 
 /*GLOBAL VAR*/
-indicators::indicators_c indicator_handler;
+indicators::indicators_c indicator_handler("SYMBOL_1");
 
 /*=========================================================*/
 /*======================PYTHON SCRIPT======================*/
@@ -20,6 +20,7 @@ void python_script(void){
         {"macd"},
         {"wma", "n:5", "w:1,2.9,3.91,6,3.5"},
         {"atr", "n:10"},
+        {"sar", "a:89.9", "ema:8"},
     };
     indicator_handler.set(indicator_config);
 }
@@ -73,11 +74,12 @@ int main(void){
     tick_trade_stream(90, indicators::side_e::buy);
     tick_trade_stream(10, indicators::side_e::sell);
     
-    tick_kline_stream(90);
-    tick_kline_stream(80);
-    tick_kline_stream(80);
-    tick_kline_stream(80);
-    tick_kline_stream(80);
+    std::cout<<std::endl;
+    tick_kline_stream(90);std::cout<<std::endl;
+    tick_kline_stream(80);std::cout<<std::endl;
+    tick_kline_stream(80);std::cout<<std::endl;
+    tick_kline_stream(80);std::cout<<std::endl;
+    tick_kline_stream(80);std::cout<<std::endl;
     return 0;
 
 }

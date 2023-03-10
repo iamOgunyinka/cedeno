@@ -18,6 +18,7 @@ namespace indicators{
 
 class indicators_c{
     private:
+        std::string m_id;
         indicator_t m_handler;
         c_indc_config m_indc_config;
 
@@ -30,7 +31,7 @@ class indicators_c{
         auto init_new_symbol_(const std::string symbol); 
         void set_indicators_callback(const std::array<bool, (uint64_t)types_e::SIZE> &indcs);
     public:
-        indicators_c();
+        indicators_c(const std::string &id);
         ~indicators_c();
 
         const inf_t& get(void);

@@ -64,7 +64,7 @@ void get_config( const std::vector<std::string> &indcs,
     if(indcs.size() > 1){
         auto config_pair = utils::split_string(indcs[1], ":");
         if(config_pair.first == "n"){
-            if(!(bool)utils::get_number_type_from_string(config_pair.second)){
+            if(!(bool)utils::check_if_string_is_valid_number(config_pair.second)){
                 std::__throw_runtime_error("Wrong ema config, n must be a number");
             }
             config.n = strtoul(config_pair.second.c_str(), nullptr, 10);

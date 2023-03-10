@@ -117,6 +117,13 @@ c_indc_config::c_indc_config(){
     indc_config.kline_callback = atr_callback;
     indcs_config_list["atr"] = indc_config;
 
+    indc_config.config_callback = config::sar::get_config; 
+    indc_config.config = &m_sar_config; 
+    indc_config.id_number = types_e::SAR;
+    indc_config.id_str = "SAR";
+    indc_config.source = std::vector<source_e>({source_e::SRC_KLINE});
+    indc_config.kline_callback = sar_callback;
+    indcs_config_list["sar"] = indc_config;
 }
 
 c_indc_config::~c_indc_config(){
