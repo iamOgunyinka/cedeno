@@ -340,6 +340,12 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     return ERROR_PARSE();
 #endif
 
+  globalRtData.futuresMakerFee = std::clamp(config.futuresMakerFee, 0.0, 0.02);
+  globalRtData.futuresTakerFee =
+      std::clamp(config.futuresTakerFee, 0.017, 0.04);
+  globalRtData.spotMakerFee = std::clamp(config.spotMakerFee, 0.02, 0.1);
+  globalRtData.spotTakerFee = std::clamp(config.spotTakerFee, 0.04, 0.1);
+
   if (verbose) {
     spdlog::info("start date: {}", config.dateFromStr);
     spdlog::info("end date: {}", config.dateToStr);
@@ -387,6 +393,14 @@ bool backtesting_t::parse(int argc, char **argv) {
                  "the start datetime (e.g. 2022-12-01 00:00:00)");
   app.add_option("--end-date", args.dateToStr,
                  "the end datetime (e.g. 2022-12-31 23:59:50)");
+  app.add_option("--futures-mf", args.futuresMakerFee,
+                 "futures maker fee (default: 0.02%)");
+  app.add_option("--futures-tf", args.futuresTakerFee,
+                 "futures taker fee (default: 0.04%)");
+  app.add_option("--spot-mf", args.spotMakerFee,
+                 "spots maker fee(default: 0.1%)");
+  app.add_option("--spot-tf", args.spotTakerFee,
+                 "spots taker fee (default: 0.1%)");
   app.add_option(
       "--root-dir", args.rootDir,
       "Root directory where the historical data are stored (default: `pwd`)");

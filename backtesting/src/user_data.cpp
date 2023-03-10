@@ -39,6 +39,36 @@ void user_data_t::setLeverage(double const leverage_) {
   m_leverage = std::clamp(leverage_, 1.0, 125.0);
 }
 
+void user_data_t::calculateLiquidationPrice(position_t &pos,
+                                            trade_market_e const marketType,
+                                            trade_side_e const side) {
+  double const closeCommission = futuresTakerFee;
+  double const openCommission =
+      marketType == trade_market_e::limit ? futuresMakerFee : futuresTakerFee;
+  double liquidationPrice = 0.0;
+
+  if (pos.side == trade_side_e::long_) {
+    // LiqPrice(LONG) = EntryPrice * (1 - (Qty / Leverage - Qty *
+    // (OpenCommission + CloseCommission)) / Qty)
+    liquidationPrice =
+        pos.entryPrice * (1 - (pos.size / pos.leverage -
+                               pos.size * (openCommission + closeCommission)) /
+                                  pos.size);
+  } else {
+    // LiqPrice(SHORT) = EntryPrice * (1 + (Qty / Leverage - Qty *
+    // (OpenCommission + CloseCommission)) / Qty)
+    liquidationPrice =
+        pos.entryPrice * (1 + (pos.size / pos.leverage -
+                               pos.size * (openCommission + closeCommission)) /
+                                  pos.size);
+  }
+
+  if (pos.liquidationPrice == 0.0 || pos.side != side)
+    pos.liquidationPrice = liquidationPrice;
+  else
+    pos.liquidationPrice = (pos.liquidationPrice + liquidationPrice) / 2.0;
+}
+
 void user_data_t::OnNewTrade(trade_data_t const &trade) {
   if (trade.tradeType == trade_type_e::none)
     return;
@@ -62,24 +92,16 @@ void user_data_t::onNewFuturesTrade(trade_data_t const &trade) {
                      return pos.token == token;
                    });
   if (iter == m_openPositions.end()) { // new position
-    position_t newPosition;
-    newPosition.token = findOrderIter->token;
-    newPosition.entryPrice = trade.amountPerPiece;
-    newPosition.side = trade.side;
-    newPosition.leverage = findOrderIter->leverage;
-    newPosition.size = trade.quantityExecuted;
-    newPosition.status = trade.status;
-    newPosition.liquidationPrice = 0.0;
+    position_t pos;
+    pos.token = findOrderIter->token;
+    pos.entryPrice = trade.amountPerPiece;
+    pos.side = trade.side;
+    pos.leverage = findOrderIter->leverage;
+    pos.size = trade.quantityExecuted;
+    pos.status = trade.status;
+    calculateLiquidationPrice(pos, findOrderIter->market, findOrderIter->side);
 
-    // TODO: calculate the liquidation price
-    double const notionalPositionValue =
-        newPosition.size * newPosition.entryPrice;
-    double const initialMargin = notionalPositionValue / newPosition.leverage;
-    double const maintenanceMargin =
-        notionalPositionValue * newPosition.token->maintenanceMarginRate -
-        newPosition.token->maintenanceAmount;
-
-    return m_openPositions.push_back(std::move(newPosition));
+    return m_openPositions.push_back(std::move(pos));
   }
 
   if (iter->side == trade.side) { // buying or selling more
@@ -90,6 +112,8 @@ void user_data_t::onNewFuturesTrade(trade_data_t const &trade) {
     iter->size += trade.quantityExecuted;
     iter->entryPrice = newEntryPrice;
     iter->status = trade.status;
+    calculateLiquidationPrice(*iter, findOrderIter->market,
+                              findOrderIter->side);
   } else {
     auto const sizeExecuted = (std::min)(iter->size, trade.quantityExecuted);
     calculatePNL(trade.amountPerPiece, sizeExecuted, *iter);
@@ -99,16 +123,20 @@ void user_data_t::onNewFuturesTrade(trade_data_t const &trade) {
       m_openPositions.erase(iter);
     } else if (difference > 0.0) { // partial sale
       iter->size -= trade.quantityExecuted;
+      calculateLiquidationPrice(*iter, findOrderIter->market, iter->side);
     } else {
-      position_t newPosition;
-      newPosition.token = findOrderIter->token;
-      newPosition.entryPrice = trade.amountPerPiece;
-      newPosition.side = trade.side;
-      newPosition.leverage = findOrderIter->leverage;
-      newPosition.size = difference;
-      newPosition.status = trade.status;
       m_openPositions.erase(iter);
-      return m_openPositions.push_back(std::move(newPosition));
+
+      position_t pos;
+      pos.token = findOrderIter->token;
+      pos.entryPrice = trade.amountPerPiece;
+      pos.side = trade.side;
+      pos.leverage = findOrderIter->leverage;
+      pos.size = difference;
+      pos.status = trade.status;
+      calculateLiquidationPrice(pos, findOrderIter->market,
+                                findOrderIter->side);
+      return m_openPositions.push_back(std::move(pos));
     }
   }
 }
@@ -200,13 +228,16 @@ void user_data_t::liquidatePosition(position_t const &position) {
                            [symbol = position.token](position_t const &pos) {
                              return pos.token == symbol;
                            });
-  auto asset = getUserAsset(position.token->quoteAsset);
-  if (iter == m_openPositions.end() || asset == nullptr)
+  if (iter == m_openPositions.end())
     return;
 
-  // TODO: Sell the position and liquidate asset
-
-  asset->amountAvailable = 0.0;
+  // auto const side = iter->side == trade_side_e::long_ ? trade_side_e::short_
+  //                                                    : trade_side_e::long_;
+  // auto order =
+  //    createOrderImpl(iter->token, iter->size, 0.0, 1.0,
+  //    trade_type_e::futures,
+  //                    side, trade_market_e::market);
+  // sendOrderToBook(std::move(order));
   m_openPositions.erase(iter);
 }
 

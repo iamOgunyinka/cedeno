@@ -16,8 +16,6 @@ struct internal_token_data_t {
   std::string baseAsset;
   std::string quoteAsset;
   trade_type_e tradeType = trade_type_e::none;
-  double maintenanceMarginRate = 1.0;
-  double maintenanceAmount = 0.0;
 };
 using token_data_list_t = std::vector<internal_token_data_t>;
 
@@ -79,10 +77,12 @@ class user_data_t {
   friend void liquidationOfPositionsImpl();
 
   double m_leverage = 1.0;
-  double m_makerFeeRate = 0.0;
-  double m_takerFeeRate = 0.0;
 
 public:
+  double futuresMakerFee = 0.00;
+  double futuresTakerFee = 0.00;
+  double spotMakerFee = 0.0;
+  double spotTakerFee = 0.0;
   uint64_t m_userID = 0;
   trade_list_t m_trades;
   order_list_t m_orders;
@@ -136,6 +136,8 @@ private:
   void OnNewTrade(trade_data_t const &trade);
   void OnNoTrade(order_data_t const &order);
 
+  void calculateLiquidationPrice(position_t &pos, trade_market_e const,
+                                 trade_side_e const side);
   void onNewSpotTrade(trade_data_t const &trade);
   void onNewFuturesTrade(trade_data_t const &trade);
   void issueRefund(order_data_t const &order);

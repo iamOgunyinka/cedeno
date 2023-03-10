@@ -21,6 +21,11 @@ struct configuration_t {
   std::string dateToStr;
   std::string rootDir;
 
+  double futuresMakerFee = 0.02;
+  double futuresTakerFee = 0.04;
+  double spotMakerFee = 0.1;
+  double spotTakerFee = 0.1;
+
   std::optional<kline_config_t> klineConfig = std::nullopt;
   std::optional<bktick_config_t> bookTickerConfig = std::nullopt;
 

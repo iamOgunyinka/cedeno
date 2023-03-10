@@ -15,6 +15,11 @@ struct global_data_t {
   std::set<std::string> validSymbols;
   std::string rootPath;
 
+  double futuresMakerFee = 0.0;
+  double futuresTakerFee = 0.0;
+  double spotMakerFee = 0.0;
+  double spotTakerFee = 0.0;
+
   static int64_t newUser(backtesting::wallet_asset_list_t tokensOwned);
   static global_data_t &instance();
 };

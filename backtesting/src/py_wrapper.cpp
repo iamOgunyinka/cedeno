@@ -238,6 +238,14 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readwrite("klineConfig", &backtesting::configuration_t::klineConfig)
       .def_readwrite("booktickerConfig",
                      &backtesting::configuration_t::bookTickerConfig)
+      .def_readwrite("futuresMakerFee",
+                     &backtesting::configuration_t::futuresMakerFee)
+      .def_readwrite("futuresTakerFee",
+                     &backtesting::configuration_t::futuresTakerFee)
+      .def_readwrite("spotMakerFee",
+                     &backtesting::configuration_t::spotMakerFee)
+      .def_readwrite("spotTakerFee",
+                     &backtesting::configuration_t::spotTakerFee)
 #ifdef BT_USE_WITH_DB
       .def_readwrite("dbConfigFilename",
                      &backtesting::configuration_t::dbConfigFilename)

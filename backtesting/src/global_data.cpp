@@ -65,6 +65,11 @@ int64_t global_data_t::newUser(backtesting::wallet_asset_list_t assets) {
   }
 #endif
 
+  user->futuresMakerFee = globalRtData.futuresMakerFee;
+  user->futuresTakerFee = globalRtData.futuresTakerFee;
+  user->spotMakerFee = globalRtData.spotMakerFee;
+  user->spotTakerFee = globalRtData.spotTakerFee;
+
   globalRtData.allUserAccounts.push_back(std::move(user));
   return userID;
 }
