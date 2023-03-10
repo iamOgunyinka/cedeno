@@ -9,7 +9,8 @@
 
 namespace py = pybind11;
 namespace backtesting {
-double currentPrice(std::string const &, trade_type_e const);
+double currentPrice(std::string const &, trade_type_e const,
+                    trade_side_e const);
 }
 
 std::optional<backtesting::user_data_t> findUserByID(int64_t userID) {
@@ -220,7 +221,6 @@ PYBIND11_MODULE(jbacktest, m) {
                std::string const &, double const,
                backtesting::trade_side_e const)>(
                &backtesting::user_data_t::createFuturesMarketOrder));
-
   py::class_<backtesting_t>(m, "Backtesting")
       .def_static("instance",
                   [](backtesting::configuration_t config) {
@@ -303,7 +303,8 @@ PYBIND11_MODULE(jbacktest, m) {
   });
 
   m.def("getCurrentPrice",
-        [](std::string const &symbol, backtesting::trade_type_e const tt) {
-          return backtesting::currentPrice(symbol, tt);
+        [](std::string const &symbol, backtesting::trade_type_e const tt,
+           backtesting::trade_side_e const side) {
+          return backtesting::currentPrice(symbol, tt, side);
         });
 }

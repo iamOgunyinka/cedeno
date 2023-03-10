@@ -15,5 +15,9 @@ private:
 #ifdef _DEBUG
   void printOrderBook() override;
 #endif
+  [[nodiscard]] trade_list_t
+  marketMatcherImpl(std::vector<details::order_meta_data_t> &list,
+                    double &amountAvailableToSpend,
+                    order_data_t const &order) override;
 };
 } // namespace backtesting

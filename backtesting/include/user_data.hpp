@@ -151,15 +151,14 @@ private:
   [[nodiscard]] int64_t sendOrderToBook(std::optional<order_data_t> &&order);
   [[nodiscard]] wallet_asset_t *getUserAsset(std::string const &name);
   [[nodiscard]] bool hasTradableBalance(internal_token_data_t *const,
-                                        trade_side_e const side,
-                                        double const quantity,
-                                        double const amount,
-                                        double const leverage);
+                                        double &quantity, double const amount,
+                                        double const leverage,
+                                        trade_side_e const side);
   [[nodiscard]] bool hasFuturesTradableBalance(internal_token_data_t *const,
-                                               trade_side_e const side,
-                                               double quantity,
+                                               double &quantity,
                                                double const amount,
-                                               double const leverage);
+                                               double const leverage,
+                                               trade_side_e const side);
   [[nodiscard]] order_data_t
   createOrderImpl(internal_token_data_t *, double const quantity,
                   double const price, double const leverage,
@@ -172,7 +171,7 @@ using user_data_list_t = std::vector<std::shared_ptr<user_data_t>>;
 
 bool initiateOrder(order_data_t const &order);
 bool cancelAllOrders(order_list_t const &orders);
-double currentPrice(internal_token_data_t *const);
+double currentPrice(internal_token_data_t *const, trade_side_e const);
 internal_token_data_t *getTokenWithName(std::string const &tokenName,
                                         trade_type_e const tradeType);
 } // namespace backtesting

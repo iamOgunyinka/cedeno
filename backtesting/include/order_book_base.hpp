@@ -79,6 +79,8 @@ public:
   virtual ~order_book_base_t();
   void run();
 
+  double currentSellPrice();
+  double currentBuyPrice();
   Gallant::Signal1<trade_list_t> NewTradesCreated;
   Gallant::Signal1<depth_data_t> NewDepthObtained;
   Gallant::Signal2<internal_token_data_t *, double> NewMarketPrice;
@@ -88,22 +90,28 @@ private:
   void setNextTimer();
   void cancelOrder(backtesting::order_data_t order);
   void placeOrder(backtesting::order_data_t order);
-  [[nodiscard]] trade_list_t
-  getExecutedTradesFromOrders(details::order_meta_data_t &data,
-                              double quantityTraded, double const priceLevel);
-  [[nodiscard]] trade_list_t
+  void shakeOrderBook();
+  [[nodiscard]] virtual trade_list_t
   marketMatcher(std::vector<details::order_meta_data_t> &list,
                 double &amountAvailableToSpend, order_data_t const &order);
-  [[nodiscard]] trade_data_t getNewTrade(order_data_t const &order,
-                                         order_status_e const, double const qty,
-                                         double const amount);
-  void shakeOrderBook();
 
 protected:
 #ifdef _DEBUG
   virtual void printOrderBook() = 0;
+
 #endif
 
+  [[nodiscard]] virtual trade_list_t
+  marketMatcherImpl(std::vector<details::order_meta_data_t> &list,
+                    double &amountAvailableToSpend,
+                    order_data_t const &order) = 0;
+
+  [[nodiscard]] trade_data_t getNewTrade(order_data_t const &order,
+                                         order_status_e const, double const qty,
+                                         double const amount);
+  [[nodiscard]] trade_list_t
+  getExecutedTradesFromOrders(details::order_meta_data_t &data,
+                              double quantityTraded, double const priceLevel);
   net::io_context &m_ioContext;
   data_streamer_t<depth_data_t> m_dataStreamer;
   internal_token_data_t *m_symbol = nullptr;

@@ -165,7 +165,6 @@ def testFuturesWallet():
 
     # buy 0.2 worth of BTCUSDT at price 22'000 at leverage 5 -> should cost (22'000 * 0.2) / 5 == 880
     orderNumber = newUser.createFuturesLimitOrder("BTCUSDT", btcusdtPrice, 0.2, jb.TradeSide.long)
-    print(orderNumber)
     assert(orderNumber > 1)
     assert(len(newUser.orders) == 1)
     
@@ -178,12 +177,34 @@ def testFuturesWallet():
     assert(len(newUser.orders) == 2)
     assert(newUser.assets[0].available == 3910)
     
-    ## after this order, balance should be $3910 - $500 == $3410
-    orderNumber = newUser.createFuturesMarketOrder("ETHUSDT", 500, jb.TradeSide.long)
-    # time.sleep(20)
+    ## after this order, balance should be $3910 - $50 == $3860
+    orderNumber = newUser.createFuturesMarketOrder("ETHUSDT", 50, jb.TradeSide.short)
     assert(orderNumber > 1)
-    assert(newUser.assets[0].available == 3410)
+    assert(newUser.assets[0].available == 3860)
     assert(len(newUser.orders) == 3)
+    print(f"ETH Order number = {orderNumber}")
+    for pos in newUser.positions:
+      print (f"EntryPrice(ETH): {pos.entryPrice}, Qty: {pos.size}, Leverage: {pos.leverage}, LiqPrice: {pos.liquidationPrice}")
+      
+    ## after this order, balance should be $3860 - $3000 == $860
+    orderNumber = newUser.createFuturesMarketOrder("BTCUSDT", 3000, jb.TradeSide.long)
+    assert(orderNumber > 1)
+    assert(newUser.assets[0].available == 860)
+    assert(len(newUser.orders) == 4)
+    assert(len(newUser.positions) == 2)
+    print(f"BTC Order number = {orderNumber}")
+    
+    pos = newUser.positions[1]
+    print (f"EntryPrice(BTC): {pos.entryPrice}, Qty: {pos.size}, Leverage: {pos.leverage}, LiqPrice: {pos.liquidationPrice}")
+
+    orderNumber = newUser.createFuturesMarketOrder("ETHUSDT", 600, jb.TradeSide.long)
+    # pos 0 is not BTCUSDT as the initial position has been closed and a new one reopened
+    assert(orderNumber > 1)
+    assert(len(newUser.orders) == 5)
+    assert(len(newUser.positions) == 2)
+
+    pos = newUser.positions[1]
+    print (f"EntryPrice: {pos.entryPrice}, Qty: {pos.size}, Leverage: {pos.leverage}, LiqPrice: {pos.liquidationPrice}")
 
 
 def main():
@@ -197,15 +218,15 @@ def main():
     # allow some time for the backtest object to call run()
     time.sleep(2)
     
-    spotThread = Thread(target=testFuturesWallet)
-    futuresThread = Thread(target=testSpotWallet)
+    # spotThread = Thread(target=testSpotWallet)
+    futuresThread = Thread(target=testFuturesWallet)
     bgThread = Thread(target=spinPrint)
     
-    spotThread.start()
+    # spotThread.start()
     futuresThread.start()
     bgThread.start()
     
-    spotThread.join()
+    # spotThread.join()
     futuresThread.join()
     bgThread.join()
     print ("End of test")

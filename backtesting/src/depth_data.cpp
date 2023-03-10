@@ -166,6 +166,42 @@ depth_data_t::dataFromCSVStream(data_streamer_t<depth_data_t> &dataStreamer) {
   return data;
 }
 
+double orderBookBuyPrice(internal_token_data_t *const token) {
+  auto &globalOrderBooks = global_order_book_t::globalOrderBooks;
+  auto iter = std::find_if(globalOrderBooks.begin(), globalOrderBooks.end(),
+                           [token](global_order_book_t &orderBook) {
+                             return utils::isCaseInsensitiveStringCompare(
+                                 orderBook.tokenName, token->name);
+                           });
+  if (iter == globalOrderBooks.end())
+    return false;
+
+  auto &orderBook = *iter;
+  auto const isFutures = token->tradeType == trade_type_e::futures;
+  if ((isFutures && !orderBook.futures) || (!isFutures && !orderBook.spot))
+    return 0.0;
+  auto &book = isFutures ? orderBook.futures : orderBook.spot;
+  return book->currentBuyPrice();
+}
+
+double orderBookSellPrice(internal_token_data_t *const token) {
+  auto &globalOrderBooks = global_order_book_t::globalOrderBooks;
+  auto iter = std::find_if(globalOrderBooks.begin(), globalOrderBooks.end(),
+                           [token](global_order_book_t &orderBook) {
+                             return utils::isCaseInsensitiveStringCompare(
+                                 orderBook.tokenName, token->name);
+                           });
+  if (iter == globalOrderBooks.end())
+    return false;
+
+  auto &orderBook = *iter;
+  auto const isFutures = token->tradeType == trade_type_e::futures;
+  if ((isFutures && !orderBook.futures) || (!isFutures && !orderBook.spot))
+    return 0.0;
+  auto &book = isFutures ? orderBook.futures : orderBook.spot;
+  return book->currentSellPrice();
+}
+
 bool initiateOrder(order_data_t const &order) {
   auto &globalOrderBooks = global_order_book_t::globalOrderBooks;
   if (order.priceLevel < 0.0 || order.quantity < 0.0 || order.leverage < 1.0)

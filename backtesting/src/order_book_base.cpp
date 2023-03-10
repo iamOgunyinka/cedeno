@@ -12,7 +12,9 @@ static details::lesser_comparator_t lesserComparator{};
 static details::greater_comparator_t greaterComparator{};
 
 int64_t getOrderNumber() {
-  static int64_t orderNumber = 0x0'01'120'00F;
+  static int64_t orderNumber =
+      (utils::getRandomInteger() * utils::getRandomInteger() +
+       utils::getRandomInteger());
   static std::mutex mutex;
 
   std::lock_guard<std::mutex> lock_g(mutex);
@@ -171,6 +173,18 @@ void order_book_base_t::shakeOrderBook() {
   NewTradesCreated(std::move(result));
 }
 
+double order_book_base_t::currentBuyPrice() {
+  if (!m_orderBook.bids.empty())
+    return m_orderBook.bids.front().priceLevel;
+  return 0.0;
+}
+
+double order_book_base_t::currentSellPrice() {
+  if (!m_orderBook.asks.empty())
+    return m_orderBook.asks.front().priceLevel;
+  return 0.0;
+}
+
 trade_list_t
 order_book_base_t::getExecutedTradesFromOrders(details::order_meta_data_t &data,
                                                double quantityTraded,
@@ -199,39 +213,12 @@ trade_list_t
 order_book_base_t::marketMatcher(std::vector<details::order_meta_data_t> &list,
                                  double &amountAvailableToSpend,
                                  order_data_t const &order) {
-  trade_list_t result;
   if (list.empty()) {
     if (order.user)
       order.user->OnNoTrade(order);
-    return result;
+    return {};
   }
-
-  order_status_e status = order_status_e::partially_filled;
-  while (amountAvailableToSpend > 0.0 && !list.empty()) {
-    auto &front = list.front();
-    double const price = front.priceLevel;
-    double const expectedExecQty = price / amountAvailableToSpend;
-    double const execQty = (std::min)(expectedExecQty, front.totalQuantity);
-    double const amountSpent = execQty * price;
-
-    if ((front.totalQuantity - execQty) == 0.0)
-      status = order_status_e::filled;
-    auto trade = getNewTrade(order, status, execQty, price);
-    auto otherTrades = getExecutedTradesFromOrders(front, execQty, price);
-
-    // broadcast current market price of symbol
-    NewMarketPrice(m_symbol, price);
-
-    front.totalQuantity -= execQty;
-    amountAvailableToSpend -= amountSpent;
-
-    if (front.totalQuantity == 0.0)
-      list.erase(list.begin());
-
-    result.push_back(trade);
-    result.insert(result.end(), otherTrades.begin(), otherTrades.end());
-  }
-  return result;
+  return marketMatcherImpl(list, amountAvailableToSpend, order);
 }
 
 order_book_base_t::order_book_base_t(net::io_context &ioContext,

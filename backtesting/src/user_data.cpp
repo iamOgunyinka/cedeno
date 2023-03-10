@@ -1,6 +1,7 @@
 #include "user_data.hpp"
 #include "global_data.hpp"
 #include <algorithm>
+#include <spdlog/spdlog.h>
 #include <thread>
 
 namespace backtesting {
@@ -83,8 +84,9 @@ void user_data_t::onNewFuturesTrade(trade_data_t const &trade) {
                    [orderID = trade.orderID](order_data_t const &order) {
                      return order.orderID == orderID;
                    });
-  if (findOrderIter == m_orders.end()) // there's a problem
-    return;
+  if (findOrderIter == m_orders.end()) { // there's a problem
+    return spdlog::error("There was a problem, order not found");
+  }
 
   auto iter =
       std::find_if(m_openPositions.begin(), m_openPositions.end(),
@@ -103,7 +105,9 @@ void user_data_t::onNewFuturesTrade(trade_data_t const &trade) {
 
     return m_openPositions.push_back(std::move(pos));
   }
-
+  spdlog::info("OrderID: {}, Side: {}, PosSize: {}, TradeSize: {}",
+               trade.orderID, (int)trade.side, iter->size,
+               trade.quantityExecuted);
   if (iter->side == trade.side) { // buying or selling more
     double const newEntryPrice =
         ((iter->entryPrice * iter->size) +
@@ -132,7 +136,7 @@ void user_data_t::onNewFuturesTrade(trade_data_t const &trade) {
       pos.entryPrice = trade.amountPerPiece;
       pos.side = trade.side;
       pos.leverage = findOrderIter->leverage;
-      pos.size = difference;
+      pos.size = std::abs(difference);
       pos.status = trade.status;
       calculateLiquidationPrice(pos, findOrderIter->market,
                                 findOrderIter->side);
@@ -242,16 +246,21 @@ void user_data_t::liquidatePosition(position_t const &position) {
 }
 
 bool user_data_t::hasFuturesTradableBalance(internal_token_data_t *const token,
-                                            trade_side_e const side,
-                                            double quantity,
+                                            double &quantity,
                                             double const amountToSpend,
-                                            double const leverage) {
+                                            double const leverage,
+                                            trade_side_e const side) {
+  auto const flipSide = (side == trade_side_e::long_) ? trade_side_e::short_
+                                                      : trade_side_e::long_;
   double price = amountToSpend;
   if (quantity == 0.0) {
-    price = currentPrice(token);
+    price = currentPrice(token, flipSide);
     if (price == 0.0)
       return false;
+
     quantity = (amountToSpend * leverage) / price;
+    spdlog::info("Amount to spend is: {}, Qty: {}, Price: {}", amountToSpend,
+                 quantity, price);
   }
 
   double cost = (quantity * price) / leverage;
@@ -268,12 +277,21 @@ bool user_data_t::hasFuturesTradableBalance(internal_token_data_t *const token,
     return true;
   }
 
-  double const quantityDifference = positionIter->size - quantity;
-  if (quantityDifference == 0.0) // a close position
+  quantity = positionIter->size - quantity;
+  if (quantity == 0.0) // a close position
     return true;
 
+  quantity = std::abs(quantity);
   // another open position
-  cost = (std::abs(quantityDifference) * price) / leverage;
+  cost = (quantity * price) / leverage;
+  if (cost < amountToSpend) {
+    // get the latest price
+    price = currentPrice(token, flipSide);
+    quantity = (amountToSpend * leverage) / price;
+    cost = (quantity * price) / leverage;
+  }
+  spdlog::info("Recalculated cost is: {}, Qty: {}, Price: {}", cost, quantity,
+               price);
   if (asset->amountAvailable < cost)
     return false;
   asset->amountAvailable -= cost;
@@ -281,14 +299,14 @@ bool user_data_t::hasFuturesTradableBalance(internal_token_data_t *const token,
 }
 
 bool user_data_t::hasTradableBalance(internal_token_data_t *const token,
-                                     trade_side_e const side,
-                                     double const quantity, double const price,
-                                     double const leverage) {
+                                     double &quantity, double const price,
+                                     double const leverage,
+                                     trade_side_e const side) {
   if (!(token && isBuyOrSell(token->tradeType, side)))
     return false;
 
   if (token->tradeType == trade_type_e::futures)
-    return hasFuturesTradableBalance(token, side, quantity, price, leverage);
+    return hasFuturesTradableBalance(token, quantity, price, leverage, side);
 
   double const lot = (quantity == 0.0 ? 1.0 : quantity) * price;
   std::string const &symbol =
@@ -335,10 +353,11 @@ user_data_t::getLimitOrder(std::string const &tokenName, double const quantity,
                            double const price, double const leverage,
                            trade_side_e const side, trade_type_e const type) {
   auto token = getTokenWithName(tokenName, type);
-  if (!(token && hasTradableBalance(token, side, quantity, price, leverage)))
+  double qty = quantity;
+  if (!(token && hasTradableBalance(token, qty, price, leverage, side)))
     return std::nullopt;
 
-  return createOrderImpl(token, quantity, price, leverage, type, side,
+  return createOrderImpl(token, qty, price, leverage, type, side,
                          trade_market_e::limit);
 }
 
@@ -348,11 +367,12 @@ std::optional<order_data_t> user_data_t::getMarketOrder(
   if (!isBuyOrSell(type, side))
     return std::nullopt;
   auto token = getTokenWithName(tokenName, type);
-  if (!(token && hasTradableBalance(token, side, 0.0, amountOrQuantityToSpend,
-                                    leverage)))
+  double qty = 0.0;
+  if (!(token && hasTradableBalance(token, qty, amountOrQuantityToSpend,
+                                    leverage, side)))
     return std::nullopt;
 
-  return createOrderImpl(token, 1.0, amountOrQuantityToSpend, leverage, type,
+  return createOrderImpl(token, qty, amountOrQuantityToSpend, leverage, type,
                          side, trade_market_e::market);
 }
 
@@ -380,11 +400,12 @@ int64_t user_data_t::sendOrderToBook(std::optional<order_data_t> &&order) {
   if (!order)
     return orderNumber;
 
+  m_orders.push_back(*order);
   if (bool const isSuccess = initiateOrder(*order); isSuccess) {
     orderNumber = order->orderID;
-    m_orders.push_back(std::move(*order));
   } else {
     issueRefund(*order);
+    m_orders.pop_back();
   }
   return orderNumber;
 }

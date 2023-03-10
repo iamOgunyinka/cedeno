@@ -59,18 +59,22 @@ signals_t::price_delegate_t &signals_t::GetPriceDelegate() {
   return *priceDelegate;
 }
 
-double currentPrice(internal_token_data_t *const token) {
+double currentPrice(internal_token_data_t *const token,
+                    trade_side_e const side) {
   auto &prices = signals_t::latestPrices;
   if (auto iter = prices.find(token); iter != prices.end())
     return iter->second;
-  return 0.0;
+  if (side == trade_side_e::buy || side == trade_side_e::long_)
+    return orderBookBuyPrice(token);
+  return orderBookSellPrice(token);
 }
 
-double currentPrice(std::string const &tokenName, trade_type_e const tt) {
+double currentPrice(std::string const &tokenName, trade_type_e const tt,
+                    trade_side_e const side) {
   auto token = getTokenWithName(tokenName, tt);
   if (!token)
     return 0.0;
-  return currentPrice(token);
+  return currentPrice(token, side);
 }
 
 } // namespace backtesting
