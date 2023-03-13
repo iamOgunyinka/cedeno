@@ -31,12 +31,7 @@ using backtesting::utils::currentTimeToString;
 using backtesting::utils::dateStringToTimeT;
 using backtesting::utils::listContains;
 
-bool verbose =
-#ifdef _DEBUG
-    true;
-#else
-    false;
-#endif // _DEBUG
+bool verbose = false;
 
 namespace backtesting {
 #ifdef BT_USE_WITH_DB
@@ -216,6 +211,7 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
   }
 #endif
 
+  verbose = config.verbose;
   if (config.streams.empty()) {
     PRINT_INFO("Streams not specified, will use 'DEPTH' as default")
     config.streams.push_back(DEPTH);

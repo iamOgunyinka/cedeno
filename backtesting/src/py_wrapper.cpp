@@ -220,7 +220,11 @@ PYBIND11_MODULE(jbacktest, m) {
            static_cast<int64_t (backtesting::user_data_t::*)(
                std::string const &, double const,
                backtesting::trade_side_e const)>(
-               &backtesting::user_data_t::createFuturesMarketOrder));
+               &backtesting::user_data_t::createFuturesMarketOrder))
+      .def("closePosition", &backtesting::user_data_t::closePosition)
+      .def("closeAllPositions", &backtesting::user_data_t::closeAllPositions)
+      .def("openQuickPosition", &backtesting::user_data_t::openQuickPosition);
+
   py::class_<backtesting_t>(m, "Backtesting")
       .def_static("instance",
                   [](backtesting::configuration_t config) {
@@ -235,6 +239,7 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readwrite("path", &backtesting::configuration_t::rootDir)
       .def_readwrite("dateStart", &backtesting::configuration_t::dateFromStr)
       .def_readwrite("dateEnd", &backtesting::configuration_t::dateToStr)
+      .def_readwrite("verbose", &backtesting::configuration_t::verbose)
       .def_readwrite("klineConfig", &backtesting::configuration_t::klineConfig)
       .def_readwrite("booktickerConfig",
                      &backtesting::configuration_t::bookTickerConfig)

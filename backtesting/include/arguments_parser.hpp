@@ -26,6 +26,7 @@ struct configuration_t {
   double spotMakerFee = 0.1;
   double spotTakerFee = 0.1;
 
+  bool verbose = false;
   std::optional<kline_config_t> klineConfig = std::nullopt;
   std::optional<bktick_config_t> bookTickerConfig = std::nullopt;
 

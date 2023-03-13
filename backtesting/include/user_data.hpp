@@ -118,6 +118,12 @@ public:
                                    double const amountOrQtyToSpend,
                                    trade_side_e const side);
 
+  bool closePosition(std::string const &symbol);
+  bool closeAllPositions();
+  bool openQuickPosition(std::string const &symbol, double const size,
+                    trade_side_e const side);
+  bool openLimitPosition(std::string const &symbol, double const size,
+                         trade_side_e const side);
   std::optional<order_data_t>
   getLimitOrder(std::string const &tokenName, double const quantity,
                 double const price, double const leverage = 1.0,
@@ -150,6 +156,10 @@ private:
   [[nodiscard]] bool isActiveOrder(order_data_t const &order);
   [[nodiscard]] int64_t sendOrderToBook(std::optional<order_data_t> &&order);
   [[nodiscard]] wallet_asset_t *getUserAsset(std::string const &name);
+  [[nodiscard]] bool hasFuturesBalance(internal_token_data_t *const token,
+                                               double const quantity,
+                                               double const leverage,
+                                               trade_side_e const side);
   [[nodiscard]] bool hasTradableBalance(internal_token_data_t *const,
                                         double &quantity, double const amount,
                                         double const leverage,
