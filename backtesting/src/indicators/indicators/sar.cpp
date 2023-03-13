@@ -6,10 +6,66 @@
 
 namespace indicators{
 
+static void ema_calculate( sar_t &handler, 
+                           const double &curr_price){
+    double k = 2/(handler.configuration->EMA + 1);
+    double &ema_price = handler.EMA.price;
+    ema_price = k*(curr_price - ema_price) + ema_price;
+}
+
+static bool sma_calculate( sar_t &handler,
+                           const double &curr_price){
+    handler.EMA.SMA.sumatory += curr_price;
+    if(++handler.EMA.SMA.counter == handler.configuration->EMA){
+        handler.EMA.price = handler.EMA.SMA.sumatory/handler.configuration->EMA;
+        return true;
+    }
+    return false;
+}
+
+static bool ema_handler(sar_t &handler,
+                        const double &price){
+    if(handler.EMA.SMA.calculating == true){
+        if(sma_calculate(handler, price)){
+            handler.EMA.SMA.calculating = false;
+        }else{
+            return false;
+        }
+    }else{
+        ema_calculate(handler, price);
+    }    
+    return true;
+}
+
+static void sar_calculate( sar_t &handler,
+                           const kline_d &kline_data){
+    inf_sar_t &sar = handler.common_db->indc_info.sar;
+
+    if(kline_data.highPrice > handler.ep_uptrend)   
+        handler.ep_uptrend = kline_data.highPrice;
+
+    sar.price_up = sar.price_up + 
+                    handler.configuration->alpha*( handler.ep_uptrend - sar.price_up);
+
+    if(kline_data.lowPrice < handler.ep_downtrend)   
+        handler.ep_downtrend = kline_data.lowPrice;
+
+    sar.price_down = sar.price_down - 
+                        handler.configuration->alpha*( sar.price_up - handler.ep_downtrend);
+
+    if(handler.EMA.price > kline_data.closePrice)
+        handler.common_db->indc_info.sar.status = true;
+    else
+        handler.common_db->indc_info.sar.status = false;
+}
+
 void sar_callback( const kline_d &kline_data, 
-          indicator_t &handler_){
+                   indicator_t &handler_){
     sar_t &handler = *handler_.indcs_var.sar_vars;
     std::cout<<__func__<<std::endl;
+    if(ema_handler(handler, kline_data.closePrice)){
+        sar_calculate(handler, kline_data);
+    }
 }
 
 namespace config{

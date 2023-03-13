@@ -12,7 +12,7 @@ static double atr_get_max_value( const kline_d &kline_data,
         return H_L;
     }else if(H_Cp >= H_L && H_Cp >= L_Cp){
         return H_Cp;
-    }else if(L_Cp >= H_L && L_Cp >= H_Cp){
+    }else{
         return L_Cp;
     }
     return 0.0;

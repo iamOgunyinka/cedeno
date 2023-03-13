@@ -22,11 +22,17 @@ struct sar_t{
     indicator_t *common_db;
     const conf_sar_t *configuration;
 
+    double ep_uptrend = 0.0;
+    double ep_downtrend = 0.0;
+
     struct{
-        bool calculating = true;
-        double sumatory = 0.0;
-        uint8_t counter = 0;
-    }SMA;
+        struct{
+            bool calculating = true;
+            double sumatory = 0.0;
+            uint8_t counter = 0;
+        }SMA;
+        double price;
+    }EMA;
 };
 
 void sar_callback( const kline_d &kline_data, 

@@ -84,7 +84,9 @@ struct inf_atr_t{
 };
 
 struct inf_sar_t{
-    double price = 0.0;
+    double price_up = 0.0;
+    double price_down = 0.0;
+    bool status = false;
 };
 
 struct inf_t{
