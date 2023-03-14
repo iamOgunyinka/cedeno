@@ -191,7 +191,7 @@ void insertNewestData(bktick_data_t const &data,
     return dataList.push_back(data);
 
   // list is meant to be small, so no need for std::algorithms
-  for (int i = 0; i < dataList.size(); ++i) {
+  for (size_t i = 0; i < dataList.size(); ++i) {
     if (utils::isCaseInsensitiveStringCompare(dataList[i].symbol,
                                               config.symbols[0])) {
       dataList[i] = data;

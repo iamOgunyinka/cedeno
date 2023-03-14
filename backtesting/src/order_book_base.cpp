@@ -5,8 +5,8 @@
 #endif
 
 namespace backtesting {
-using simple_sort_callback_t = bool (*)(details::order_meta_data_t const &,
-                                        details::order_meta_data_t const &);
+using simple_sort_callback_t = bool (*)(details::order_book_entry_t const &,
+                                        details::order_book_entry_t const &);
 
 static details::lesser_comparator_t lesserComparator{};
 static details::greater_comparator_t greaterComparator{};
@@ -23,21 +23,21 @@ int64_t getOrderNumber() {
   return orderNumber++;
 }
 
-bool isGreater(details::order_meta_data_t const &a,
-               details::order_meta_data_t const &b) {
+bool isGreater(details::order_book_entry_t const &a,
+               details::order_book_entry_t const &b) {
   return a.priceLevel > b.priceLevel;
 }
 
-bool isLesser(details::order_meta_data_t const &a,
-              details::order_meta_data_t const &b) {
+bool isLesser(details::order_book_entry_t const &a,
+              details::order_book_entry_t const &b) {
   return a.priceLevel < b.priceLevel;
 }
 
-details::order_meta_data_t
+details::order_book_entry_t
 orderMetaDataFromDepth(depth_data_t::depth_meta_t const &depth,
                        internal_token_data_t *token, trade_side_e const side,
                        trade_type_e const tradeType) {
-  details::order_meta_data_t d;
+  details::order_book_entry_t d;
   d.totalQuantity += depth.quantity;
   d.priceLevel = depth.priceLevel;
 
@@ -54,7 +54,7 @@ orderMetaDataFromDepth(depth_data_t::depth_meta_t const &depth,
 }
 
 void insertAndSort(std::vector<depth_data_t::depth_meta_t> const &depthList,
-                   std::vector<details::order_meta_data_t> &dst,
+                   std::vector<details::order_book_entry_t> &dst,
                    trade_side_e const side, trade_type_e const tradeType,
                    internal_token_data_t *token,
                    simple_sort_callback_t comparator) {
@@ -66,7 +66,7 @@ void insertAndSort(std::vector<depth_data_t::depth_meta_t> const &depthList,
 
 template <typename Comparator>
 void updateSidesWithNewOrder(order_data_t const &order,
-                             std::vector<details::order_meta_data_t> &dest,
+                             std::vector<details::order_book_entry_t> &dest,
                              Comparator comparator) {
   auto iter =
       std::lower_bound(dest.begin(), dest.end(), order.priceLevel, comparator);
@@ -78,7 +78,7 @@ void updateSidesWithNewOrder(order_data_t const &order,
       iter->orders.push_back(order);
     }
   } else {
-    details::order_meta_data_t newInsert{};
+    details::order_book_entry_t newInsert{};
     newInsert.orders.push_back(std::move(order));
     newInsert.priceLevel = order.priceLevel;
     newInsert.totalQuantity = order.quantity;
@@ -88,7 +88,7 @@ void updateSidesWithNewOrder(order_data_t const &order,
 
 template <typename Func>
 void updateSidesWithNewOrder(order_list_t const &src,
-                             std::vector<details::order_meta_data_t> &dest,
+                             std::vector<details::order_book_entry_t> &dest,
                              Func comparator) {
   for (auto const &d : src)
     updateSidesWithNewOrder(d, dest, comparator);
@@ -100,7 +100,7 @@ void updateSidesWithNewOrder(order_list_t const &src,
 
 template <typename Comparator>
 void updateSidesWithNewDepth(std::vector<depth_data_t::depth_meta_t> const &src,
-                             std::vector<details::order_meta_data_t> &dest,
+                             std::vector<details::order_book_entry_t> &dest,
                              trade_side_e const side,
                              internal_token_data_t *token,
                              Comparator comparator) {
@@ -130,7 +130,7 @@ void updateSidesWithNewDepth(std::vector<depth_data_t::depth_meta_t> const &src,
   }
 
   dest.erase(std::remove_if(dest.begin(), dest.end(),
-                            [](details::order_meta_data_t const &a) {
+                            [](details::order_book_entry_t const &a) {
                               return a.totalQuantity == 0.0;
                             }),
              dest.end());
@@ -186,7 +186,7 @@ double order_book_base_t::currentSellPrice() {
 }
 
 trade_list_t
-order_book_base_t::getExecutedTradesFromOrders(details::order_meta_data_t &data,
+order_book_base_t::getExecutedTradesFromOrders(details::order_book_entry_t &data,
                                                double quantityTraded,
                                                double const priceLevel) {
   trade_list_t trades;
@@ -210,7 +210,7 @@ order_book_base_t::getExecutedTradesFromOrders(details::order_meta_data_t &data,
 }
 
 trade_list_t
-order_book_base_t::marketMatcher(std::vector<details::order_meta_data_t> &list,
+order_book_base_t::marketMatcher(std::vector<details::order_book_entry_t> &list,
                                  double &amountAvailableToSpend,
                                  order_data_t const &order) {
   if (list.empty()) {

@@ -8,7 +8,7 @@ futures_order_book_t::futures_order_book_t(
     : order_book_base_t(ioContext, std::move(dataStream), token) {}
 
 trade_list_t futures_order_book_t::marketMatcherImpl(
-    std::vector<details::order_meta_data_t> &list, double &,
+    std::vector<details::order_book_entry_t> &list, double &,
     order_data_t const &order) {
   trade_list_t result;
   order_status_e status = order_status_e::partially_filled;
