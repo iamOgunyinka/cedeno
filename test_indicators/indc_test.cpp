@@ -29,9 +29,8 @@ void python_script(void){
 /*======================PYTHON SCRIPT======================*/
 /*=========================================================*/
 
-indicators::trade_stream_d set_trade_list(double price, indicators::assest_side_e side){
+indicators::trade_stream_d set_trade_list(double price, indicators::side_e side){
 
-    indicators::trade_stream_d trade_list;
     indicators::trade_stream_d trade_data; 
     trade_data.tokenName = "BTCUSDT";
     trade_data.amountPerPiece = price;
@@ -39,11 +38,11 @@ indicators::trade_stream_d set_trade_list(double price, indicators::assest_side_
     trade_data.eventTime =  std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count();
-    return trade_list;
+    return trade_data;
 }
 
-void print_info(void){
-    const indicators::inf_t &indicator_info = indicator_symbol_1.get();
+void print_info(indicators::indicators_c &indc_handler){
+    const indicators::inf_t &indicator_info = indc_handler.get();
 
     std::cout<<std::endl<<"INFO:"<<std::endl
              <<"ticks_in: "<<indicator_info.cab.ticks_in<<std::endl
@@ -56,11 +55,13 @@ void print_info(void){
              <<"qty_in_out: "<<indicator_info.cab.qty_in_out<<std::endl;
 }
 
-static void tick_trade_stream(const uint64_t &price, const indicators::assest_side_e &side){
-    indicators::trade_stream_d trade_list = set_trade_list(price, side);
-    indicator_symbol_1.process(trade_list);
-    indicator_symbol_2.process(trade_list);
-    // print_info();
+static void tick_trade_stream(const uint64_t &price, const indicators::side_e &side){
+    indicators::trade_stream_d trade_data_symbol_1 = set_trade_list(price, indicators::side_e::sell);
+    indicators::trade_stream_d trade_data_symbol_2 = set_trade_list(price, indicators::side_e::buy);
+    indicator_symbol_1.process(trade_data_symbol_1);
+    indicator_symbol_2.process(trade_data_symbol_2);
+    print_info(indicator_symbol_1);
+    print_info(indicator_symbol_2);
 }
 
 static void tick_kline_stream(const uint64_t &price){
@@ -72,16 +73,10 @@ static void tick_kline_stream(const uint64_t &price){
 int main(void){
     python_script();
     
-    tick_trade_stream(80, indicators::assest_side_e::buy);
-    // tick_trade_stream(90, indicators::side_e::buy);
-    // tick_trade_stream(10, indicators::side_e::sell);
+    tick_trade_stream(80, indicators::side_e::buy);
     
     std::cout<<std::endl;
     tick_kline_stream(90);std::cout<<std::endl;
-    // tick_kline_stream(80);std::cout<<std::endl;
-    // tick_kline_stream(80);std::cout<<std::endl;
-    // tick_kline_stream(80);std::cout<<std::endl;
-    // tick_kline_stream(80);std::cout<<std::endl;
     return 0;
 
 }
