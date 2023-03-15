@@ -7,7 +7,9 @@
 #include <array>
 
 /*GLOBAL VAR*/
-indicators::indicators_c indicator_handler("SYMBOL_1");
+indicators::indicators_c indicator_handler("indicator");
+indicators::indicators_c indicator_symbol_1("SYMBOL_1");
+indicators::indicators_c indicator_symbol_2("SYMBOL_2");
 
 /*=========================================================*/
 /*======================PYTHON SCRIPT======================*/
@@ -27,9 +29,7 @@ void python_script(void){
 /*======================PYTHON SCRIPT======================*/
 /*=========================================================*/
 
-
-
-indicators::trade_stream_d set_trade_list(double price, indicators::side_e side){
+indicators::trade_stream_d set_trade_list(double price, indicators::assest_side_e side){
 
     indicators::trade_stream_d trade_list;
     indicators::trade_stream_d trade_data; 
@@ -42,8 +42,8 @@ indicators::trade_stream_d set_trade_list(double price, indicators::side_e side)
     return trade_list;
 }
 
-void print_info(const std::string &symbol){
-    const indicators::inf_t &indicator_info = indicator_handler.get();
+void print_info(void){
+    const indicators::inf_t &indicator_info = indicator_symbol_1.get();
 
     std::cout<<std::endl<<"INFO:"<<std::endl
              <<"ticks_in: "<<indicator_info.cab.ticks_in<<std::endl
@@ -56,30 +56,32 @@ void print_info(const std::string &symbol){
              <<"qty_in_out: "<<indicator_info.cab.qty_in_out<<std::endl;
 }
 
-static void tick_trade_stream(const uint64_t &price, const indicators::side_e &side){
+static void tick_trade_stream(const uint64_t &price, const indicators::assest_side_e &side){
     indicators::trade_stream_d trade_list = set_trade_list(price, side);
-    indicator_handler.process(trade_list);
-    print_info("BTCUSDT");
+    indicator_symbol_1.process(trade_list);
+    indicator_symbol_2.process(trade_list);
+    // print_info();
 }
 
 static void tick_kline_stream(const uint64_t &price){
     indicators::kline_d kline_data;
-    indicator_handler.process(kline_data);
+    indicator_symbol_1.process(kline_data);
+    indicator_symbol_2.process(kline_data);
 }
 
 int main(void){
     python_script();
     
-    tick_trade_stream(80, indicators::side_e::buy);
-    tick_trade_stream(90, indicators::side_e::buy);
-    tick_trade_stream(10, indicators::side_e::sell);
+    tick_trade_stream(80, indicators::assest_side_e::buy);
+    // tick_trade_stream(90, indicators::side_e::buy);
+    // tick_trade_stream(10, indicators::side_e::sell);
     
     std::cout<<std::endl;
     tick_kline_stream(90);std::cout<<std::endl;
-    tick_kline_stream(80);std::cout<<std::endl;
-    tick_kline_stream(80);std::cout<<std::endl;
-    tick_kline_stream(80);std::cout<<std::endl;
-    tick_kline_stream(80);std::cout<<std::endl;
+    // tick_kline_stream(80);std::cout<<std::endl;
+    // tick_kline_stream(80);std::cout<<std::endl;
+    // tick_kline_stream(80);std::cout<<std::endl;
+    // tick_kline_stream(80);std::cout<<std::endl;
     return 0;
 
 }

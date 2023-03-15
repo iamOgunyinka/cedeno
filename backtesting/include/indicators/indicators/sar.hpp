@@ -3,7 +3,6 @@
 
 #include "indc_data.hpp"
 
-#include "source_data.hpp"
 namespace indicators{
 
 struct conf_sar_t{

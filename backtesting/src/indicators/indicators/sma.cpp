@@ -6,6 +6,7 @@ void sma_callback( const kline_d &kline_data,
                    indicator_t &handler_){
     sma_t &handler = *handler_.indcs_var.sma_vars;
     std::cout<<__func__<<std::endl;
+    std::cout<<"sma: n: "<<handler.configuration->n<<std::endl;
     if(handler.n < handler.configuration->n){
         handler.n++;
     }else{
@@ -14,7 +15,7 @@ void sma_callback( const kline_d &kline_data,
         handler.prices_q.pop();
     }
     handler.sumatory += kline_data.closePrice;
-    handler.common_db->indc_info.sma.price = handler.sumatory/handler.n;
+    handler.common_db->info.sma.price = handler.sumatory/handler.n;
     handler.prices_q.push(kline_data.closePrice);
 }
 

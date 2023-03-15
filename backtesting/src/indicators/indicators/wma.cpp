@@ -4,7 +4,7 @@
 namespace indicators{
 static void wma_calculate(wma_t &handler){
     const std::size_t &sz = handler.prices_q.size();
-    double &wma_price = handler.common_db->indc_info.macd.price;
+    double &wma_price = handler.common_db->info.macd.price;
     for(uint64_t idx = 0; idx < sz; idx++){
         wma_price += handler.prices_q[idx] *
                      handler.configuration->wi[idx]; 

@@ -9,22 +9,6 @@
 
 namespace indicators{
 
-struct ticks_in_t;
-struct ticks_out_t;
-struct qty_in_t;
-struct qty_out_t;
-struct avrg_in_t;
-struct avrg_out_t;
-struct qty_in_out_t;
-struct ticks_in_out_t;
-struct buy_vs_sell_t;
-struct ema_t;
-struct sma_t;
-struct macd_t;
-struct atr_t;
-struct sar_t;
-struct wma_t;
-
 enum class types_e{
     BUY_VS_SELL,
     TICK_IN,
@@ -50,6 +34,22 @@ enum class source_e{
     SRC_KLINE,
     SIZE,
 };
+
+struct ticks_in_t;
+struct ticks_out_t;
+struct qty_in_t;
+struct qty_out_t;
+struct avrg_in_t;
+struct avrg_out_t;
+struct qty_in_out_t;
+struct ticks_in_out_t;
+struct buy_vs_sell_t;
+struct ema_t;
+struct sma_t;
+struct macd_t;
+struct atr_t;
+struct sar_t;
+struct wma_t;
 
 struct inf_BWFS_t{
     uint64_t ticks_in = 0;
@@ -118,7 +118,7 @@ struct indcs_vars_t{
 };
 
 struct indicator_t{
-    inf_t indc_info;
+    inf_t info;
     indcs_vars_t indcs_var;
 };
 

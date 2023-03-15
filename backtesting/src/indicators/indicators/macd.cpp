@@ -6,7 +6,7 @@
 namespace indicators{
 
 static void calculate_macd(macd_t &handler){
-    inf_macd_t &inf_macd = handler.common_db->indc_info.macd;
+    inf_macd_t &inf_macd = handler.common_db->info.macd;
     inf_macd.price = handler.ema_q[handler.configuration->high_period] - 
                      handler.ema_q[handler.configuration->low_period];
 }
@@ -16,14 +16,14 @@ void macd_callback( const kline_d &kline_data,
     macd_t &handler = *handler_.indcs_var.macd_vars;
     std::cout<<__func__<<std::endl;
     if(handler.n <= handler.configuration->high_period){
-        handler.ema_q.push_front(handler.common_db->indc_info.ema.price);
+        handler.ema_q.push_front(handler.common_db->info.ema.price);
         if(handler.n == handler.configuration->high_period){
             calculate_macd(handler);
         }
         handler.n++;
     }else{
         handler.ema_q.pop_back();
-        handler.ema_q.push_front(handler.common_db->indc_info.ema.price);
+        handler.ema_q.push_front(handler.common_db->info.ema.price);
         calculate_macd(handler);
     }
 }

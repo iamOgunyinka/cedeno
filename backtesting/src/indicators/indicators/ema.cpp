@@ -9,7 +9,7 @@ namespace indicators{
 static void ema_calculate( ema_t &handler, 
                            const double &curr_price){
     double k = 2/(handler.configuration->n + 1);
-    double &ema_price = handler.common_db->indc_info.ema.price;
+    double &ema_price = handler.common_db->info.ema.price;
     ema_price = k*(curr_price - ema_price) + ema_price;
 }
 
@@ -17,7 +17,7 @@ static bool sma_calculate( ema_t &handler,
                            const double &price){
     handler.SMA.sumatory += price;
     if(++handler.SMA.counter == handler.configuration->n){
-        handler.common_db->indc_info.ema.price = handler.SMA.sumatory/handler.SMA.counter;
+        handler.common_db->info.ema.price = handler.SMA.sumatory/handler.SMA.counter;
         return true;
     }
     return false;

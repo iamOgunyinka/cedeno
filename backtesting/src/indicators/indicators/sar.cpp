@@ -39,7 +39,7 @@ static bool ema_handler(sar_t &handler,
 
 static void sar_calculate( sar_t &handler,
                            const kline_d &kline_data){
-    inf_sar_t &sar = handler.common_db->indc_info.sar;
+    inf_sar_t &sar = handler.common_db->info.sar;
 
     if(kline_data.highPrice > handler.ep_uptrend)   
         handler.ep_uptrend = kline_data.highPrice;
@@ -54,9 +54,9 @@ static void sar_calculate( sar_t &handler,
                         handler.configuration->alpha*( sar.price_up - handler.ep_downtrend);
 
     if(handler.EMA.price > kline_data.closePrice)
-        handler.common_db->indc_info.sar.status = true;
+        handler.common_db->info.sar.status = true;
     else
-        handler.common_db->indc_info.sar.status = false;
+        handler.common_db->info.sar.status = false;
 }
 
 void sar_callback( const kline_d &kline_data, 

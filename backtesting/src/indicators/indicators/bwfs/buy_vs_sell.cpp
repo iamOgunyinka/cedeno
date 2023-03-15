@@ -13,7 +13,7 @@ static uint64_t calculate_time_threshold( const conf_BWFS_t &config,
 static void reset_info_data(buy_vs_sell_t &handler){
     std::queue<buy_vs_sell_q_t> empty_list;
     std::swap(handler.price_q, empty_list);
-    (*handler.common_db).indc_info.cab = inf_BWFS_t();
+    (*handler.common_db).info.cab = inf_BWFS_t();
 }
 
 static auto get_user( std::unordered_map<std::string, double> &handler,
@@ -31,7 +31,7 @@ static void decrease_quantity( buy_vs_sell_t &handler,
                                const std::string &buyer_id, 
                                const std::string &seller_id){
 
-    double &buyer_vs_seller = handler.common_db->indc_info.cab.buyer_vs_seller;
+    double &buyer_vs_seller = handler.common_db->info.cab.buyer_vs_seller;
     double &clnt_conf = handler.configuration->client_confirmation;
 
     double &last_quantity_buyer = get_user(handler.buyer, buyer_id)->second;
@@ -58,7 +58,7 @@ static void increase_quantity( buy_vs_sell_t &handler,
                                const std::string &buyer_id, 
                                const std::string &seller_id){
 
-    double &buyer_vs_seller = handler.common_db->indc_info.cab.buyer_vs_seller;
+    double &buyer_vs_seller = handler.common_db->info.cab.buyer_vs_seller;
     double &clnt_conf = handler.configuration->client_confirmation;
 
     double &last_quantity_buyer = get_user(handler.buyer, buyer_id)->second;

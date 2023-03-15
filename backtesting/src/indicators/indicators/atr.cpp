@@ -30,7 +30,7 @@ static void atr_calculate(const kline_d &kline_data,
 
     double atr_prev = total_sum/n;
     double atr_curr = atr_get_max_value(kline_data, handler);
-    handler.common_db->indc_info.atr.price = ((atr_prev*(n - 1)) + atr_curr) / n; 
+    handler.common_db->info.atr.price = ((atr_prev*(n - 1)) + atr_curr) / n; 
 
     handler.prices_q.pop_back();
     handler.prices_q.push_back(atr_curr);
