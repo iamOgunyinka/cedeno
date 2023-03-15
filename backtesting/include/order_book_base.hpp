@@ -9,6 +9,10 @@
 #include "user_data.hpp"
 #include <algorithm>
 
+#ifdef BT_USE_WITH_INDICATORS
+#include "indicators/manager/indc_mnger.hpp"
+#endif
+
 namespace boost {
 namespace asio {
 class io_context;
@@ -107,10 +111,14 @@ public:
   double currentBuyPrice();
   /// internal signal emitted when a new trade occurs
   Gallant::Signal1<trade_list_t> NewTradesCreated;
-  /// internal signal emitted when a new depth is gotten
-  Gallant::Signal1<depth_data_t> NewDepthObtained;
   /// internal price emittance signal
   Gallant::Signal2<internal_token_data_t *, double> NewMarketPrice;
+
+#ifdef BT_USE_WITH_INDICATORS
+  inline void setIndicatorConfiguration(std::vector<std::vector<std::string>> && config) {
+    m_indicator.set(std::move(config));
+  }
+#endif
 
 private:
   void updateOrderBook(depth_data_t &&newestData);
@@ -173,6 +181,10 @@ protected:
   depth_data_t m_nextData;
   /// the timer object
   time_t m_currentTimer = 0;
+
+#ifdef BT_USE_WITH_INDICATORS
+  indicators::indicators_c m_indicator {};
+#endif
 };
 
 details::order_book_entry_t

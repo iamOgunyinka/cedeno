@@ -3,6 +3,13 @@
 #include "bookticker.hpp"
 #include "candlestick_data.hpp"
 
+
+#ifdef BT_USE_WITH_INDICATORS
+namespace indicator {
+bool isValidIndicatorConfiguration(std::vector<std::vector<std::string>> const &);
+}
+#endif
+
 namespace backtesting {
 enum class trade_type_e;
 
@@ -13,6 +20,11 @@ std::string getDatabaseConfigPath();
 ///  allows the user to configure the backtest instance
 struct configuration_t {
   using stringlist_t = std::vector<std::string>;
+
+#ifdef BT_USE_WITH_INDICATORS
+  /// a list of configurations used by the indicators
+  std::vector<std::vector<std::string>> indicatorConfig;
+#endif
 
   stringlist_t streams;    //!< a list of the streams(s) to run. Valid options are:
                            //!< trade, ticker, bookticker, kline, depth(default)

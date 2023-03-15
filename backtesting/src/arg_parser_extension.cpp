@@ -4,7 +4,11 @@
 #include <thread>
 
 namespace backtesting {
-void processDepthStream(trade_map_td &tradeMap);
+void processDepthStream(trade_map_td &tradeMap
+#ifdef BT_USE_WITH_INDICATORS
+                        , std::vector<std::vector<std::string>> &&config
+#endif
+                        );
 void aggregateTradesImpl();
 void candlestickProcessingImpl();
 void bookTickerProcessingThreadImpl();
@@ -30,8 +34,12 @@ int backtesting_t::run() {
 
   std::unique_ptr<std::thread> depthStreamThread = nullptr;
   if (auto iter = csvFilenames.find(DEPTH); iter != csvFilenames.end()) {
-    depthStreamThread.reset(new std::thread{[csData = iter->second]() mutable {
-      backtesting::processDepthStream(csData);
+    depthStreamThread.reset(new std::thread{[&,csData = iter->second]() mutable {
+      backtesting::processDepthStream(csData
+#ifdef BT_USE_WITH_INDICATORS
+        , std::move(globalRtData.indicatorConfig)
+#endif
+      );
     }});
   }
 

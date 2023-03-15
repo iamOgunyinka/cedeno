@@ -255,6 +255,12 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     }
   }
 
+#ifdef BT_USE_WITH_INDICATORS
+  if (!indicator::isValidIndicatorConfiguration(config.indicatorConfig)) {
+    ERROR_EXIT("invalid configuration set for the indicator");
+  }
+#endif
+
   if (config.rootDir.empty()) {
     config.rootDir =
         (std::filesystem::current_path() / "backtestingFiles").string();
@@ -354,6 +360,10 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     for (auto const &t : config.tradeTypes)
       spdlog::info("trade: {}", t);
   }
+
+#ifdef BT_USE_WITH_INDICATORS
+  globalRtData.indicatorConfig = std::move(config.indicatorConfig);
+#endif
 
   m_config.emplace(config);
   m_argumentParsed = true;

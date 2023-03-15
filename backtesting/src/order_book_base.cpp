@@ -235,7 +235,9 @@ order_book_base_t::order_book_base_t(net::io_context &ioContext,
                 firstData.tradeType, symbol, isLesser);
   m_currentTimer = firstData.eventTime;
 
-  NewDepthObtained(firstData);
+#ifdef BT_USE_WITH_INDICATORS
+  // m_indicator.process(firstData);
+#endif
 }
 
 order_book_base_t::~order_book_base_t() {
@@ -430,7 +432,6 @@ void order_book_base_t::setNextTimer() {
 
   m_nextData = m_dataStreamer.getNextData();
   m_nextData.tradeType = m_symbol->tradeType;
-  NewDepthObtained(m_nextData);
 
   // no more data but we need to keep the simulator running
   if (m_nextData.asks.empty() && m_nextData.bids.empty())
@@ -448,6 +449,10 @@ void order_book_base_t::setNextTimer() {
   m_currentTimer = m_nextData.eventTime;
   m_periodicTimer->expires_from_now(boost::posix_time::milliseconds(timeDiff));
   m_periodicTimer->async_wait([this](boost::system::error_code const ec) {
+#ifdef BT_USE_WITH_INDICATORS
+    // m_indicator.process(m_nextData);
+#endif
+
     updateOrderBook(std::move(m_nextData));
     setNextTimer();
   });

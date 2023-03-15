@@ -13,6 +13,11 @@ struct global_data_t {
   backtesting::token_data_list_t allTokens;
   backtesting::user_data_list_t allUserAccounts;
   std::set<std::string> validSymbols;
+#ifdef BT_USE_WITH_INDICATORS
+  /// a list of configurations used by the indicators
+  std::vector<std::vector<std::string>> indicatorConfig;
+#endif
+
   std::string rootPath;
 
   double futuresMakerFee = 0.0;

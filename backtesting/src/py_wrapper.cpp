@@ -257,6 +257,10 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readwrite("dbLaunchType",
                      &backtesting::configuration_t::dbLaunchType)
 #endif
+
+#ifdef BT_USE_WITH_INDICATORS
+      .def_readwrite("indicatorConfig", &backtesting::configuration_t::indicatorConfig)
+#endif
       ;
 
   m.def("sendOrder", &backtesting::initiateOrder);

@@ -52,8 +52,13 @@ struct py_depth_data_t {
 };
 using py_depth_data_list_t = std::vector<py_depth_data_t>;
 
-void processDepthStream(trade_map_td &tradeMap);
 py_depth_data_list_t depthDataToPythonDepth(depth_data_t const &);
+void processDepthStream(trade_map_td &tradeMap
+#ifdef BT_USE_WITH_INDICATORS
+    , std::vector<std::vector<std::string>> &&config
+#endif
+);
+
 using depth_event_callback_t = std::function<void(py_depth_data_list_t)>;
 using depth_callback_map_t = std::map<int, std::vector<depth_event_callback_t>>;
 } // namespace backtesting

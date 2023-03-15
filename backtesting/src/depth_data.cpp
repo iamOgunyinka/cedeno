@@ -14,7 +14,11 @@ internal_token_data_t *getTokenWithName(std::string const &tokenName,
 
 std::vector<global_order_book_t> global_order_book_t::globalOrderBooks{};
 
-void processDepthStream(trade_map_td &tradeMap) {
+void processDepthStream(trade_map_td &tradeMap
+#ifdef BT_USE_WITH_INDICATORS
+    , std::vector<std::vector<std::string>> &&config
+#endif
+) {
   auto &globalOrderBooks = global_order_book_t::globalOrderBooks;
 
   globalOrderBooks.clear();
@@ -63,24 +67,36 @@ void processDepthStream(trade_map_td &tradeMap) {
   }
 
   auto &newTradesDelegate = trade_signal_handler_t::GetTradesDelegate();
-  auto &newDepthDelegate = depth_signal_handler_t::GetDepthDelegate();
   auto &priceDelegate = signals_t::GetPriceDelegate();
 
   for (auto &orderBook : globalOrderBooks) {
     if (orderBook.futures) {
-      orderBook.futures->NewDepthObtained.Connect(newDepthDelegate);
       orderBook.futures->NewTradesCreated.Connect(newTradesDelegate);
       orderBook.futures->NewMarketPrice.Connect(priceDelegate);
       orderBook.futures->run();
     }
     if (orderBook.spot) {
-      orderBook.spot->NewDepthObtained.Connect(newDepthDelegate);
       orderBook.spot->NewTradesCreated.Connect(newTradesDelegate);
       orderBook.spot->run();
     }
   }
 
-  std::thread{[=] { ioContext->run(); }}.detach();
+#ifdef BT_USE_WITH_INDICATORS
+  if (globalOrderBooks.empty())
+    return;
+
+  // call ::set() only on one of the (possibly) several indicator instances
+  auto& book = globalOrderBooks.back().spot == nullptr ?
+      *globalOrderBooks.back().futures : *globalOrderBooks.back().spot;
+  std::thread {
+    [=, &book] () mutable {
+      book.setIndicatorConfiguration(std::move(config));
+      ioContext->run();
+    }
+  };
+#else
+  std::thread{[=] {ioContext->run(); }}.detach();
+#endif
 }
 
 bool depth_data_t::depthMetaFromCSV(csv::CSVRow const &row,
