@@ -189,7 +189,7 @@ void candlestickProcessingImpl() {
 
   while (true) {
     auto task = kline_task_t::klineScheduledTasks.get();
-    if (threadsAtWork > 4) {
+    if (threadsAtWork > 8) {
       std::unique_lock<std::mutex> uLock{taskWaitMutex};
       cv.wait(uLock, [threadsAtWork] { return threadsAtWork < 4; });
       if (threadsAtWork >= 4) // ignore and continue -> an error

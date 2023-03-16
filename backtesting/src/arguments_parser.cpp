@@ -249,6 +249,9 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     config.tokenList.push_back("ETHUSDT");
 #endif // _DEBUG
   } else {
+    if (config.tokenList.size() > 4)
+      ERROR_EXIT("The maximum allowed symbols is 4");
+
     for (auto &token : config.tokenList) {
       for (auto &t : token)
         t = toupper(t);

@@ -4,14 +4,16 @@
 #include <thread>
 
 namespace backtesting {
-void processDepthStream(trade_map_td &tradeMap
 #ifdef BT_USE_WITH_INDICATORS
-                        , std::vector<std::vector<std::string>> &&config
+
+  void scheduleCandlestickTask(unsigned long long, unsigned long long);
+  void processDepthStream(trade_map_td &tradeMap,
+                          std::vector<std::vector<std::string>> &&config);
+#else
+  void processDepthStream(trade_map_td &tradeMap);
 #endif
-                        );
+
 void aggregateTradesImpl();
-void candlestickProcessingImpl();
-void bookTickerProcessingThreadImpl();
 void liquidationOfPositionsImpl();
 } // namespace backtesting
 
@@ -28,18 +30,21 @@ int backtesting_t::run() {
   // implemented in signals.cpp
   std::thread{[] { backtesting::liquidationOfPositionsImpl(); }}.detach();
 
-  // std::thread{[] { backtesting::candlestickProcessingImpl(); }}.detach();
+#ifdef BT_USE_WITH_INDICATORS
+  std::thread{[] { backtesting::candlestickProcessingImpl(); }}.detach();
+#endif
   // std::thread{[] { backtesting::bookTickerProcessingThreadImpl();
   // }}.detach();
 
   std::unique_ptr<std::thread> depthStreamThread = nullptr;
   if (auto iter = csvFilenames.find(DEPTH); iter != csvFilenames.end()) {
     depthStreamThread.reset(new std::thread{[&,csData = iter->second]() mutable {
-      backtesting::processDepthStream(csData
 #ifdef BT_USE_WITH_INDICATORS
-        , std::move(globalRtData.indicatorConfig)
+      backtesting::processDepthStream(csData , std::move(globalRtData.indicatorConfig));
+      backtesting::scheduleCandlestickTask(globalRtData.startTime, globalRtData.endTime);
+#else
+      backtesting::processDepthStream(csData);
 #endif
-      );
     }});
   }
 

@@ -66,7 +66,7 @@ option(ENABLE_TEST_DATA_EXT   "Compile TestDataExtractor" on)
 option(ENABLE_TEST_BACKTNG    "Compile TestBacktesting" off)
 option(ENABLE_BT_DATABASE     "Enable database support for backtesting" off)
 option(ENABLE_LIBS_FOR_TEST   "Compile the libraries for testing" off)
-option(ENABLE_INDICATOR       "Compile the library with indicators" off)
+option(ENABLE_INDICATOR       "Compile the library with indicators" on)
 
 # Select openssl
 if(REQUIRE_SSL)

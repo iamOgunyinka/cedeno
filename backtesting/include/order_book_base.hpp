@@ -115,6 +115,7 @@ public:
   Gallant::Signal2<internal_token_data_t *, double> NewMarketPrice;
 
 #ifdef BT_USE_WITH_INDICATORS
+  inline indicators::indicators_c& indicator() { return m_indicator; }
   inline void setIndicatorConfiguration(std::vector<std::vector<std::string>> && config) {
     m_indicator.set(std::move(config));
   }
@@ -183,7 +184,7 @@ protected:
   time_t m_currentTimer = 0;
 
 #ifdef BT_USE_WITH_INDICATORS
-  indicators::indicators_c m_indicator {};
+  indicators::indicators_c m_indicator;
 #endif
 };
 

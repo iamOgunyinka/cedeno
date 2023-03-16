@@ -286,6 +286,37 @@ py_depth_data_list_t depthDataToPythonDepth(depth_data_t const &data) {
   return result;
 }
 
+#ifdef BT_USE_WITH_INDICATORS
+void scheduleCandlestickTask(unsigned long long startTime,
+                             unsigned long long endTime) {
+  for (auto &book: global_order_book_t::globalOrderBooks) {
+    kline_config_t config;
+    config.symbol = book.tokenName;
+    config.startTime = static_cast<time_t>(startTime);
+    config.endTime = static_cast<time_t>(endTime);
+    config.interval = data_interval_e::one_second;
+
+    if (book.futures) {
+      auto &indicator = book.futures->indicator();
+      config.tradeType = trade_type_e::futures;
+      config.callback = [&indicator](backtesting::kline_data_list_t const &l) {
+        indicator.process(l);
+      };
+      auto temp = config;
+      (void)getContinuousKlineData(std::move(temp));
+    };
+    if (book.spot) {
+      auto &indicator = book.spot->indicator();
+      config.tradeType = trade_type_e::spot;
+      config.callback = [&indicator](backtesting::kline_data_list_t const &l) {
+        indicator.process(l);
+      };
+      (void) getContinuousKlineData(std::move(config));
+    }
+  }
+}
+#endif
+
 depth_callback_map_t depthCallbackList{};
 ::utils::waitable_container_t<depth_data_t> depthDataList{};
 } // namespace backtesting

@@ -90,8 +90,10 @@ void indicators_c::process(const trade_stream_d &trade_data){
     m_indcs_trade_mngr->process(trade_data, m_handler);
 }
 
-void indicators_c::process(const kline_d &kline_data){ 
+void indicators_c::process(const std::vector<kline_d> &kline_data_list){
+  for (auto const &kline_data: kline_data_list) {
     m_indcs_kline_mngr->process(kline_data, m_handler);
+  }
 }
 
 }
