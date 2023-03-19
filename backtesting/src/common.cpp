@@ -93,6 +93,10 @@ bool listContains(std::vector<std::string> const &container,
   return false;
 }
 
+bool startsWith(std::string const &s, std::string const &substr) {
+  return s.rfind(substr, 0) == 0;
+}
+
 std::optional<std::time_t> dateStringToTimeT(std::string const &s) {
   time_t tStart;
 
@@ -129,6 +133,12 @@ std::string toUpperString(std::string const &s) {
   for (std::string::size_type i = 0; i < strLen; ++i)
     temp[i] = std::toupper(s[i]);
   return temp;
+}
+
+void removeAllQuotes(std::string &str) {
+  str.erase(std::remove_if(str.begin(), str.end(),
+                           [](char const ch) { return ch == '"'; }),
+            str.end());
 }
 
 std::optional<std::string> currentTimeToString(std::time_t const currentTime,

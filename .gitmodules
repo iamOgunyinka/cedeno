@@ -14,3 +14,6 @@
 [submodule "third-party/Signals"]
 	path = third-party/Signals
 	url = https://github.com/pbhogan/Signals.git
+[submodule "third-party/mINI"]
+	path = third-party/mINI
+	url = https://github.com/pulzed/mINI

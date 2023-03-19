@@ -88,6 +88,7 @@ public:
   order_list_t m_orders;
   wallet_asset_list_t m_assets;
   position_list_t m_openPositions;
+  bool m_isGlobalUser = false;
 
   user_data_t() = default;
 

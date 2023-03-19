@@ -3,6 +3,7 @@
 #include "bookticker.hpp"
 #include "callbacks.hpp"
 #include "candlestick_data.hpp"
+#include "indicator_data.hpp"
 
 #include <pybind11/complex.h>
 #include <pybind11/functional.h>
@@ -11,7 +12,9 @@ namespace py = pybind11;
 namespace backtesting {
 double currentPrice(std::string const &, trade_type_e const,
                     trade_side_e const);
-}
+bool createBTInstanceFromConfigFile(std::string const &);
+bool startGlobalBTInstance();
+} // namespace backtesting
 
 std::optional<backtesting::user_data_t> findUserByID(int64_t userID) {
   if (userID < 0)
@@ -259,7 +262,8 @@ PYBIND11_MODULE(jbacktest, m) {
 #endif
 
 #ifdef BT_USE_WITH_INDICATORS
-      .def_readwrite("indicatorConfig", &backtesting::configuration_t::indicatorConfig)
+      .def_readwrite("indicatorConfig",
+                     &backtesting::configuration_t::indicatorConfig)
 #endif
       ;
 
@@ -316,4 +320,135 @@ PYBIND11_MODULE(jbacktest, m) {
            backtesting::trade_side_e const side) {
           return backtesting::currentPrice(symbol, tt, side);
         });
+
+  m.def("onStart", [](std::function<void()> func) {
+    global_data_t::instance().onStart = std::move(func);
+  });
+
+  m.def("onFinished", [](std::function<void()> func) {
+    global_data_t::instance().onCompletion = std::move(func);
+  });
+
+  m.def("onTick", [](backtesting::indicator_callback_t func) {
+    global_data_t::instance().onTick = std::move(func);
+  });
+
+  m.def("loadConfigFile", [](std::string const &filename) {
+    return backtesting::createBTInstanceFromConfigFile(filename);
+  });
+
+  m.def("start", &backtesting::startGlobalBTInstance);
+
+  m.def("cancelOrder", [](int64_t const orderID) {
+    auto user = backtesting::getGlobalUser();
+    if (!user)
+      return false;
+    return user->cancelOrderWithID(orderID);
+  });
+
+  m.def("createSpotLimitOrder",
+        [](std::string const &base, std::string const &quote,
+           double const price, double const quantity,
+           backtesting::trade_side_e const side) -> int64_t {
+          auto user = backtesting::getGlobalUser();
+          if (!user)
+            return -1;
+          return user->createSpotLimitOrder(base, quote, price, quantity, side);
+        });
+
+  m.def("createSpotLimitOrder",
+        [](std::string const &tokenName, double const price,
+           double const quantity,
+           backtesting::trade_side_e const side) -> int64_t {
+          auto user = backtesting::getGlobalUser();
+          if (!user)
+            return -1;
+          return user->createSpotLimitOrder(tokenName, price, quantity, side);
+        });
+
+  m.def("createSpotMarketOrder",
+        [](std::string const &base, std::string const &quote,
+           double const amountOrQtyToSpend,
+           backtesting::trade_side_e const side) -> int64_t {
+          auto user = backtesting::getGlobalUser();
+          if (!user)
+            return -1;
+          return user->createSpotMarketOrder(base, quote, amountOrQtyToSpend,
+                                             side);
+        });
+
+  m.def("createSpotMarketOrder",
+        [](std::string const &tokenName, double const amountOrQtyToSpend,
+           backtesting::trade_side_e const side) -> int64_t {
+          auto user = backtesting::getGlobalUser();
+          if (!user)
+            return -1;
+          return user->createSpotMarketOrder(tokenName, amountOrQtyToSpend,
+                                             side);
+        });
+
+  m.def("createFuturesLimitOrder",
+        [](std::string const &base, std::string const &quote,
+           double const price, double const quantity,
+           backtesting::trade_side_e const side) -> int64_t {
+          auto user = backtesting::getGlobalUser();
+          if (!user)
+            return -1;
+          return user->createFuturesLimitOrder(base, quote, price, quantity,
+                                               side);
+        });
+
+  m.def("createFuturesLimitOrder",
+        [](std::string const &tokenName, double const price,
+           double const quantity,
+           backtesting::trade_side_e const side) -> int64_t {
+          auto user = backtesting::getGlobalUser();
+          if (!user)
+            return -1;
+          return user->createFuturesLimitOrder(tokenName, price, quantity,
+                                               side);
+        });
+
+  m.def("createFuturesMarketOrder",
+        [](std::string const &base, std::string const &quote,
+           double const amountOrQtyToSpend,
+           backtesting::trade_side_e const side) -> int64_t {
+          auto user = backtesting::getGlobalUser();
+          if (!user)
+            return -1;
+          return user->createFuturesMarketOrder(base, quote, amountOrQtyToSpend,
+                                                side);
+        });
+
+  m.def("createFuturesMarketOrder",
+        [](std::string const &tokenName, double const amountOrQtyToSpend,
+           backtesting::trade_side_e const side) -> int64_t {
+          auto user = backtesting::getGlobalUser();
+          if (!user)
+            return -1;
+          return user->createFuturesMarketOrder(tokenName, amountOrQtyToSpend,
+                                                side);
+        });
+
+  m.def("closePosition", [](std::string const &tokenName) {
+    auto user = backtesting::getGlobalUser();
+    if (!user)
+      return false;
+    return user->closePosition(tokenName);
+  });
+
+  m.def("closeAllPositions", [] {
+    auto user = backtesting::getGlobalUser();
+    if (!user)
+      return false;
+    return user->closeAllPositions();
+  });
+
+  m.def("openQuickPosition", [](std::string const &symbol, double const size,
+                                backtesting::trade_side_e const side) {
+    auto user = backtesting::getGlobalUser();
+    if (!user)
+      return false;
+    return user->openQuickPosition(symbol, size, side);
+  });
 }

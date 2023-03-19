@@ -185,10 +185,9 @@ double order_book_base_t::currentSellPrice() {
   return 0.0;
 }
 
-trade_list_t
-order_book_base_t::getExecutedTradesFromOrders(details::order_book_entry_t &data,
-                                               double quantityTraded,
-                                               double const priceLevel) {
+trade_list_t order_book_base_t::getExecutedTradesFromOrders(
+    details::order_book_entry_t &data, double quantityTraded,
+    double const priceLevel) {
   trade_list_t trades;
   while (quantityTraded > 0.0) {
     if (data.orders.empty())
@@ -224,11 +223,11 @@ order_book_base_t::marketMatcher(std::vector<details::order_book_entry_t> &list,
 order_book_base_t::order_book_base_t(net::io_context &ioContext,
                                      data_streamer_t<depth_data_t> dataStreamer,
                                      internal_token_data_t *symbol)
-    : m_ioContext(ioContext)
-    , m_dataStreamer(std::move(dataStreamer))
-    , m_symbol(symbol)
+    : m_ioContext(ioContext), m_dataStreamer(std::move(dataStreamer)),
+      m_symbol(symbol)
 #ifdef BT_USE_WITH_INDICATORS
-      , m_indicator(m_symbol->name)
+      ,
+      m_indicator(m_symbol->name)
 #endif
 {
   auto firstData = m_dataStreamer.getNextData();
@@ -276,7 +275,7 @@ trade_data_t order_book_base_t::getNewTrade(order_data_t const &order,
   trade.tradeType = order.type;
   trade.status = status;
 
-  if (order.user){ // send notification to the order owner
+  if (order.user) { // send notification to the order owner
     order.user->OnNewTrade(trade);
 #ifdef BT_USE_WITH_INDICATORS
     m_indicator.process(trade);
@@ -460,9 +459,8 @@ void order_book_base_t::setNextTimer() {
   m_periodicTimer->expires_from_now(boost::posix_time::milliseconds(timeDiff));
   m_periodicTimer->async_wait([this](boost::system::error_code const ec) {
 #ifdef BT_USE_WITH_INDICATORS
-    // m_indicator.process(m_nextData);
+  // m_indicator.process(m_nextData);
 #endif
-
     updateOrderBook(std::move(m_nextData));
     setNextTimer();
   });

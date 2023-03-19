@@ -7,6 +7,7 @@
 
 #include "global_data.hpp"
 #include <CLI11/CLI11.hpp>
+#include <mini/ini.h>
 #include <random>
 #include <spdlog/spdlog.h>
 
@@ -249,8 +250,9 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     config.tokenList.push_back("ETHUSDT");
 #endif // _DEBUG
   } else {
-    if (config.tokenList.size() > 4)
+    if (config.tokenList.size() > 4) {
       ERROR_EXIT("The maximum allowed symbols is 4");
+    }
 
     for (auto &token : config.tokenList) {
       for (auto &t : token)
@@ -366,11 +368,18 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
 
 #ifdef BT_USE_WITH_INDICATORS
   globalRtData.indicatorConfig = std::move(config.indicatorConfig);
+  globalRtData.ticks = config.ticks;
 #endif
 
   m_config.emplace(config);
   m_argumentParsed = true;
   return m_argumentParsed;
+}
+
+void backtesting_t::reset() {
+  m_config.reset();
+  m_argumentParsed = false;
+  m_authenticatedData = false;
 }
 
 bool backtesting_t::parse(int argc, char **argv) {
@@ -493,10 +502,189 @@ bool backtesting_t::prepareData() {
   return true;
 }
 
-std::optional<backtesting_t>
-newBTInstance(backtesting::configuration_t const &config) {
-  backtesting_t bt;
-  if (!(bt.parseImpl(config) && bt.prepareData() && bt.isReady()))
-    return std::nullopt;
+backtesting_t *newBTInstance(backtesting::configuration_t const &config) {
+  auto &bt = backtesting::getGlobalBTInstance();
+  bt->reset();
+
+  if (!(bt->parseImpl(config) && bt->prepareData() && bt->isReady()))
+    return nullptr;
+  return bt.get();
+}
+
+namespace backtesting {
+
+user_data_t *getGlobalUser() {
+  auto &users = global_data_t::instance().allUserAccounts;
+  for (size_t i = 0; i < users.size(); ++i) {
+    if (users[i]->m_isGlobalUser)
+      return users[i].get();
+  }
+  return nullptr;
+}
+
+std::unique_ptr<backtesting_t> &getGlobalBTInstance() {
+  static std::unique_ptr<backtesting_t> bt = nullptr;
+  if (!bt)
+    bt = std::make_unique<backtesting_t>();
   return bt;
 }
+
+bool createBTInstanceFromConfigFile(std::string const &filename) {
+  mINI::INIFile file(filename);
+  mINI::INIStructure iniStruct{};
+
+  if (!file.read(iniStruct))
+    return false;
+
+  configuration_t config;
+  double leverage = 1.0;
+  backtesting::wallet_asset_list_t assets;
+  bool verbosity = false;
+
+  for (auto const &[key, value] : iniStruct) {
+    auto const keyName = utils::trim_copy(utils::toUpperString(key));
+    if (keyName.compare("APP") == 0) {
+      auto const verbosityStr = utils::trim_copy(value.get("verbose"));
+      if (verbosityStr.empty())
+        return false;
+      verbosity = static_cast<bool>(std::clamp(std::stoi(verbosityStr), 0, 1));
+    } else if (keyName.compare("ASSETS") == 0) {
+      for (auto const &[asset, balance] : value) {
+        auto const assetName = utils::trim_copy(utils::toUpperString(asset));
+        double const v = std::stod(utils::trim_copy(balance));
+        assets.push_back(backtesting::wallet_asset_t{assetName, v});
+      }
+    } else if (keyName.compare("TRADES") == 0) {
+      for (auto const &[n, v] : value) {
+        auto const name = utils::trim_copy(utils::toUpperString(n));
+        if (name.compare("SYMBOLS") == 0) {
+          config.tokenList = utils::splitString(utils::trim_copy(v), ",");
+        } else if (name.compare("TYPE") == 0) {
+          config.tradeTypes = utils::splitString(utils::trim_copy(v), ",");
+        } else if (name.compare("PATH") == 0) {
+          config.rootDir = utils::trim_copy(v);
+          utils::removeAllQuotes(config.rootDir);
+        } else if (name.compare("STARTDATE") == 0) {
+          config.dateFromStr = utils::trim_copy(v);
+          utils::removeAllQuotes(config.dateFromStr);
+        } else if (name.compare("ENDDATE") == 0) {
+          config.dateToStr = utils::trim_copy(v);
+          utils::removeAllQuotes(config.dateToStr);
+        } else if (name.compare("LEVERAGE") == 0) {
+          leverage = std::stod(utils::trim_copy(v));
+        }
+      }
+    } else if (keyName.compare("FEES") == 0) {
+      for (auto const &[variable_, amount_] : value) {
+        auto const variable = utils::toUpperString(utils::trim_copy(variable_));
+        double const amount = std::stod(utils::trim_copy(amount_));
+        if (variable == "FUTURESMAKER")
+          config.futuresMakerFee = amount;
+        else if (variable == "FUTURESTAKER")
+          config.futuresTakerFee = amount;
+        else if (variable == "SPOTMAKER")
+          config.spotMakerFee = amount;
+        else if (variable == "SPOTTAKER")
+          config.spotTakerFee = amount;
+      }
+    }
+#ifdef BT_USE_WITH_INDICATORS
+    else if (utils::startsWith(keyName, "INDICATORS")) {
+      auto const indicatorSplit = utils::splitString(keyName, ".");
+      if (indicatorSplit.size() == 1) { // whole string match
+        for (auto const &[name_, val] : value) {
+          auto const name = utils::trim_copy(utils::toUpperString(name_));
+          if (name == "TICK") {
+            auto &ticks = config.ticks;
+            for (auto const &tick : utils::splitString(val, ","))
+              ticks.push_back(std::stod(utils::trim_copy(tick)));
+
+            // sort and remove possible duplicates
+            std::sort(ticks.begin(), ticks.end(), std::less<size_t>{});
+            ticks.erase(std::unique(ticks.begin(), ticks.end()), ticks.end());
+          }
+        }
+      } else if (indicatorSplit.size() == 2) {
+        auto const indicatorName =
+            utils::toUpperString(utils::trim_copy(indicatorSplit[1]));
+        if (indicatorName == "QTY_IN") {
+          //
+        } else if (indicatorName == "QTY_OUT") {
+          //
+        } else if (indicatorName == "AVG_OUT") {
+          //
+        } else if (indicatorName == "AVG_IN") {
+          //
+        } else if (indicatorName == "TICK_IN") {
+          //
+        } else if (indicatorName == "TICK_OUT") {
+          //
+        } else if (indicatorName == "BUY_VS_SELL") {
+          //
+        } else if (indicatorName == "MODE") {
+          //
+        } else if (indicatorName == "EMA") {
+          auto const nValue = value.get("n");
+          if (nValue.empty())
+            return false;
+          config.indicatorConfig.push_back({{"ema"}, {"n:" + nValue}});
+        } else if (indicatorName == "SMA") {
+          auto const nValue = value.get("n");
+          if (nValue.empty())
+            return false;
+          config.indicatorConfig.push_back({{"sma"}, {"n:" + nValue}});
+        } else if (indicatorName == "MACD") {
+          config.indicatorConfig.push_back({"macd"});
+        } else if (indicatorName == "WMA") {
+          auto const nValue = utils::trim_copy(value.get("n"));
+          auto const wValue = utils::trim_copy(value.get("w"));
+          if (nValue.empty() || wValue.empty())
+            return false;
+          config.indicatorConfig.push_back(
+              {{"wma"}, {"n:" + nValue}, {"w:" + wValue}});
+        } else if (indicatorName == "ATR") {
+          auto const nValue = value.get("n");
+          if (nValue.empty())
+            return false;
+          config.indicatorConfig.push_back({{"atr"}, {"n:" + nValue}});
+        } else if (indicatorName == "SAR") {
+          auto const aValue = utils::trim_copy(value.get("a"));
+          auto const emaValue = utils::trim_copy(value.get("ema"));
+          if (aValue.empty() || emaValue.empty())
+            return false;
+          config.indicatorConfig.push_back(
+              {{"sar"}, {"a:" + aValue}, {"ema:" + emaValue}});
+        }
+      }
+    }
+#endif
+  }
+
+  config.verbose = verbosity;
+  auto bt = ::newBTInstance(std::move(config));
+  if (bt == nullptr)
+    return false;
+
+  if (auto const userID = global_data_t::newUser(std::move(assets));
+      userID < 0) {
+    return false;
+  } else {
+    auto &users = global_data_t::instance().allUserAccounts;
+    auto iter =
+        std::find_if(users.begin(), users.end(), [userID](auto const &user) {
+          return user->m_userID == userID;
+        });
+    if (iter == users.end())
+      return false;
+    (*iter)->m_isGlobalUser = true;
+    (*iter)->setLeverage(leverage);
+  }
+
+  return true;
+}
+
+void startGlobalBTInstance() {
+  if (auto &bt = getGlobalBTInstance(); bt != nullptr)
+    bt->run();
+}
+} // namespace backtesting

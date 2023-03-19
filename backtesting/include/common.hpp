@@ -39,8 +39,10 @@ listOfFilesForTradeData(time_t const startTime, time_t const endTime,
 std::optional<std::time_t> dateStringToTimeT(std::string const &s);
 unsigned long timeStringToSeconds(std::string const &s);
 std::string toUpperString(std::string const &s);
+void removeAllQuotes(std::string &s);
 bool listContains(std::vector<std::string> const &container,
                   std::string const &t);
+bool startsWith(std::string const &s, std::string const &substr);
 std::chrono::seconds stringToStdInterval(std::string &str);
 std::vector<std::string> splitString(std::string const &str, char const *delim);
 filename_map_td
