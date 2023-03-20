@@ -54,6 +54,7 @@ include_directories(${PROJECT_DIR}/../third-party)
 include_directories(${PROJECT_DIR}/../third-party/pybind11/include)
 include_directories(${PROJECT_DIR}/../third-party/spdlog/include)
 include_directories(${PROJECT_DIR}/../third-party/csv-parser/single_include)
+include_directories(${PROJECT_DIR}/../third-party/mINI/src)
 
 if(WIN32)
   # set stuff for windows
@@ -121,6 +122,7 @@ set(SRC_FILES
   src/py_wrapper.cpp
   src/signals.cpp
   src/spot_order_book.cpp
+  src/tick.cpp
   src/trades_data.cpp
   src/user_data.cpp
 )
@@ -169,11 +171,13 @@ set(HEADERS_FILES
   include/futures_data.hpp
   include/futures_order_book.hpp
   include/global_data.hpp
+  include/indicator_data.hpp
   include/matching_engine.hpp
   include/order_book_base.hpp
   include/py_wrapper.hpp
   include/signals.hpp
   include/spot_order_book.hpp
+  include/tick.hpp
   include/trades_data.hpp
   include/user_data.hpp
 )

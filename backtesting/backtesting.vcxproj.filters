@@ -84,6 +84,12 @@
     <ClInclude Include="include\signals.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\tick.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\indicator_data.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\adaptor.cpp">
@@ -141,6 +147,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\signals.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tick.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

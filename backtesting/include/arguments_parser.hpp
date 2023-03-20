@@ -3,10 +3,10 @@
 #include "bookticker.hpp"
 #include "candlestick_data.hpp"
 
-
 #ifdef BT_USE_WITH_INDICATORS
 namespace indicator {
-bool isValidIndicatorConfiguration(std::vector<std::vector<std::string>> const &);
+bool isValidIndicatorConfiguration(
+    std::vector<std::vector<std::string>> const &);
 }
 #endif
 
@@ -24,36 +24,48 @@ struct configuration_t {
 #ifdef BT_USE_WITH_INDICATORS
   /// a list of configurations used by the indicators
   std::vector<std::vector<std::string>> indicatorConfig;
+  /// a list of time frames where indicator data is sent to the user
+  std::vector<size_t> ticks;
 #endif
 
-  stringlist_t streams;    //!< a list of the streams(s) to run. Valid options are:
-                           //!< trade, ticker, bookticker, kline, depth(default)
-  stringlist_t tradeTypes;//!< a list of trade types. Valid options are:
-                          //!< futures, spot(default)
-  stringlist_t tokenList; //!< a list of valid symbols e.g BTCUSDT, ETHUSDT, RUNEUSDT
-  std::string dateFromStr;//!< a string specifying the date from which the backtesting
-                          //!< instance is started. Format: yyyy-mm-dd HH:MM:SS
-  std::string dateToStr; //!< a string specifying the date from which the backtesting
-                         //!< instance is stopped. Format: yyyy-mm-dd HH:MM:SS
-  std::string rootDir;   //!< Root directory where the historical data are stored
-                         //!< (default: the current working directory `pwd`
-  double futuresMakerFee = 0.02; //!< the maker fee rate in percentage for futures trading
-  double futuresTakerFee = 0.04; //!< the taker fee rate in percentage for futures trading
-  double spotMakerFee = 0.1;     //!< the maker fee rate in percentage for spot trading
-  double spotTakerFee = 0.1;    //!< the taker fee rate in percentage for spot trading
-  bool verbose = false;  //!< show logs on every operation performed by backtest
+  /// a list of the streams(s) to run. Valid options are:
+  /// trade, ticker, bookticker, kline, depth(default)
+  stringlist_t streams;
+  /// a list of trade types. Valid options are: futures, spot(default)
+  stringlist_t tradeTypes;
+  /// a list of valid symbols e.g BTCUSDT,ETHUSDT,RUNEUSDT
+  stringlist_t tokenList;
+  /// a string specifying the date from which the backtesting
+  /// instance is started. Format: yyyy-mm-dd HH:MM:SS
+  std::string dateFromStr;
+  /// a string specifying the date from which the backtesting
+  /// instance is stopped. Format: yyyy-mm-dd HH:MM:SS
+  std::string dateToStr;
+  /// Root directory where the historical data are stored
+  /// (default: the current working directory `pwd`)
+  std::string rootDir;
+  /// the maker fee rate in percentage for futures trading
+  double futuresMakerFee = 0.02;
+  /// the taker fee rate in percentage for futures trading
+  double futuresTakerFee = 0.04;
+  /// the maker fee rate in percentage for spot trading
+  double spotMakerFee = 0.1;
+  /// the taker fee rate in percentage for spot trading
+  double spotTakerFee = 0.1;
+  /// show logs on every operation performed by backtest
+  bool verbose = false;
 
   /**
    * klineConfig specifies a configuration for receiving continuous kline data.
-   * This allows the user get periodic kline updates as obtained from the exchanges.
-   * It is optional and be left out completely
+   * This allows the user get periodic kline updates as obtained from the
+   * exchanges. It is optional and be left out completely
    */
   std::optional<kline_config_t> klineConfig = std::nullopt;
 
   /**
-   * bookTickerConfig specifies a configuration for receiving continuous book ticker data.
-   * This allows the user get periodic book ticker updates as obtained from the exchanges.
-   * It is optional and be left out completely
+   * bookTickerConfig specifies a configuration for receiving continuous book
+   * ticker data. This allows the user get periodic book ticker updates as
+   * obtained from the exchanges. It is optional and be left out completely
    */
   std::optional<bktick_config_t> bookTickerConfig = std::nullopt;
 
@@ -70,7 +82,6 @@ void readTokensFromFileImpl(token_data_list_t& result,
 */
 } // namespace backtesting
 
-
 /// provides the core functionality for users of the back testing project.
 /*! there must be only one instance of this class */
 class backtesting_t {
@@ -80,11 +91,14 @@ class backtesting_t {
   /// \return bool
   bool isReady() const { return m_argumentParsed && m_authenticatedData; }
 
-  /// @private parseImpl - checks and ensures that the configuration passed from the
-  /// user is valid. This function is called before `prepareData` and `isReady`
-  /// @param `backtesting::configuration_t` - An instance of the `configuration_t` class
+  /// @private parseImpl - checks and ensures that the configuration passed from
+  /// the user is valid. This function is called before `prepareData` and
+  /// `isReady`
+  /// @param `backtesting::configuration_t` - An instance of the
+  /// `configuration_t` class
   /// @return bool - True on success, False on failure
   bool parseImpl(backtesting::configuration_t);
+  void reset();
 
 public:
   backtesting_t();
@@ -106,8 +120,7 @@ public:
   /// \return 0 on success and non-zero on failure
   int run();
 
-  friend std::optional<backtesting_t>
-  newBTInstance(backtesting::configuration_t const &);
+  friend backtesting_t *newBTInstance(backtesting::configuration_t const &);
 
 private:
   std::optional<backtesting::configuration_t> m_config;
@@ -117,6 +130,14 @@ private:
 
 /// creates an instance of backtesting class using the `configuration_t` object
 /// @param config - a valid `configuration_t` object
-/// \return a valid backtesting_t instance on success and std::nullopt on failure
-std::optional<backtesting_t>
-newBTInstance(backtesting::configuration_t const &);
+/// \return a valid backtesting_t instance on success and std::nullopt on
+/// failure
+backtesting_t *newBTInstance(backtesting::configuration_t const &);
+
+namespace backtesting {
+class user_data_t;
+
+std::unique_ptr<backtesting_t> &getGlobalBTInstance();
+bool createBTInstanceFromConfigFile(std::string const &filename);
+user_data_t *getGlobalUser();
+} // namespace backtesting

@@ -1,8 +1,10 @@
-#include <boost/asio/io_context.hpp>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 
+#include "depth_data.hpp"
 #include "callbacks.hpp"
 #include "container.hpp"
-#include "depth_data.hpp"
 #include "futures_order_book.hpp"
 #include "matching_engine.hpp"
 #include "signals.hpp"
@@ -14,11 +16,14 @@ internal_token_data_t *getTokenWithName(std::string const &tokenName,
 
 std::vector<global_order_book_t> global_order_book_t::globalOrderBooks{};
 
-void processDepthStream(trade_map_td &tradeMap
 #ifdef BT_USE_WITH_INDICATORS
-    , std::vector<std::vector<std::string>> &&config
+void processDepthStream(std::shared_ptr<net::io_context> ioContext,
+                        trade_map_td &tradeMap,
+                        std::vector<std::vector<std::string>> &&config) {
+#else
+void processDepthStream(std::shared_ptr<net::io_context> ioContext,
+                        trade_map_td &tradeMap) {
 #endif
-) {
   auto &globalOrderBooks = global_order_book_t::globalOrderBooks;
 
   globalOrderBooks.clear();
@@ -44,7 +49,6 @@ void processDepthStream(trade_map_td &tradeMap
     return symbol;
   };
 
-  auto ioContext = std::make_shared<boost::asio::io_context>();
   for (auto &[tokenName, value] : tradeMap) {
     global_order_book_t d;
     d.spot = nullptr;
@@ -84,18 +88,11 @@ void processDepthStream(trade_map_td &tradeMap
 #ifdef BT_USE_WITH_INDICATORS
   if (globalOrderBooks.empty())
     return;
-
   // call ::set() only on one of the (possibly) several indicator instances
-  auto& book = globalOrderBooks.back().spot == nullptr ?
-      *globalOrderBooks.back().futures : *globalOrderBooks.back().spot;
-  std::thread {
-    [=, &book] () mutable {
-      book.setIndicatorConfiguration(std::move(config));
-      ioContext->run();
-    }
-  };
-#else
-  std::thread{[=] {ioContext->run(); }}.detach();
+  auto &book = globalOrderBooks.back().spot == nullptr
+                   ? *globalOrderBooks.back().futures
+                   : *globalOrderBooks.back().spot;
+  book.setIndicatorConfiguration(std::move(config));
 #endif
 }
 
@@ -285,6 +282,37 @@ py_depth_data_list_t depthDataToPythonDepth(depth_data_t const &data) {
 
   return result;
 }
+
+#ifdef BT_USE_WITH_INDICATORS
+void scheduleCandlestickTask(unsigned long long startTime,
+                             unsigned long long endTime) {
+  for (auto &book : global_order_book_t::globalOrderBooks) {
+    kline_config_t config;
+    config.symbol = book.tokenName;
+    config.startTime = static_cast<time_t>(startTime);
+    config.endTime = static_cast<time_t>(endTime);
+    config.interval = data_interval_e::one_second;
+
+    if (book.futures) {
+      auto &indicator = book.futures->indicator();
+      config.tradeType = trade_type_e::futures;
+      config.callback = [&indicator](backtesting::kline_data_list_t const &l) {
+        indicator.process(l);
+      };
+      auto temp = config;
+      (void)getContinuousKlineData(std::move(temp));
+    };
+    if (book.spot) {
+      auto &indicator = book.spot->indicator();
+      config.tradeType = trade_type_e::spot;
+      config.callback = [&indicator](backtesting::kline_data_list_t const &l) {
+        indicator.process(l);
+      };
+      (void)getContinuousKlineData(std::move(config));
+    }
+  }
+}
+#endif
 
 depth_callback_map_t depthCallbackList{};
 ::utils::waitable_container_t<depth_data_t> depthDataList{};

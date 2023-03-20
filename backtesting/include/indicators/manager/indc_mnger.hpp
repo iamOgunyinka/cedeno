@@ -37,7 +37,7 @@ class indicators_c{
 
         void process(const trade_stream_d &trade_data);
 
-        void process(const kline_d &kline_data);
+        void process(const std::vector<kline_d> &kline_data);
 };
 
 }
