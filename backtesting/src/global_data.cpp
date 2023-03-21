@@ -78,3 +78,23 @@ global_data_t &global_data_t::instance() {
   static global_data_t globalData;
   return globalData;
 }
+
+void global_data_t::cleanUp() {
+  auto &data = instance();
+  data.startTime = data.endTime = 0;
+  data.listOfFiles.clear();
+  data.allTokens.clear();
+  data.allUserAccounts.clear();
+  data.validSymbols.clear();
+
+#ifdef BT_USE_WITH_INDICATORS
+  data.indicatorConfig.clear();
+  data.ticks.clear();
+#endif
+  data.rootPath.clear();
+  data.futuresMakerFee = data.futuresTakerFee =
+      data.spotMakerFee = data.spotTakerFee = 0.0;
+  data.onStart = nullptr;
+  data.onCompletion = nullptr;
+  data.onTick = nullptr;
+}

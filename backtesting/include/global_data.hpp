@@ -6,7 +6,7 @@
 #include <set>
 
 struct global_data_t {
-  global_data_t() {}
+  global_data_t() = default;
 
   unsigned long long startTime = 0;
   unsigned long long endTime = 0;
@@ -34,4 +34,5 @@ struct global_data_t {
 
   static int64_t newUser(backtesting::wallet_asset_list_t tokensOwned);
   static global_data_t &instance();
+  static void cleanUp();
 };

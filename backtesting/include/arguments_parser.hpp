@@ -2,9 +2,10 @@
 
 #include "bookticker.hpp"
 #include "candlestick_data.hpp"
+#include "indicator_data.hpp"
 
 #ifdef BT_USE_WITH_INDICATORS
-namespace indicator {
+namespace indicators {
 bool isValidIndicatorConfiguration(
     std::vector<std::vector<std::string>> const &);
 }
@@ -12,6 +13,7 @@ bool isValidIndicatorConfiguration(
 
 namespace backtesting {
 enum class trade_type_e;
+class user_data_t;
 
 #ifdef BT_USE_WITH_DB
 std::string getDatabaseConfigPath();
@@ -75,11 +77,9 @@ struct configuration_t {
 #endif
 };
 
-/*
-void readTokensFromFileImpl(token_data_list_t& result,
-                            trade_type_e const tradeType,
-                            std::string const &filename);
-*/
+bool startGlobalBTInstance(std::function<void()>, std::function<void()>,
+                           backtesting::indicator_callback_t);
+bool endGlobalBTInstance();
 } // namespace backtesting
 
 /// provides the core functionality for users of the back testing project.
@@ -121,6 +121,9 @@ public:
   int run();
 
   friend backtesting_t *newBTInstance(backtesting::configuration_t const &);
+  friend bool backtesting::startGlobalBTInstance(std::function<void()>, std::function<void()>,
+      backtesting::indicator_callback_t);
+  friend bool backtesting::endGlobalBTInstance();
 
 private:
   std::optional<backtesting::configuration_t> m_config;
@@ -135,9 +138,7 @@ private:
 backtesting_t *newBTInstance(backtesting::configuration_t const &);
 
 namespace backtesting {
-class user_data_t;
-
-std::unique_ptr<backtesting_t> &getGlobalBTInstance();
+backtesting_t* getGlobalBTInstance();
 bool createBTInstanceFromConfigFile(std::string const &filename);
 user_data_t *getGlobalUser();
-} // namespace backtesting
+}

@@ -24,14 +24,14 @@ class indicators_c{
         static ind_mngr_c<trade_stream_d, indicator_t> *m_indcs_trade_mngr;
         static ind_mngr_c<kline_d, indicator_t> *m_indcs_kline_mngr;
 
-        static void delete_current_indicators_(void);
+        static void delete_current_indicators_();
 
         static void set_indicators_callback_(const std::array<bool, (uint64_t)types_e::SIZE> &indcs);
     public:
         indicators_c(const std::string &id);
         ~indicators_c();
 
-        const inf_t& get(void);
+        const inf_t& get() const;
 
         static void set(const std::vector<std::vector<std::string>> &indcs);
 

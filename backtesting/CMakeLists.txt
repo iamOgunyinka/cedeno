@@ -135,6 +135,7 @@ if (ENABLE_INDICATOR)
        src/indicators/indicators/ema.cpp
        src/indicators/indicators/indicator.cpp
        src/indicators/indicators/macd.cpp
+       src/indicators/indicators/sar.cpp
        src/indicators/indicators/sma.cpp
        src/indicators/indicators/wma.cpp
        src/indicators/indicators/bwfs/avrg_in.cpp

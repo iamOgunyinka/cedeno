@@ -9,11 +9,15 @@
 #include <pybind11/functional.h>
 
 namespace py = pybind11;
+
+extern bool isRunning;
+
 namespace backtesting {
 double currentPrice(std::string const &, trade_type_e const,
                     trade_side_e const);
 bool createBTInstanceFromConfigFile(std::string const &);
-bool startGlobalBTInstance();
+bool endGlobalBTInstance();
+bool startGlobalBTInstance(std::function<void()>, std::function<void()>, indicator_callback_t);
 } // namespace backtesting
 
 std::optional<backtesting::user_data_t> findUserByID(int64_t userID) {
@@ -55,7 +59,7 @@ PYBIND11_MODULE(jbacktest, m) {
       .value("expired", backtesting::order_status_e::expired)
       .value("filled", backtesting::order_status_e::filled)
       .value("new_order", backtesting::order_status_e::new_order)
-      .value("partiall_filled", backtesting::order_status_e::partially_filled)
+      .value("partially_filled", backtesting::order_status_e::partially_filled)
       .value("pending_cancel", backtesting::order_status_e::pending_cancel)
       .value("rejected", backtesting::order_status_e::rejected);
 
@@ -75,6 +79,10 @@ PYBIND11_MODULE(jbacktest, m) {
       .value("three_days", backtesting::data_interval_e::three_days)
       .value("one_week", backtesting::data_interval_e::one_week)
       .value("one_month", backtesting::data_interval_e::one_month);
+
+  py::class_<backtesting::indicator_data_t>(m, "IndicatorData")
+      .def(py::init<>())
+      .def_readonly("tick", &backtesting::indicator_data_t::time);
 
   py::class_<backtesting::bktick_data_t>(m, "BooktickerData")
       .def(py::init<>())
@@ -321,23 +329,19 @@ PYBIND11_MODULE(jbacktest, m) {
           return backtesting::currentPrice(symbol, tt, side);
         });
 
-  m.def("onStart", [](std::function<void()> func) {
-    global_data_t::instance().onStart = std::move(func);
-  });
-
-  m.def("onFinished", [](std::function<void()> func) {
-    global_data_t::instance().onCompletion = std::move(func);
-  });
-
-  m.def("onTick", [](backtesting::indicator_callback_t func) {
-    global_data_t::instance().onTick = std::move(func);
-  });
-
   m.def("loadConfigFile", [](std::string const &filename) {
     return backtesting::createBTInstanceFromConfigFile(filename);
   });
 
-  m.def("start", &backtesting::startGlobalBTInstance);
+  m.def("startSimulation", [](std::function<void()> onStart, std::function<void()> onEnd,
+      backtesting::indicator_callback_t onTick)
+  {
+    return backtesting::startGlobalBTInstance(onStart, onEnd, onTick);
+  }, py::arg("onStart") = nullptr, py::arg("onEnd") = nullptr, py::arg("onTick") = nullptr);
+
+  m.def("endSimulation", []{
+    return backtesting::endGlobalBTInstance();
+  });
 
   m.def("cancelOrder", [](int64_t const orderID) {
     auto user = backtesting::getGlobalUser();
@@ -450,5 +454,9 @@ PYBIND11_MODULE(jbacktest, m) {
     if (!user)
       return false;
     return user->openQuickPosition(symbol, size, side);
+  });
+
+  m.def("isRunning", [] {
+    return isRunning;
   });
 }

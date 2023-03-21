@@ -89,10 +89,16 @@ void processDepthStream(std::shared_ptr<net::io_context> ioContext,
   if (globalOrderBooks.empty())
     return;
   // call ::set() only on one of the (possibly) several indicator instances
-  auto &book = globalOrderBooks.back().spot == nullptr
-                   ? *globalOrderBooks.back().futures
-                   : *globalOrderBooks.back().spot;
-  book.setIndicatorConfiguration(std::move(config));
+  auto& book = globalOrderBooks.back().spot == nullptr ?
+               *globalOrderBooks.back().futures : *globalOrderBooks.back().spot;
+  std::thread {
+      [=, &book] () mutable {
+        book.setIndicatorConfiguration(std::move(config));
+        ioContext->run();
+      }
+  }.detach();
+#else
+  std::thread{[=] {ioContext->run(); }}.detach();
 #endif
 }
 

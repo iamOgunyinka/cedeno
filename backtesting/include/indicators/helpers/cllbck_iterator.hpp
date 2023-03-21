@@ -41,7 +41,7 @@ template <typename T,typename B>
 ind_mngr_c<T, B>::ind_mngr_c(const uint64_t &sz_indcs): 
     m_sz_indcs(sz_indcs){
     m_cllbcks = new indc_cllbck_p[sz_indcs]{nullptr};
-} 
+}
 
 
 template <typename T,typename B>
