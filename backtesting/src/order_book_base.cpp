@@ -1,4 +1,5 @@
 #include "order_book_base.hpp"
+#include <algorithm>
 
 #ifdef _DEBUG
 #include <spdlog/spdlog.h>
@@ -227,7 +228,7 @@ order_book_base_t::order_book_base_t(net::io_context &ioContext,
       m_symbol(symbol)
 #ifdef BT_USE_WITH_INDICATORS
       ,
-      m_indicator(m_symbol->name)
+      m_indicatorMeta(m_symbol)
 #endif
 {
   auto firstData = m_dataStreamer.getNextData();
@@ -278,7 +279,7 @@ trade_data_t order_book_base_t::getNewTrade(order_data_t const &order,
   if (order.user) { // send notification to the order owner
     order.user->OnNewTrade(trade);
 #ifdef BT_USE_WITH_INDICATORS
-    m_indicator.process(trade);
+    m_indicatorMeta.indicator.process(trade);
 #endif
   }
 

@@ -7,9 +7,10 @@
 #include "arguments_parser.hpp"
 #include "global_data.hpp"
 #include "indicator_data.hpp"
-#include "tick.hpp"
 #include "spdlog/spdlog.h"
+#include "tick.hpp"
 
+#include <memory>
 #include <thread>
 
 namespace net = boost::asio;
@@ -53,8 +54,8 @@ int backtesting_t::run() {
   auto ioContext = backtesting::getContextObject();
 
   if (auto iter = csvFilenames.find(DEPTH); iter != csvFilenames.end()) {
-    depthStreamThread.reset(
-        new std::thread{[&globalRtData, ioContext, csData = iter->second]() mutable {
+    depthStreamThread = std::make_unique<std::thread>(
+        [&globalRtData, ioContext, csData = iter->second]() mutable {
 #ifdef BT_USE_WITH_INDICATORS
           backtesting::processDepthStream(
               ioContext, csData, std::move(globalRtData.indicatorConfig));
@@ -63,7 +64,7 @@ int backtesting_t::run() {
 #else
           backtesting::processDepthStream(ioContext, csData);
 #endif
-        }});
+        });
   }
 
 #ifdef BT_USE_WITH_INDICATORS

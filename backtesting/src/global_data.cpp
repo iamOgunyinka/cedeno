@@ -92,9 +92,11 @@ void global_data_t::cleanUp() {
   data.ticks.clear();
 #endif
   data.rootPath.clear();
-  data.futuresMakerFee = data.futuresTakerFee =
-      data.spotMakerFee = data.spotTakerFee = 0.0;
+  data.futuresMakerFee = data.futuresTakerFee = data.spotMakerFee =
+      data.spotTakerFee = 0.0;
   data.onStart = nullptr;
   data.onCompletion = nullptr;
+#ifdef BT_USE_WITH_INDICATORS
   data.onTick = nullptr;
+#endif
 }

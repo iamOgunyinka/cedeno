@@ -17,7 +17,12 @@ double currentPrice(std::string const &, trade_type_e const,
                     trade_side_e const);
 bool createBTInstanceFromConfigFile(std::string const &);
 bool endGlobalBTInstance();
-bool startGlobalBTInstance(std::function<void()>, std::function<void()>, indicator_callback_t);
+bool startGlobalBTInstance(std::function<void()>, std::function<void()>
+#ifdef BT_USE_WITH_INDICATORS
+                           ,
+                           indicator_callback_t
+#endif
+);
 } // namespace backtesting
 
 std::optional<backtesting::user_data_t> findUserByID(int64_t userID) {
@@ -80,9 +85,62 @@ PYBIND11_MODULE(jbacktest, m) {
       .value("one_week", backtesting::data_interval_e::one_week)
       .value("one_month", backtesting::data_interval_e::one_month);
 
+#ifdef BT_USE_WITH_INDICATORS
+  py::class_<indicators::inf_BWFS_t>(m, "BwfsInfo")
+      .def(py::init<>())
+      .def_readonly("ticksIn", &indicators::inf_BWFS_t::ticks_in)
+      .def_readonly("ticksOut", &indicators::inf_BWFS_t::ticks_out)
+      .def_readonly("qtyIn", &indicators::inf_BWFS_t::qty_in)
+      .def_readonly("qtyOut", &indicators::inf_BWFS_t::qty_out)
+      .def_readonly("avgIn", &indicators::inf_BWFS_t::avrg_in)
+      .def_readonly("avgOut", &indicators::inf_BWFS_t::avrg_out)
+      .def_readonly("ticksInOut", &indicators::inf_BWFS_t::ticks_in_out)
+      .def_readonly("qtyInOut", &indicators::inf_BWFS_t::qty_in_out)
+      .def_readonly("buyerVsSeller", &indicators::inf_BWFS_t::buyer_vs_seller);
+
+  py::class_<indicators::inf_ema_t>(m, "EmaInfo")
+      .def(py::init<>())
+      .def_readonly("price", &indicators::inf_ema_t::price);
+
+  py::class_<indicators::inf_sma_t>(m, "SmaInfo")
+      .def(py::init<>())
+      .def_readonly("price", &indicators::inf_sma_t::price);
+
+  py::class_<indicators::inf_macd_t>(m, "MacdInfo")
+      .def(py::init<>())
+      .def_readonly("price", &indicators::inf_macd_t::price);
+
+  py::class_<indicators::inf_wma_t>(m, "WmaInfo")
+      .def(py::init<>())
+      .def_readonly("price", &indicators::inf_wma_t::price);
+
+  py::class_<indicators::inf_atr_t>(m, "AtrInfo")
+      .def(py::init<>())
+      .def_readonly("price", &indicators::inf_atr_t::price);
+
+  py::class_<indicators::inf_sar_t>(m, "SarInfo")
+      .def(py::init<>())
+      .def_readonly("priceUp", &indicators::inf_sar_t::price_up)
+      .def_readonly("priceDown", &indicators::inf_sar_t::price_down)
+      .def_readonly("status", &indicators::inf_sar_t::status);
+
+  py::class_<indicators::inf_t>(m, "IndicatorInfo")
+      .def(py::init<>())
+      .def_readonly("cab", &indicators::inf_t::cab)
+      .def_readonly("ema", &indicators::inf_t::ema)
+      .def_readonly("sma", &indicators::inf_t::sma)
+      .def_readonly("macd", &indicators::inf_t::macd)
+      .def_readonly("wma", &indicators::inf_t::wma)
+      .def_readonly("atr", &indicators::inf_t::atr)
+      .def_readonly("sar", &indicators::inf_t::sar);
+
   py::class_<backtesting::indicator_data_t>(m, "IndicatorData")
       .def(py::init<>())
-      .def_readonly("tick", &backtesting::indicator_data_t::time);
+      .def_readonly("tick", &backtesting::indicator_data_t::time)
+      .def_readonly("symbol", &backtesting::indicator_data_t::symbol)
+      .def_readonly("trade", &backtesting::indicator_data_t::tradeType)
+      .def_readonly("indicator", &backtesting::indicator_data_t::indicator);
+#endif
 
   py::class_<backtesting::bktick_data_t>(m, "BooktickerData")
       .def(py::init<>())
@@ -333,15 +391,26 @@ PYBIND11_MODULE(jbacktest, m) {
     return backtesting::createBTInstanceFromConfigFile(filename);
   });
 
-  m.def("startSimulation", [](std::function<void()> onStart, std::function<void()> onEnd,
-      backtesting::indicator_callback_t onTick)
-  {
-    return backtesting::startGlobalBTInstance(onStart, onEnd, onTick);
-  }, py::arg("onStart") = nullptr, py::arg("onEnd") = nullptr, py::arg("onTick") = nullptr);
+#ifdef BT_USE_WITH_INDICATORS
+  m.def(
+      "startSimulation",
+      [](std::function<void()> onStart, std::function<void()> onEnd,
+         backtesting::indicator_callback_t onTick) {
+        return backtesting::startGlobalBTInstance(onStart, onEnd, onTick);
+      },
+      py::arg("onStart") = nullptr, py::arg("onEnd") = nullptr,
+      py::arg("onTick") = nullptr);
 
-  m.def("endSimulation", []{
-    return backtesting::endGlobalBTInstance();
-  });
+#else
+  m.def(
+      "startSimulation",
+      [](std::function<void()> onStart, std::function<void()> onEnd) {
+        return backtesting::startGlobalBTInstance(onStart, onEnd);
+      },
+      py::arg("onStart") = nullptr, py::arg("onEnd") = nullptr);
+#endif
+
+  m.def("endSimulation", [] { return backtesting::endGlobalBTInstance(); });
 
   m.def("cancelOrder", [](int64_t const orderID) {
     auto user = backtesting::getGlobalUser();
@@ -456,7 +525,5 @@ PYBIND11_MODULE(jbacktest, m) {
     return user->openQuickPosition(symbol, size, side);
   });
 
-  m.def("isRunning", [] {
-    return isRunning;
-  });
+  m.def("isRunning", [] { return isRunning; });
 }

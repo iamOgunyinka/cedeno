@@ -17,8 +17,8 @@ int main(int argc, char **argv) {
         "cedeno\\test_backtesting\\config\\config.ini";
     if (!backtesting::createBTInstanceFromConfigFile(filename))
       return EXIT_FAILURE;
-    auto& bt = backtesting::getGlobalBTInstance();
-    bt->run();
+    if (auto *bt = backtesting::getGlobalBTInstance(); bt != nullptr)
+      bt->run();
   }
 
   return EXIT_SUCCESS;

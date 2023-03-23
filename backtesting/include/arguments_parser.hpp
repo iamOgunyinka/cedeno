@@ -77,8 +77,12 @@ struct configuration_t {
 #endif
 };
 
-bool startGlobalBTInstance(std::function<void()>, std::function<void()>,
-                           backtesting::indicator_callback_t);
+bool startGlobalBTInstance(std::function<void()>, std::function<void()>
+#ifdef BT_USE_WITH_INDICATORS
+                           ,
+                           backtesting::indicator_callback_t
+#endif
+);
 bool endGlobalBTInstance();
 } // namespace backtesting
 
@@ -104,7 +108,7 @@ public:
   backtesting_t();
 
   /// the ctor that takes an instance of `configuration_t`
-  backtesting_t(backtesting::configuration_t const &);
+  explicit backtesting_t(backtesting::configuration_t const &);
 
   /// parse - parses the command line arguments
   /// \param argc - the size of `argv`
@@ -121,8 +125,14 @@ public:
   int run();
 
   friend backtesting_t *newBTInstance(backtesting::configuration_t const &);
-  friend bool backtesting::startGlobalBTInstance(std::function<void()>, std::function<void()>,
-      backtesting::indicator_callback_t);
+  friend bool
+      backtesting::startGlobalBTInstance(std::function<void()>,
+                                         std::function<void()>
+#ifdef BT_USE_WITH_INDICATORS
+                                         ,
+                                         backtesting::indicator_callback_t
+#endif
+      );
   friend bool backtesting::endGlobalBTInstance();
 
 private:
@@ -138,7 +148,7 @@ private:
 backtesting_t *newBTInstance(backtesting::configuration_t const &);
 
 namespace backtesting {
-backtesting_t* getGlobalBTInstance();
+backtesting_t *getGlobalBTInstance();
 bool createBTInstanceFromConfigFile(std::string const &filename);
 user_data_t *getGlobalUser();
-}
+} // namespace backtesting

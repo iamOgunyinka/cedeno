@@ -5,19 +5,11 @@
 #include <optional>
 #include <string>
 #include <variant>
-#include <vector>
 
+#include "symbol.hpp"
 #include "trades_data.hpp"
 
 namespace backtesting {
-
-struct internal_token_data_t {
-  std::string name;
-  std::string baseAsset;
-  std::string quoteAsset;
-  trade_type_e tradeType = trade_type_e::none;
-};
-using token_data_list_t = std::vector<internal_token_data_t>;
 
 struct position_t {
   friend class user_data_t;
@@ -122,7 +114,7 @@ public:
   bool closePosition(std::string const &symbol);
   bool closeAllPositions();
   bool openQuickPosition(std::string const &symbol, double const size,
-                    trade_side_e const side);
+                         trade_side_e const side);
   bool openLimitPosition(std::string const &symbol, double const size,
                          trade_side_e const side);
   std::optional<order_data_t>
@@ -158,9 +150,9 @@ private:
   [[nodiscard]] int64_t sendOrderToBook(std::optional<order_data_t> &&order);
   [[nodiscard]] wallet_asset_t *getUserAsset(std::string const &name);
   [[nodiscard]] bool hasFuturesBalance(internal_token_data_t *const token,
-                                               double const quantity,
-                                               double const leverage,
-                                               trade_side_e const side);
+                                       double const quantity,
+                                       double const leverage,
+                                       trade_side_e const side);
   [[nodiscard]] bool hasTradableBalance(internal_token_data_t *const,
                                         double &quantity, double const amount,
                                         double const leverage,

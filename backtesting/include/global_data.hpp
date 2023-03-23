@@ -30,7 +30,9 @@ struct global_data_t {
 
   std::function<void()> onStart = nullptr;
   std::function<void()> onCompletion = nullptr;
+#ifdef BT_USE_WITH_INDICATORS
   backtesting::indicator_callback_t onTick = nullptr;
+#endif
 
   static int64_t newUser(backtesting::wallet_asset_list_t tokensOwned);
   static global_data_t &instance();

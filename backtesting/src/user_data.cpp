@@ -299,11 +299,11 @@ bool user_data_t::hasFuturesTradableBalance(internal_token_data_t *const token,
 }
 
 bool user_data_t::hasFuturesBalance(internal_token_data_t *const token,
-                                            double const quantity,
-                                            double const leverage,
-                                            trade_side_e const side) {
-  auto const flipSide = (side == trade_side_e::long_) ? trade_side_e::short_:
-                        trade_side_e::long_;
+                                    double const quantity,
+                                    double const leverage,
+                                    trade_side_e const side) {
+  auto const flipSide = (side == trade_side_e::long_) ? trade_side_e::short_
+                                                      : trade_side_e::long_;
   double const price = currentPrice(token, flipSide);
   auto asset = getUserAsset(token->quoteAsset);
   if (quantity <= 0.0 || price <= 0.0 || asset == nullptr)
@@ -421,44 +421,41 @@ order_data_t user_data_t::createOrderImpl(
   return order;
 }
 
-bool user_data_t::closeAllPositions()
-{
-  return std::all_of(m_openPositions.begin(),m_openPositions.end(),
-                     [this](position_t const &pos)
-                     {
-                       return closePosition(pos.token->name);
-                     });
+bool user_data_t::closeAllPositions() {
+  return std::all_of(
+      m_openPositions.begin(), m_openPositions.end(),
+      [this](position_t const &pos) { return closePosition(pos.token->name); });
 }
 
-bool user_data_t::closePosition(std::string const &symbol)
-{
+bool user_data_t::closePosition(std::string const &symbol) {
   auto token = getTokenWithName(symbol, trade_type_e::futures);
   if (!token)
     return false;
-  auto iter = std::find_if(m_openPositions.begin(), m_openPositions.end(),
-                           [token](position_t const &pos)
-                           {
-                              return  token == pos.token;
-                           });
+  auto iter = std::find_if(
+      m_openPositions.begin(), m_openPositions.end(),
+      [token](position_t const &pos) { return token == pos.token; });
   if (iter == m_openPositions.end())
     return false;
-  auto const flipSide = iter->side == trade_side_e::long_ ?
-      trade_side_e::short_: trade_side_e::long_;
-  auto order = createOrderImpl(token, iter->size, 0.0, iter->leverage, trade_type_e::futures,
-                               flipSide, trade_market_e::market);
+  auto const flipSide = iter->side == trade_side_e::long_ ? trade_side_e::short_
+                                                          : trade_side_e::long_;
+  auto order =
+      createOrderImpl(token, iter->size, 0.0, iter->leverage,
+                      trade_type_e::futures, flipSide, trade_market_e::market);
   return sendOrderToBook(std::move(order)) > 0;
 }
 
-bool user_data_t::openQuickPosition(std::string const &symbol, double const size,
-                  trade_side_e const side)
-{
+bool user_data_t::openQuickPosition(std::string const &symbol,
+                                    double const size,
+                                    trade_side_e const side) {
   auto token = getTokenWithName(symbol, trade_type_e::futures);
-  if (!(token && (size > 0.0) && this->isBuyOrSell(trade_type_e::futures, side)))
+  if (!(token && (size > 0.0) &&
+        this->isBuyOrSell(trade_type_e::futures, side)))
     return false;
   if (!hasFuturesBalance(token, size, m_leverage, side))
     return false;
   auto order =
-      createOrderImpl(token, size, 0.0, m_leverage, trade_type_e::futures, side, market_type_e::market);
+      createOrderImpl(token, size, 0.0, m_leverage, trade_type_e::futures, side,
+                      market_type_e::market);
   return sendOrderToBook(std::move(order)) > 0.0;
 }
 

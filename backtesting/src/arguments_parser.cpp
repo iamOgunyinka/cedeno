@@ -1,3 +1,7 @@
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 #include "arguments_parser.hpp"
 
 #ifdef BT_USE_WITH_DB
@@ -246,10 +250,10 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
 
   if (config.tokenList.empty()) {
     PRINT_INFO("token list is empty, using 'BTCUSDT' as the default");
-    config.tokenList.push_back("BTCUSDT");
+    config.tokenList.emplace_back("BTCUSDT");
 #ifdef _DEBUG
     PRINT_INFO("adding 'ETHUSDT' to the token list");
-    config.tokenList.push_back("ETHUSDT");
+    config.tokenList.emplace_back("ETHUSDT");
 #endif // _DEBUG
   } else {
     if (config.tokenList.size() > 4) {
@@ -524,17 +528,14 @@ user_data_t *getGlobalUser() {
   return nullptr;
 }
 
-std::unique_ptr<backtesting_t>& getGlobalBTInstanceImpl()
-{
+std::unique_ptr<backtesting_t> &getGlobalBTInstanceImpl() {
   static std::unique_ptr<backtesting_t> bt = nullptr;
   if (!bt)
     bt = std::make_unique<backtesting_t>();
   return bt;
 }
 
-backtesting_t* getGlobalBTInstance() {
-  return getGlobalBTInstanceImpl().get();
-}
+backtesting_t *getGlobalBTInstance() { return getGlobalBTInstanceImpl().get(); }
 
 bool createBTInstanceFromConfigFile(std::string const &filename) {
   mINI::INIFile file(filename);
@@ -691,13 +692,18 @@ bool createBTInstanceFromConfigFile(std::string const &filename) {
 }
 
 bool startGlobalBTInstance(std::function<void()> onStart,
-                           std::function<void()> onEnd,
-                           backtesting::indicator_callback_t onTick) {
+                           std::function<void()> onEnd
+#ifdef BT_USE_WITH_INDICATORS
+                           ,
+                           backtesting::indicator_callback_t onTick
+#endif
+) {
   auto bt = getGlobalBTInstance();
   auto &globalRtData = global_data_t::instance();
 
   if (bt == nullptr || !bt->isReady()) {
-    auto const defaultConfigPath = std::filesystem::current_path() / "config" / "config.ini";
+    auto const defaultConfigPath =
+        std::filesystem::current_path() / "config" / "config.ini";
     if (!std::filesystem::exists(defaultConfigPath))
       return false;
     if (!createBTInstanceFromConfigFile(defaultConfigPath.string()))
@@ -706,8 +712,10 @@ bool startGlobalBTInstance(std::function<void()> onStart,
       return false;
 
     globalRtData.onStart = std::move(onStart);
-    globalRtData.onTick = std::move(onTick);
     globalRtData.onCompletion = std::move(onEnd);
+#ifdef BT_USE_WITH_INDICATORS
+    globalRtData.onTick = std::move(onTick);
+#endif
   }
   bt->run();
   isRunning = true;
@@ -723,7 +731,10 @@ bool endGlobalBTInstance() {
     globalRtData.onCompletion();
 
   getContextObject()->stop();
+#ifdef BT_USE_WITH_INDICATORS
   tick_t::instance()->stopAllTicks();
+#endif
+
   getGlobalBTInstanceImpl().reset();
   global_data_t::cleanUp();
 
@@ -744,5 +755,5 @@ bool isValidIndicatorConfiguration(
   // TODO: //check the passed data
   return true;
 }
-}
+} // namespace indicators
 #endif
