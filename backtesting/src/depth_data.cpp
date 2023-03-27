@@ -3,16 +3,22 @@
 #endif
 
 #include "depth_data.hpp"
+
 #include "callbacks.hpp"
 #include "container.hpp"
 #include "futures_order_book.hpp"
 #include "matching_engine.hpp"
 #include "signals.hpp"
 #include "spot_order_book.hpp"
+#include <memory>
+
+#ifdef BT_USE_WITH_INDICATORS
+#include "tick.hpp"
+#endif
 
 namespace backtesting {
 internal_token_data_t *getTokenWithName(std::string const &tokenName,
-                                        trade_type_e const tradeType);
+                                        trade_type_e tradeType);
 
 std::vector<global_order_book_t> global_order_book_t::globalOrderBooks{};
 
@@ -56,14 +62,14 @@ void processDepthStream(std::shared_ptr<net::io_context> ioContext,
     d.tokenName = utils::toUpperString(tokenName);
     if (auto spotStreamer = sorter(value, SPOT); spotStreamer.has_value()) {
       auto symbol = getTradeSymbol(tokenName, trade_type_e::spot);
-      d.spot.reset(
-          new spot_order_book_t(*ioContext, std::move(*spotStreamer), symbol));
+      d.spot = std::make_unique<spot_order_book_t>(
+          *ioContext, std::move(*spotStreamer), symbol);
     }
     if (auto futuresStreamer = sorter(value, FUTURES);
         futuresStreamer.has_value()) {
       auto symbol = getTradeSymbol(tokenName, trade_type_e::futures);
-      d.futures.reset(new futures_order_book_t(
-          *ioContext, std::move(*futuresStreamer), symbol));
+      d.futures = std::make_unique<futures_order_book_t>(
+          *ioContext, std::move(*futuresStreamer), symbol);
     }
 
     if (d.futures || d.spot)
@@ -92,13 +98,18 @@ void processDepthStream(std::shared_ptr<net::io_context> ioContext,
   auto &book = globalOrderBooks.back().spot == nullptr
                    ? *globalOrderBooks.back().futures
                    : *globalOrderBooks.back().spot;
-  book.setIndicatorConfiguration(std::move(config));
+  std::thread{[=, &book]() mutable {
+    book.setIndicatorConfiguration(std::move(config));
+    ioContext->run();
+  }}.detach();
+#else
+  std::thread{[=] { ioContext->run(); }}.detach();
 #endif
 }
 
 bool depth_data_t::depthMetaFromCSV(csv::CSVRow const &row,
                                     depth_data_t &data) {
-  if (row.size() == 0 || row.size() != 8)
+  if (row.empty() || row.size() != 8)
     return false;
 
   assert(row.size() == 8);
@@ -232,7 +243,7 @@ bool initiateOrder(order_data_t const &order) {
     return false;
 
   auto &orderBook = *iter;
-  auto const isFutures = order.type == trade_type_e::futures;
+  bool const isFutures = order.type == trade_type_e::futures;
   if ((isFutures && !orderBook.futures) || (!isFutures && !orderBook.spot))
     return false;
 
@@ -252,7 +263,7 @@ bool cancelAllOrders(order_list_t const &orders) {
     if (iter == globalOrderBooks.end())
       return false;
     auto &orderBook = *iter;
-    auto const isSpot = order.type == trade_type_e::spot;
+    bool const isSpot = order.type == trade_type_e::spot;
     matching_engine::cancelOrder(isSpot ? *orderBook.spot : *orderBook.futures,
                                  order);
   }
@@ -264,20 +275,20 @@ py_depth_data_list_t depthDataToPythonDepth(depth_data_t const &data) {
   result.reserve(data.asks.size() + data.bids.size());
 
   for (auto const &a : data.asks) {
-    py_depth_data_t data;
-    data.eventTime = data.eventTime;
-    data.price = a.priceLevel;
-    data.quantity = a.quantity;
-    result.push_back(std::move(data));
+    py_depth_data_t d;
+    d.eventTime = data.eventTime;
+    d.price = a.priceLevel;
+    d.quantity = a.quantity;
+    result.push_back(std::move(d));
   }
 
   for (auto const &b : data.bids) {
-    py_depth_data_t data;
-    data.type = 1;
-    data.eventTime = data.eventTime;
-    data.price = b.priceLevel;
-    data.quantity = b.quantity;
-    result.push_back(std::move(data));
+    py_depth_data_t d;
+    d.type = 1;
+    d.eventTime = data.eventTime;
+    d.price = b.priceLevel;
+    d.quantity = b.quantity;
+    result.push_back(std::move(d));
   }
 
   return result;
@@ -286,7 +297,12 @@ py_depth_data_list_t depthDataToPythonDepth(depth_data_t const &data) {
 #ifdef BT_USE_WITH_INDICATORS
 void scheduleCandlestickTask(unsigned long long startTime,
                              unsigned long long endTime) {
-  for (auto &book : global_order_book_t::globalOrderBooks) {
+  std::vector<indicator_metadata_t *> indicators;
+  auto &allOrderBooks = global_order_book_t::globalOrderBooks;
+
+  indicators.reserve(allOrderBooks.size());
+
+  for (auto &book : allOrderBooks) {
     kline_config_t config;
     config.symbol = book.tokenName;
     config.startTime = static_cast<time_t>(startTime);
@@ -294,23 +310,32 @@ void scheduleCandlestickTask(unsigned long long startTime,
     config.interval = data_interval_e::one_second;
 
     if (book.futures) {
-      auto &indicator = book.futures->indicator();
+      auto &indicatorMeta = book.futures->indicator();
+      indicators.push_back(&indicatorMeta);
+
       config.tradeType = trade_type_e::futures;
-      config.callback = [&indicator](backtesting::kline_data_list_t const &l) {
-        indicator.process(l);
-      };
+      config.callback =
+          [&indicatorMeta](backtesting::kline_data_list_t const &l) {
+            indicatorMeta.indicator.process(l);
+          };
       auto temp = config;
       (void)getContinuousKlineData(std::move(temp));
     };
     if (book.spot) {
-      auto &indicator = book.spot->indicator();
+      auto &indicatorMeta = book.spot->indicator();
+      indicators.push_back(&indicatorMeta);
+
       config.tradeType = trade_type_e::spot;
-      config.callback = [&indicator](backtesting::kline_data_list_t const &l) {
-        indicator.process(l);
-      };
+      config.callback =
+          [&indicatorMeta](backtesting::kline_data_list_t const &l) {
+            indicatorMeta.indicator.process(l);
+          };
       (void)getContinuousKlineData(std::move(config));
     }
   }
+
+  if (!indicators.empty())
+    tick_t::instance()->addIndicators(indicators);
 }
 #endif
 

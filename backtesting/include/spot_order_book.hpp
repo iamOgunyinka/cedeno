@@ -9,7 +9,7 @@ public:
   spot_order_book_t(net::io_context &ioContext,
                     data_streamer_t<depth_data_t> dataStreamer,
                     internal_token_data_t *symbol);
-  ~spot_order_book_t() {}
+  ~spot_order_book_t() override = default;
 
 private:
 #ifdef _DEBUG

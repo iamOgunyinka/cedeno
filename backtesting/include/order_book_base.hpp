@@ -6,18 +6,14 @@
 
 #include "Signals/Signal.h"
 #include "depth_data.hpp"
-#include "user_data.hpp"
-#include <algorithm>
-
 #ifdef BT_USE_WITH_INDICATORS
-#include "indicators/manager/indc_mnger.hpp"
+#include "indicator_data.hpp"
 #endif
+#include "user_data.hpp"
 
-namespace boost {
-namespace asio {
+namespace boost::asio {
 class io_context;
-} // namespace asio
-} // namespace boost
+} // namespace boost::asio
 
 namespace net = boost::asio;
 
@@ -117,10 +113,10 @@ public:
   Gallant::Signal2<internal_token_data_t *, double> NewMarketPrice;
 
 #ifdef BT_USE_WITH_INDICATORS
-  inline indicators::indicators_c &indicator() { return m_indicator; }
-  inline void
+  inline indicator_metadata_t &indicator() { return m_indicatorMeta; }
+  static void
   setIndicatorConfiguration(std::vector<std::vector<std::string>> &&config) {
-    m_indicator.set(std::move(config));
+    indicators::indicators_c::set(std::move(config));
   }
 #endif
 
@@ -158,8 +154,8 @@ protected:
   /// \param amount the price the instrument is traded for
   /// \return a `trade_data_t` for that trade that occurred
   [[nodiscard]] trade_data_t getNewTrade(order_data_t const &order,
-                                         order_status_e const, double const qty,
-                                         double const amount);
+                                         order_status_e status, double qty,
+                                         double amount);
   /// an internal function that is used to notify the other side of a trade,
   /// for example if an order is bought, someone on the other side sold that
   /// instrument. This function returns the trade on the other side
@@ -170,11 +166,11 @@ protected:
   /// side of the trade
   [[nodiscard]] trade_list_t
   getExecutedTradesFromOrders(details::order_book_entry_t &data,
-                              double quantityTraded, double const priceLevel);
+                              double quantityTraded, double priceLevel);
   /// an IO context object used to control the timers
   net::io_context &m_ioContext;
   //// a stream object responsible for reading depth stream from file to the
-  ///order book
+  /// order book
   data_streamer_t<depth_data_t> m_dataStreamer;
   /// the symbol being traded
   internal_token_data_t *m_symbol = nullptr;
@@ -188,14 +184,14 @@ protected:
   time_t m_currentTimer = 0;
 
 #ifdef BT_USE_WITH_INDICATORS
-  indicators::indicators_c m_indicator;
+  indicator_metadata_t m_indicatorMeta;
 #endif
 };
 
 details::order_book_entry_t
 orderMetaDataFromDepth(depth_data_t::depth_meta_t const &depth,
-                       internal_token_data_t *token, trade_side_e const side,
-                       trade_type_e const tradeType);
+                       internal_token_data_t *token, trade_side_e side,
+                       trade_type_e tradeType);
 /// the progressive order number
 /// \return the next order number
 int64_t getOrderNumber();

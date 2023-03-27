@@ -7,8 +7,10 @@
 #include "arguments_parser.hpp"
 #include "global_data.hpp"
 #include "indicator_data.hpp"
+#include "spdlog/spdlog.h"
 #include "tick.hpp"
 
+#include <memory>
 #include <thread>
 
 namespace net = boost::asio;
@@ -49,11 +51,11 @@ int backtesting_t::run() {
 #endif
 
   std::unique_ptr<std::thread> depthStreamThread = nullptr;
-  auto ioContext = std::make_shared<net::io_context>();
+  auto ioContext = backtesting::getContextObject();
 
   if (auto iter = csvFilenames.find(DEPTH); iter != csvFilenames.end()) {
-    depthStreamThread.reset(
-        new std::thread{[&, csData = iter->second]() mutable {
+    depthStreamThread = std::make_unique<std::thread>(
+        [&globalRtData, ioContext, csData = iter->second]() mutable {
 #ifdef BT_USE_WITH_INDICATORS
           backtesting::processDepthStream(
               ioContext, csData, std::move(globalRtData.indicatorConfig));
@@ -62,22 +64,18 @@ int backtesting_t::run() {
 #else
           backtesting::processDepthStream(ioContext, csData);
 #endif
-        }});
+        });
   }
 
 #ifdef BT_USE_WITH_INDICATORS
-  auto &tickInstance =
-      backtesting::tick_t::tickInstance(*ioContext, globalRtData.ticks);
-  tickInstance.setCallback(globalRtData.onTick);
+  auto tickInstance = backtesting::tick_t::instance();
+  tickInstance->setCallback(globalRtData.onTick);
+  tickInstance->addTicks(globalRtData.ticks);
 #endif
 
   if (depthStreamThread)
     depthStreamThread->join();
 
-  ioContext->run();
-
-  if (globalRtData.onCompletion)
-    globalRtData.onCompletion();
-
+  spdlog::info("Completed ----------- ");
   return 0;
 }

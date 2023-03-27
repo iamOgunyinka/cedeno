@@ -1,8 +1,5 @@
 #include "manager/indc_mnger.hpp"
 
-#include <time.h>
-#include <bits/stdc++.h>
-#include <stdio.h>
 #include <memory>
 
 #include "indicators/helpers/indcs_utils.hpp"
@@ -10,9 +7,9 @@
 
 namespace indicators{
 
-c_indc_config indicators_c::m_indc_config;
-ind_mngr_c<trade_stream_d, indicator_t> *indicators_c::m_indcs_trade_mngr;
-ind_mngr_c<kline_d, indicator_t> *indicators_c::m_indcs_kline_mngr;
+c_indc_config indicators_c::m_indc_config {};
+ind_mngr_c<trade_stream_d, indicator_t> *indicators_c::m_indcs_trade_mngr = nullptr;
+ind_mngr_c<kline_d, indicator_t> *indicators_c::m_indcs_kline_mngr = nullptr;
 
 indicators_c::indicators_c(const std::string &id){
     m_id = id;
@@ -36,29 +33,28 @@ indicators_c::indicators_c(const std::string &id){
     m_handler.indcs_var.sar_vars = std::make_unique<sar_t>(m_handler, indicators_c::m_indc_config.m_sar_config); 
 }
 
-indicators_c::~indicators_c(){
-    delete indicators_c::m_indcs_trade_mngr;
-    delete indicators_c::m_indcs_kline_mngr;
+indicators_c::~indicators_c() {
+  delete_current_indicators_();
 }
 
-void indicators_c::delete_current_indicators_(void){
-    delete indicators_c::m_indcs_trade_mngr;
-    delete indicators_c::m_indcs_kline_mngr;
+void indicators_c::delete_current_indicators_() {
+  delete indicators_c::m_indcs_trade_mngr;
+  indicators_c::m_indcs_trade_mngr = nullptr;
+
+  delete indicators_c::m_indcs_kline_mngr;
+  indicators_c::m_indcs_kline_mngr = nullptr;
 }
 
 void indicators_c::set_indicators_callback_(const std::array<bool, (uint64_t)types_e::SIZE> &indcs_state){
-    for( uint64_t indc_idx = (uint64_t)types_e::BUY_VS_SELL, end = (uint64_t)types_e::SIZE; 
-         indc_idx <  end; 
-         indc_idx++){
-        if(indcs_state[indc_idx] == true){
+    for(auto indc_idx = (uint64_t)types_e::BUY_VS_SELL, end = (uint64_t)types_e::SIZE; indc_idx <  end; indc_idx++) {
+        if(indcs_state[indc_idx]) {
             auto indc_config = indicators_c::m_indc_config.indcs_config_list.find(indc_list_key_number[indc_idx]);
             for(auto &source : indc_config->second.source){
-                if(source == source_e::SRC_TRADE){
+                if(source == source_e::SRC_TRADE && indicators_c::m_indcs_trade_mngr)
                     indicators_c::m_indcs_trade_mngr->add_indicator(indc_config->second.trade_callback);
-                }
-                if(source == source_e::SRC_KLINE){
+
+                if(source == source_e::SRC_KLINE && indicators_c::m_indcs_kline_mngr)
                     indicators_c::m_indcs_kline_mngr->add_indicator(indc_config->second.kline_callback);
-                }
             }
         }
     }
@@ -72,28 +68,31 @@ void indicators_c::set(const std::vector<std::vector<std::string>> &indcs){
 
     indicators_c::m_indc_config.set(indcs, indcs_state, num_of_indcs_per_mngr);
 
-    indicators_c::m_indcs_trade_mngr = new ind_mngr_c<trade_stream_d,indicator_t>(
-                                        num_of_indcs_per_mngr[(uint64_t)source_e::SRC_TRADE]
-                                        );
+    if (auto const v = num_of_indcs_per_mngr[(uint64_t)source_e::SRC_TRADE]; v > 0) {
+      indicators_c::m_indcs_trade_mngr = new ind_mngr_c<trade_stream_d,indicator_t>(v);
+    }
 
-    indicators_c::m_indcs_kline_mngr = new ind_mngr_c<kline_d, indicator_t>(
-                                        num_of_indcs_per_mngr[(uint64_t)source_e::SRC_KLINE]
-                                        );
+    if (auto const v = num_of_indcs_per_mngr[(uint64_t)source_e::SRC_KLINE]; v > 0) {
+      indicators_c::m_indcs_kline_mngr = new ind_mngr_c<kline_d, indicator_t>(v);
+    }
     set_indicators_callback_(indcs_state);
 }
 
-const inf_t& indicators_c::get(void){
+const inf_t& indicators_c::get() const {
     return m_handler.info;
 }
 
 void indicators_c::process(const trade_stream_d &trade_data){
+  if (m_indcs_trade_mngr)
     m_indcs_trade_mngr->process(trade_data, m_handler);
 }
 
 void indicators_c::process(const std::vector<kline_d> &kline_data_list){
-  for (auto const &kline_data: kline_data_list) {
+  if (!m_indcs_kline_mngr)
+    return;
+
+  for (auto const &kline_data: kline_data_list)
     m_indcs_kline_mngr->process(kline_data, m_handler);
-  }
 }
 
 }

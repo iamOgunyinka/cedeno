@@ -55,7 +55,8 @@ using py_depth_data_list_t = std::vector<py_depth_data_t>;
 py_depth_data_list_t depthDataToPythonDepth(depth_data_t const &);
 void processDepthStream(trade_map_td &tradeMap
 #ifdef BT_USE_WITH_INDICATORS
-    , std::vector<std::vector<std::string>> &&config
+                        ,
+                        std::vector<std::vector<std::string>> &&config
 #endif
 );
 

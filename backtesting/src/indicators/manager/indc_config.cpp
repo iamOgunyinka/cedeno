@@ -134,16 +134,12 @@ void c_indc_config::get_indicators_to_activing_( const std::vector<std::vector<s
                                                 std::array<bool, (uint64_t)types_e::SIZE> &indcs_state,
                                                 std::array<uint64_t, (uint64_t)source_e::SIZE> &num_of_indcs_per_mnger){
     for(auto &itr : indcs){
-        auto indc = indcs_config_list.find(itr.front());
-        if(indc == indcs_config_list.end())
-            std::__throw_runtime_error("Indicator does not exist");
-
-        if(indcs_state[(uint64_t)indc->second.id_number] == true){
-            std::__throw_runtime_error(std::string( "You are setting " 
-                                                    + indc->second.id_str 
-                                                    +" indicator twice").c_str());
-        }
-        indc->second.config_callback(itr, &indcs_state, num_of_indcs_per_mnger, indc->second.config, indc->second.source);
+      auto indc = indcs_config_list.find(itr.front());
+      if(indc == indcs_config_list.end())
+        std::__throw_runtime_error("Indicator does not exist");
+      if(indcs_state[(uint64_t)indc->second.id_number] == true)
+        throw std::runtime_error("You are setting " + indc->second.id_str + " indicator twice");
+      indc->second.config_callback(itr, &indcs_state, num_of_indcs_per_mnger, indc->second.config, indc->second.source);
     }
 }
 

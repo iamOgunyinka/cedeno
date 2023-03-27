@@ -1,3 +1,7 @@
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 #include "arguments_parser.hpp"
 
 #ifdef BT_USE_WITH_DB
@@ -6,6 +10,7 @@
 #endif // BT_USE_WITH_DB
 
 #include "global_data.hpp"
+#include "tick.hpp"
 #include <CLI11/CLI11.hpp>
 #include <mini/ini.h>
 #include <random>
@@ -33,6 +38,7 @@ using backtesting::utils::dateStringToTimeT;
 using backtesting::utils::listContains;
 
 bool verbose = false;
+bool isRunning = false;
 
 namespace backtesting {
 #ifdef BT_USE_WITH_DB
@@ -244,10 +250,10 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
 
   if (config.tokenList.empty()) {
     PRINT_INFO("token list is empty, using 'BTCUSDT' as the default");
-    config.tokenList.push_back("BTCUSDT");
+    config.tokenList.emplace_back("BTCUSDT");
 #ifdef _DEBUG
     PRINT_INFO("adding 'ETHUSDT' to the token list");
-    config.tokenList.push_back("ETHUSDT");
+    config.tokenList.emplace_back("ETHUSDT");
 #endif // _DEBUG
   } else {
     if (config.tokenList.size() > 4) {
@@ -261,7 +267,7 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
   }
 
 #ifdef BT_USE_WITH_INDICATORS
-  if (!indicator::isValidIndicatorConfiguration(config.indicatorConfig)) {
+  if (!indicators::isValidIndicatorConfiguration(config.indicatorConfig)) {
     ERROR_EXIT("invalid configuration set for the indicator");
   }
 #endif
@@ -385,7 +391,7 @@ void backtesting_t::reset() {
 bool backtesting_t::parse(int argc, char **argv) {
   m_argumentParsed = false;
 
-  CLI::App app{"backtesting software for Creed & Bear LLC"};
+  CLI::App app{"backtesting software"};
   auto &args = m_config.emplace();
 
 #ifdef BT_USE_WITH_DB
@@ -503,12 +509,12 @@ bool backtesting_t::prepareData() {
 }
 
 backtesting_t *newBTInstance(backtesting::configuration_t const &config) {
-  auto &bt = backtesting::getGlobalBTInstance();
+  auto bt = backtesting::getGlobalBTInstance();
   bt->reset();
 
   if (!(bt->parseImpl(config) && bt->prepareData() && bt->isReady()))
     return nullptr;
-  return bt.get();
+  return bt;
 }
 
 namespace backtesting {
@@ -522,12 +528,14 @@ user_data_t *getGlobalUser() {
   return nullptr;
 }
 
-std::unique_ptr<backtesting_t> &getGlobalBTInstance() {
+std::unique_ptr<backtesting_t> &getGlobalBTInstanceImpl() {
   static std::unique_ptr<backtesting_t> bt = nullptr;
   if (!bt)
     bt = std::make_unique<backtesting_t>();
   return bt;
 }
+
+backtesting_t *getGlobalBTInstance() { return getGlobalBTInstanceImpl().get(); }
 
 bool createBTInstanceFromConfigFile(std::string const &filename) {
   mINI::INIFile file(filename);
@@ -683,8 +691,69 @@ bool createBTInstanceFromConfigFile(std::string const &filename) {
   return true;
 }
 
-void startGlobalBTInstance() {
-  if (auto &bt = getGlobalBTInstance(); bt != nullptr)
-    bt->run();
+bool startGlobalBTInstance(std::function<void()> onStart,
+                           std::function<void()> onEnd
+#ifdef BT_USE_WITH_INDICATORS
+                           ,
+                           backtesting::indicator_callback_t onTick
+#endif
+) {
+  auto bt = getGlobalBTInstance();
+  auto &globalRtData = global_data_t::instance();
+
+  if (bt == nullptr || !bt->isReady()) {
+    auto const defaultConfigPath =
+        std::filesystem::current_path() / "config" / "config.ini";
+    if (!std::filesystem::exists(defaultConfigPath))
+      return false;
+    if (!createBTInstanceFromConfigFile(defaultConfigPath.string()))
+      return false;
+    if (bt = getGlobalBTInstance(); bt == nullptr)
+      return false;
+
+    globalRtData.onStart = std::move(onStart);
+    globalRtData.onCompletion = std::move(onEnd);
+#ifdef BT_USE_WITH_INDICATORS
+    globalRtData.onTick = std::move(onTick);
+#endif
+  }
+  bt->run();
+  isRunning = true;
+  return true;
 }
+
+bool endGlobalBTInstance() {
+  auto bt = getGlobalBTInstance();
+  if (bt == nullptr || !bt->isReady())
+    return false;
+  auto &globalRtData = global_data_t::instance();
+  if (globalRtData.onCompletion)
+    globalRtData.onCompletion();
+
+  getContextObject()->stop();
+#ifdef BT_USE_WITH_INDICATORS
+  tick_t::instance()->stopAllTicks();
+#endif
+
+  getGlobalBTInstanceImpl().reset();
+  global_data_t::cleanUp();
+
+  spdlog::info("Stopping the context object");
+  std::this_thread::sleep_for(std::chrono::seconds(2));
+  getContextObject()->reset();
+  spdlog::info("[Done] Stopping the context object");
+  isRunning = false;
+  return true;
+}
+
 } // namespace backtesting
+
+#ifdef BT_USE_WITH_INDICATORS
+namespace indicators {
+bool isValidIndicatorConfiguration(
+    std::vector<std::vector<std::string>> const &) {
+  // TODO: //check the passed data
+  return true;
+}
+} // namespace indicators
+#endif

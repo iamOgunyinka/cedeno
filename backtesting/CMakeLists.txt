@@ -135,6 +135,7 @@ if (ENABLE_INDICATOR)
        src/indicators/indicators/ema.cpp
        src/indicators/indicators/indicator.cpp
        src/indicators/indicators/macd.cpp
+       src/indicators/indicators/sar.cpp
        src/indicators/indicators/sma.cpp
        src/indicators/indicators/wma.cpp
        src/indicators/indicators/bwfs/avrg_in.cpp
@@ -177,10 +178,10 @@ set(HEADERS_FILES
   include/py_wrapper.hpp
   include/signals.hpp
   include/spot_order_book.hpp
+  include/symbol.hpp
   include/tick.hpp
   include/trades_data.hpp
-  include/user_data.hpp
-)
+  include/user_data.hpp)
 
 if (ENABLE_INDICATOR)
   include_directories(${PROJECT_DIR}/include/indicators)
