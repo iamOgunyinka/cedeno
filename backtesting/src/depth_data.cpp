@@ -335,7 +335,7 @@ void scheduleCandlestickTask(unsigned long long startTime,
   }
 
   if (!indicators.empty())
-    tick_t::instance()->addIndicators(indicators);
+    ticker_t::instance()->addIndicators(indicators);
 }
 #endif
 

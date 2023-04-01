@@ -4,13 +4,11 @@
 
 #include <boost/asio/io_context.hpp>
 
-#include "arguments_parser.hpp"
+#include "entry_point.hpp"
 #include "global_data.hpp"
 #include "indicator_data.hpp"
-#include "spdlog/spdlog.h"
 #include "tick.hpp"
 
-#include <memory>
 #include <thread>
 
 namespace net = boost::asio;
@@ -68,14 +66,13 @@ int backtesting_t::run() {
   }
 
 #ifdef BT_USE_WITH_INDICATORS
-  auto tickInstance = backtesting::tick_t::instance();
-  tickInstance->setCallback(globalRtData.onTick);
+  auto tickInstance = backtesting::ticker_t::instance();
   tickInstance->addTicks(globalRtData.ticks);
+  tickInstance->setCallback(globalRtData.onTick);
+  tickInstance->startTimers();
 #endif
 
   if (depthStreamThread)
     depthStreamThread->join();
-
-  spdlog::info("Completed ----------- ");
   return 0;
 }

@@ -1,8 +1,8 @@
 #include "py_wrapper.hpp"
-#include "arguments_parser.hpp"
 #include "bookticker.hpp"
 #include "callbacks.hpp"
 #include "candlestick_data.hpp"
+#include "entry_point.hpp"
 #include "indicator_data.hpp"
 
 #include <pybind11/complex.h>
@@ -134,12 +134,21 @@ PYBIND11_MODULE(jbacktest, m) {
       .def_readonly("atr", &indicators::inf_t::atr)
       .def_readonly("sar", &indicators::inf_t::sar);
 
-  py::class_<backtesting::indicator_data_t>(m, "IndicatorData")
+  py::class_<backtesting::timeframe_info_t>(m, "TimeframeData")
       .def(py::init<>())
-      .def_readonly("tick", &backtesting::indicator_data_t::time)
-      .def_readonly("symbol", &backtesting::indicator_data_t::symbol)
-      .def_readonly("trade", &backtesting::indicator_data_t::tradeType)
-      .def_readonly("indicator", &backtesting::indicator_data_t::indicator);
+      .def_readonly("isClosed", &backtesting::timeframe_info_t::isClosed)
+      .def("__len__",
+           [](backtesting::timeframe_info_t const &a) {
+             return a.dataMap.size();
+           })
+      .def("__getitem__", [](backtesting::timeframe_info_t &self,
+                             std::string const &str) { return self[str]; })
+      .def(
+          "__iter__",
+          [](backtesting::timeframe_info_t const &a) {
+            return py::make_key_iterator(a.dataMap.cbegin(), a.dataMap.cend());
+          },
+          py::keep_alive<0, 1>());
 #endif
 
   py::class_<backtesting::bktick_data_t>(m, "BooktickerData")
@@ -303,7 +312,7 @@ PYBIND11_MODULE(jbacktest, m) {
 
   py::class_<backtesting::configuration_t>(m, "AppConfig")
       .def(py::init<>())
-      .def_readwrite("trades", &backtesting::configuration_t::tradeTypes)
+      .def_readwrite("trade", &backtesting::configuration_t::tradeType)
       .def_readwrite("symbols", &backtesting::configuration_t::tokenList)
       .def_readwrite("path", &backtesting::configuration_t::rootDir)
       .def_readwrite("dateStart", &backtesting::configuration_t::dateFromStr)

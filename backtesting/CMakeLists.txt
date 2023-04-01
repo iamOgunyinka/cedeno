@@ -107,14 +107,14 @@ endif()
 set(SRC_FILES
   src/adaptor.cpp
   src/aggregate_trade.cpp
-  src/arg_parser_extension.cpp
-  src/arguments_parser.cpp
   src/bookticker.cpp
   src/callbacks.cpp
   src/candlestick_data.cpp
   src/common.cpp
   src/database_connector.cpp
   src/depth_data.cpp
+  src/entry_point_extension.cpp
+  src/entry_point.cpp
   src/futures_order_book.cpp
   src/global_data.cpp
   src/matching_engine.cpp
@@ -158,7 +158,6 @@ source_group("Sources" FILES ${SRC_FILES})
 set(HEADERS_FILES
   include/adaptor.hpp
   include/aggregate_trade.hpp
-  include/arguments_parser.hpp
   include/bookticker.hpp
   include/callbacks.hpp
   include/candlestick_data.hpp
@@ -169,6 +168,7 @@ set(HEADERS_FILES
   include/database_types.hpp
   include/depth_data.hpp
   include/enumerations.hpp
+  include/entry_point.hpp
   include/futures_data.hpp
   include/futures_order_book.hpp
   include/global_data.hpp

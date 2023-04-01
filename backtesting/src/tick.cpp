@@ -8,86 +8,123 @@
 namespace backtesting {
 
 #ifdef BT_USE_WITH_INDICATORS
-std::shared_ptr<tick_t> tick_t::instance() {
-  static std::shared_ptr<tick_t> tickInstance(new tick_t());
+std::shared_ptr<ticker_t> ticker_t::instance() {
+  static std::shared_ptr<ticker_t> tickInstance(new ticker_t());
   return tickInstance;
 }
 
-tick_t::tick_t(std::vector<size_t> const &ticks)
-    : m_ioContext(getContextObject()), m_ticks(ticks.begin(), ticks.end()) {}
+ticker_t::ticker_t() : m_ioContext(getContextObject()) {}
 
-tick_t::~tick_t() {
+ticker_t::~ticker_t() {
   m_ticks.clear();
   m_allIndicators.clear();
+  stopTimers();
 
-  for (auto &timer : m_timers)
-    delete timer;
-  m_timers.clear();
   m_ioContext = nullptr;
   m_callback = nullptr;
 }
 
-void tick_t::stopAllTicks() {
-  boost::system::error_code ec{};
-  for (auto &timer : m_timers)
-    timer->cancel(ec);
+void ticker_t::stopTimers() {
+  if (!m_periodicTimer)
+    return;
+
+  {
+    boost::system::error_code ec{};
+    m_periodicTimer->cancel(ec);
+    m_periodicTimer.reset();
+  }
+
+  for (auto &timerMeta : m_timers) {
+    boost::system::error_code ec{};
+    timerMeta->timer->cancel(ec);
+    delete timerMeta->timer;
+    delete timerMeta;
+  }
+  m_timers.clear();
 }
 
-void tick_t::stopTimerWithTick(const size_t tick) {
-  auto const time = boost::posix_time::seconds(tick);
-  for (auto iter = m_timers.begin(); iter != m_timers.end(); ++iter) {
-    auto &timer = *iter;
-    if (timer->expires_from_now() == time) {
-      timer->cancel();
-      m_timers.erase(iter);
+void ticker_t::startTimers() {
+  if (m_callback == nullptr || m_ioContext == nullptr || m_periodicTimer ||
+      m_ticks.empty())
+    return;
+
+  startOtherTimers();
+
+  m_periodicTimer = std::make_unique<net::deadline_timer>(*m_ioContext);
+  m_periodicTimer->expires_from_now(boost::posix_time::millisec(BT_MILLI));
+  m_periodicTimer->async_wait([self = shared_from_this()](auto const ec) {
+    if (ec == net::error::operation_aborted)
       return;
-    }
+    self->onPeriodicTimerTimedOut();
+  });
+}
+
+void ticker_t::setupNextTimeTick(size_t const tick,
+                                 timer_metadata_t *timerMeta) {
+  auto &timer = timerMeta->timer;
+
+  if (!timer)
+    timer = new net::deadline_timer(timerMeta->ioContext);
+
+  timer->expires_from_now(boost::posix_time::seconds(tick));
+  timer->async_wait(
+      [self = shared_from_this(), tick, timerMeta](auto const ec) {
+        if (ec == net::error::operation_aborted)
+          return;
+        self->onTickTimersTimedOut(tick, timerMeta);
+      });
+}
+
+void ticker_t::startOtherTimers() {
+  m_timers.clear();
+  m_timers.reserve(m_ticks.size());
+
+  for (auto const tick : m_ticks) {
+    auto timer = new timer_metadata_t(*m_ioContext, tick);
+    setupNextTimeTick(tick, timer);
+    m_timers.push_back(timer);
   }
 }
 
-void tick_t::createTimerWithTick(size_t const tick) {
-  m_timers.reserve(m_ticks.size() + 1);
-
-  auto timer = new net::deadline_timer(*m_ioContext);
-  timer->expires_from_now(boost::posix_time::seconds(tick));
-  timer->async_wait([self = shared_from_this(), tick, timer](auto const ec) {
-    if (ec == net::error::operation_aborted)
-      return;
-    self->onTimerTimedout(tick, timer);
-  });
-  m_timers.push_back(timer);
+void ticker_t::onTickTimersTimedOut(size_t const tick,
+                                    timer_metadata_t *timerMeta) {
+  timerMeta->timeInfo.isClosed = true;
+  setupNextTimeTick(tick, timerMeta);
 }
 
-void tick_t::addTicks(std::vector<size_t> const &ticks) {
-  for (auto const tick : ticks)
-    addTick(tick);
-}
-
-void tick_t::onTimerTimedout(size_t const tick, net::deadline_timer *timer) {
-  if (m_callback && m_ioContext) {
-    indicator_result_t result;
-    result.reserve(m_allIndicators.size());
+void ticker_t::onPeriodicTimerTimedOut() {
+  {
     for (auto &indicator : m_allIndicators) {
-      indicator_data_t data;
-      data.indicator = indicator->indicator.get();
-      data.time = tick;
-      data.tradeType = indicator->symbol->tradeType;
-      data.symbol = indicator->symbol->name;
-      result.push_back(std::move(data));
+      auto data = indicator->indicator.get();
+      auto const &symbol = indicator->symbol;
+      for (auto &timerMeta : m_timers) {
+        auto &timerInfo = timerMeta->timeInfo;
+        timerMeta->timeInfo.dataMap[symbol].push_back(data);
+      }
     }
-    net::post(net::make_strand(*m_ioContext),
-              [data = std::move(result), self = shared_from_this()] {
-                self->m_callback(data);
-              });
+
+    net::post(net::make_strand(*m_ioContext), [self = shared_from_this()] {
+      indicator_data_t result;
+      for (auto &timerMeta : self->m_timers) {
+        std::string const timeString = std::to_string(timerMeta->tick);
+        auto &timeInfo = timerMeta->timeInfo;
+        result[timeString] = timeInfo;
+        if (timeInfo.isClosed) {
+          timeInfo.dataMap.clear();
+          timeInfo.isClosed = false;
+        }
+      }
+      self->m_callback(std::move(result));
+    });
   }
 
-  timer->expires_from_now(boost::posix_time::seconds(tick));
-  timer->async_wait([self = shared_from_this(), tick,
-                     timer](boost::system::error_code const ec) {
-    if (ec == net::error::operation_aborted)
-      return;
-    self->onTimerTimedout(tick, timer);
-  });
+  m_periodicTimer->expires_from_now(boost::posix_time::milliseconds(BT_MILLI));
+  m_periodicTimer->async_wait(
+      [self = shared_from_this()](boost::system::error_code const ec) {
+        if (ec == net::error::operation_aborted)
+          return;
+        self->onPeriodicTimerTimedOut();
+      });
 }
 
 #endif

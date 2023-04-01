@@ -1,4 +1,4 @@
-#include "arguments_parser.hpp"
+#include "entry_point.hpp"
 
 int main(int argc, char **argv) {
 

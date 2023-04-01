@@ -149,7 +149,6 @@
   <ItemGroup>
     <ClInclude Include="include\adaptor.hpp" />
     <ClInclude Include="include\aggregate_trade.hpp" />
-    <ClInclude Include="include\arguments_parser.hpp" />
     <ClInclude Include="include\bookticker.hpp" />
     <ClInclude Include="include\callbacks.hpp" />
     <ClInclude Include="include\candlestick_data.hpp" />
@@ -159,6 +158,7 @@
     <ClInclude Include="include\database_types.hpp" />
     <ClInclude Include="include\data_streamer.hpp" />
     <ClInclude Include="include\depth_data.hpp" />
+    <ClInclude Include="include\entry_point.hpp" />
     <ClInclude Include="include\enumerations.hpp" />
     <ClInclude Include="include\futures_data.hpp" />
     <ClInclude Include="include\futures_order_book.hpp" />
@@ -169,6 +169,7 @@
     <ClInclude Include="include\py_wrapper.hpp" />
     <ClInclude Include="include\signals.hpp" />
     <ClInclude Include="include\spot_order_book.hpp" />
+    <ClInclude Include="include\symbol.hpp" />
     <ClInclude Include="include\tick.hpp" />
     <ClInclude Include="include\trades_data.hpp" />
     <ClInclude Include="include\user_data.hpp" />
@@ -176,14 +177,14 @@
   <ItemGroup>
     <ClCompile Include="src\adaptor.cpp" />
     <ClCompile Include="src\aggregate_trade.cpp" />
-    <ClCompile Include="src\arguments_parser.cpp" />
-    <ClCompile Include="src\arg_parser_extension.cpp" />
     <ClCompile Include="src\bookticker.cpp" />
     <ClCompile Include="src\callbacks.cpp" />
     <ClCompile Include="src\candlestick_data.cpp" />
     <ClCompile Include="src\common.cpp" />
     <ClCompile Include="src\database_connector.cpp" />
     <ClCompile Include="src\depth_data.cpp" />
+    <ClCompile Include="src\entry_point.cpp" />
+    <ClCompile Include="src\entry_point_extension.cpp" />
     <ClCompile Include="src\futures_order_book.cpp" />
     <ClCompile Include="src\global_data.cpp" />
     <ClCompile Include="src\matching_engine.cpp" />

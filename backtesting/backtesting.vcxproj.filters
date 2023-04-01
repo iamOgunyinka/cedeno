@@ -18,7 +18,13 @@
     <ClInclude Include="include\adaptor.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\arguments_parser.hpp">
+    <ClInclude Include="include\aggregate_trade.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\bookticker.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\callbacks.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\candlestick_data.hpp">
@@ -42,10 +48,22 @@
     <ClInclude Include="include\depth_data.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\entry_point.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\enumerations.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\futures_data.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\futures_order_book.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\global_data.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\indicator_data.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\matching_engine.hpp">
@@ -57,37 +75,22 @@
     <ClInclude Include="include\py_wrapper.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\signals.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\spot_order_book.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\user_data.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\aggregate_trade.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\callbacks.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\trades_data.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\bookticker.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\enumerations.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\futures_data.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\signals.hpp">
+    <ClInclude Include="include\symbol.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\tick.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\indicator_data.hpp">
+    <ClInclude Include="include\trades_data.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\user_data.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -95,10 +98,13 @@
     <ClCompile Include="src\adaptor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\arg_parser_extension.cpp">
+    <ClCompile Include="src\aggregate_trade.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\arguments_parser.cpp">
+    <ClCompile Include="src\bookticker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\callbacks.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\candlestick_data.cpp">
@@ -113,6 +119,12 @@
     <ClCompile Include="src\depth_data.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\entry_point.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\entry_point_extension.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\futures_order_book.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -122,34 +134,25 @@
     <ClCompile Include="src\matching_engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\py_wrapper.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\spot_order_book.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\user_data.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\trades_data.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\callbacks.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\aggregate_trade.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\bookticker.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\order_book_base.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\py_wrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\signals.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\spot_order_book.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\tick.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\trades_data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\user_data.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

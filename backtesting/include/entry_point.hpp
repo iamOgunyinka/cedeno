@@ -33,8 +33,8 @@ struct configuration_t {
   /// a list of the streams(s) to run. Valid options are:
   /// trade, ticker, bookticker, kline, depth(default)
   stringlist_t streams;
-  /// a list of trade types. Valid options are: futures, spot(default)
-  stringlist_t tradeTypes;
+  /// the trade type. Valid options are: futures or spot(default)
+  std::string tradeType;
   /// a list of valid symbols e.g BTCUSDT,ETHUSDT,RUNEUSDT
   stringlist_t tokenList;
   /// a string specifying the date from which the backtesting

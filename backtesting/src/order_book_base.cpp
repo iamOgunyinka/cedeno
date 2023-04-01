@@ -1,6 +1,10 @@
 #include "order_book_base.hpp"
 #include <algorithm>
 
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/asio/strand.hpp>
+
 #ifdef _DEBUG
 #include <spdlog/spdlog.h>
 #endif
@@ -228,7 +232,7 @@ order_book_base_t::order_book_base_t(net::io_context &ioContext,
       m_symbol(symbol)
 #ifdef BT_USE_WITH_INDICATORS
       ,
-      m_indicatorMeta(m_symbol)
+      m_indicatorMeta(m_symbol->name)
 #endif
 {
   auto firstData = m_dataStreamer.getNextData();
@@ -238,7 +242,6 @@ order_book_base_t::order_book_base_t(net::io_context &ioContext,
                 firstData.tradeType, symbol, isGreater);
   insertAndSort(firstData.asks, m_orderBook.asks, trade_side_e::sell,
                 firstData.tradeType, symbol, isLesser);
-  m_currentTimer = firstData.eventTime;
 
 #ifdef BT_USE_WITH_INDICATORS
   // m_indicator.process(firstData);
@@ -247,7 +250,8 @@ order_book_base_t::order_book_base_t(net::io_context &ioContext,
 
 order_book_base_t::~order_book_base_t() {
   if (m_periodicTimer) {
-    m_periodicTimer->cancel();
+    boost::system::error_code ec;
+    m_periodicTimer->cancel(ec);
     m_periodicTimer.reset();
   }
 }
@@ -256,7 +260,7 @@ void order_book_base_t::run() {
   if (m_periodicTimer) // already running
     return;
 
-  setNextTimer();
+  readNextData();
 }
 
 trade_data_t order_book_base_t::getNewTrade(order_data_t const &order,
@@ -436,35 +440,25 @@ void order_book_base_t::cancelOrder(order_data_t order) {
                             lesserComparator);
 }
 
-void order_book_base_t::setNextTimer() {
+void order_book_base_t::readNextData() {
   if (!m_periodicTimer)
-    m_periodicTimer.reset(new net::deadline_timer(m_ioContext));
+    m_periodicTimer = std::make_unique<net::deadline_timer>(m_ioContext);
 
-  m_nextData = m_dataStreamer.getNextData();
-  m_nextData.tradeType = m_symbol->tradeType;
+  auto nextData = m_dataStreamer.getNextData();
+  nextData.tradeType = m_symbol->tradeType;
 
-  // no more data but we need to keep the simulator running
-  if (m_nextData.asks.empty() && m_nextData.bids.empty())
-    m_nextData.eventTime = m_currentTimer + 1'000;
-
-  auto const timeDiff = m_nextData.eventTime - m_currentTimer;
-#ifdef _DEBUG
-  spdlog::debug("TimeDiff: {}", timeDiff);
-  assert(timeDiff > 0);
-#else
-  if (timeDiff <= 0LL)
+  if (nextData.asks.empty() && nextData.bids.empty()) // no more data
     return;
-#endif // _DEBUG
 
-  m_currentTimer = m_nextData.eventTime;
-  m_periodicTimer->expires_from_now(boost::posix_time::milliseconds(timeDiff));
-  m_periodicTimer->async_wait([this](boost::system::error_code const ec) {
+  m_periodicTimer->expires_from_now(boost::posix_time::milliseconds(BT_MILLI));
+  m_periodicTimer->async_wait(
+      [this, data = std::move(nextData)](auto const ec) mutable {
+        updateOrderBook(std::move(data));
 #ifdef BT_USE_WITH_INDICATORS
-  // m_indicator.process(m_nextData);
+    // m_indicator.process(m_nextData);
 #endif
-    updateOrderBook(std::move(m_nextData));
-    setNextTimer();
-  });
+        readNextData();
+      });
 }
 
 void order_book_base_t::updateOrderBook(depth_data_t &&newestData) {

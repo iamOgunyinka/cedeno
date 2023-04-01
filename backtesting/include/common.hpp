@@ -46,7 +46,7 @@ bool startsWith(std::string const &s, std::string const &substr);
 std::chrono::seconds stringToStdInterval(std::string &str);
 std::vector<std::string> splitString(std::string const &str, char const *delim);
 filename_map_td
-getListOfCSVFiles(stringlist_t const &tokenList, stringlist_t const &tradeTypes,
+getListOfCSVFiles(stringlist_t const &tokenList, std::string const &tradeType,
                   stringlist_t const &streams, std::time_t const startTime,
                   std::time_t const endTime, std::string const &rootDir);
 std::vector<std::time_t> intervalsBetweenDates(std::time_t const start,

@@ -2,7 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-#include "arguments_parser.hpp"
+#include "entry_point.hpp"
 
 #ifdef BT_USE_WITH_DB
 #include "adaptor.hpp"
@@ -234,18 +234,17 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     }
   }
 
-  if (config.tradeTypes.empty()) {
+  if (config.tradeType.empty()) {
     PRINT_INFO("trade type not specified, will use 'SPOT' as default")
-    config.tradeTypes.push_back(SPOT);
+    config.tradeType = SPOT;
   } else {
     std::vector<std::string> const validTrades{SPOT, FUTURES};
-    for (auto &trade : config.tradeTypes) {
-      if (!listContains(validTrades, trade)) {
-        ERROR_EXIT("'{}' is not a valid trade type", trade);
-      }
-      for (auto &t : trade)
-        t = tolower(t);
+    if (!listContains(validTrades, config.tradeType)) {
+      ERROR_EXIT("'{}' is not a valid trade type", config.tradeType);
     }
+
+    for (auto &t : config.tradeType)
+      t = tolower(t);
   }
 
   if (config.tokenList.empty()) {
@@ -336,7 +335,7 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
     std::swap(globalRtData.startTime, globalRtData.endTime);
 
   globalRtData.listOfFiles = backtesting::utils::getListOfCSVFiles(
-      config.tokenList, config.tradeTypes, config.streams,
+      config.tokenList, config.tradeType, config.streams,
       globalRtData.startTime, globalRtData.endTime, config.rootDir);
 
   if (globalRtData.listOfFiles.empty()) {
@@ -359,18 +358,15 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
   globalRtData.spotMakerFee = std::clamp(config.spotMakerFee, 0.02, 0.1);
   globalRtData.spotTakerFee = std::clamp(config.spotTakerFee, 0.04, 0.1);
 
-  if (verbose) {
-    spdlog::info("start date: {}", config.dateFromStr);
-    spdlog::info("end date: {}", config.dateToStr);
-    spdlog::info("rootDir: {}", config.rootDir);
+  PRINT_INFO("start date: {}", config.dateFromStr);
+  PRINT_INFO("end date: {}", config.dateToStr);
+  PRINT_INFO("rootDir: {}", config.rootDir);
 
-    for (auto const &token : config.tokenList)
-      spdlog::info("token: {}", token);
-    for (auto const &s : config.streams)
-      spdlog::info("stream: {}", s);
-    for (auto const &t : config.tradeTypes)
-      spdlog::info("trade: {}", t);
-  }
+  for (auto const &token : config.tokenList)
+    PRINT_INFO("token: {}", token);
+  for (auto const &s : config.streams)
+    PRINT_INFO("stream: {}", s);
+  PRINT_INFO("trade: {}", config.tradeType);
 
 #ifdef BT_USE_WITH_INDICATORS
   globalRtData.indicatorConfig = std::move(config.indicatorConfig);
@@ -410,9 +406,9 @@ bool backtesting_t::parse(int argc, char **argv) {
   app.add_option("--streams", args.streams,
                  "A list of the streams(s) to run. Valid options are: "
                  "[trade, ticker, bookticker, depth(default), kline]");
-  app.add_option("--trade-types", args.tradeTypes,
-                 "A list of trade types. Valid options are: "
-                 "[futures, spot(default)]");
+  app.add_option("--trade-type", args.tradeType,
+                 "The trade type. Valid options are: "
+                 "[futures OR spot(default)]");
   app.add_option("--start-date", args.dateFromStr,
                  "the start datetime (e.g. 2022-12-01 00:00:00)");
   app.add_option("--end-date", args.dateToStr,
@@ -568,7 +564,7 @@ bool createBTInstanceFromConfigFile(std::string const &filename) {
         if (name.compare("SYMBOLS") == 0) {
           config.tokenList = utils::splitString(utils::trim_copy(v), ",");
         } else if (name.compare("TYPE") == 0) {
-          config.tradeTypes = utils::splitString(utils::trim_copy(v), ",");
+          config.tradeType = utils::trim_copy(v);
         } else if (name.compare("PATH") == 0) {
           config.rootDir = utils::trim_copy(v);
           utils::removeAllQuotes(config.rootDir);
@@ -732,7 +728,7 @@ bool endGlobalBTInstance() {
 
   getContextObject()->stop();
 #ifdef BT_USE_WITH_INDICATORS
-  tick_t::instance()->stopAllTicks();
+  ticker_t::instance()->stopTimers();
 #endif
 
   getGlobalBTInstanceImpl().reset();

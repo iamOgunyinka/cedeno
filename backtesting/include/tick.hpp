@@ -5,6 +5,7 @@
 
 #ifdef BT_USE_WITH_INDICATORS
 #include <boost/asio/deadline_timer.hpp>
+#include <map>
 #include <set>
 
 #include "indicator_data.hpp"
@@ -16,37 +17,47 @@ namespace backtesting {
 
 #ifdef BT_USE_WITH_INDICATORS
 
-class tick_t : public std::enable_shared_from_this<tick_t> {
-public:
-  static std::shared_ptr<tick_t> instance();
+struct timer_metadata_t {
+  net::io_context &ioContext;
+  net::deadline_timer *timer = nullptr;
+  size_t tick = 0;
+  timeframe_info_t timeInfo;
 
-  ~tick_t();
+  explicit timer_metadata_t(net::io_context &ioContext_, size_t const tick_)
+      : ioContext(ioContext_), tick(tick_) {}
+};
+
+class ticker_t : public std::enable_shared_from_this<ticker_t> {
+public:
+  static std::shared_ptr<ticker_t> instance();
+
+  ~ticker_t();
   void setCallback(indicator_callback_t func) { m_callback = func; }
-  void addTicks(std::vector<size_t> const &ticks);
+  inline void addTicks(std::vector<size_t> const &ticks) {
+    m_ticks.insert(ticks.cbegin(), ticks.cend());
+  }
+
   inline void
   addIndicators(std::vector<indicator_metadata_t *> const &indicators) {
     m_allIndicators.clear();
     m_allIndicators = indicators;
   }
 
-  inline void addTick(size_t const tick) {
-    if (auto const &[_, inserted] = m_ticks.insert(tick); inserted)
-      createTimerWithTick(tick);
-  }
-
-  void stopAllTicks();
-  void stopTimerWithTick(size_t tick);
+  void stopTimers();
+  void startTimers();
 
 private:
-  explicit tick_t() : tick_t{std::vector<size_t>{}} {}
-  explicit tick_t(std::vector<size_t> const &ticks);
-  void onTimerTimedout(size_t, net::deadline_timer *);
-  void createTimerWithTick(size_t);
+  ticker_t();
+  void onPeriodicTimerTimedOut();
+  void onTickTimersTimedOut(size_t, timer_metadata_t *);
+  void startOtherTimers();
+  void setupNextTimeTick(size_t, timer_metadata_t *);
 
   std::shared_ptr<net::io_context> m_ioContext = nullptr;
-  std::vector<net::deadline_timer *> m_timers;
-  std::vector<indicator_metadata_t *> m_allIndicators;
+  std::unique_ptr<net::deadline_timer> m_periodicTimer = nullptr;
+  std::vector<timer_metadata_t *> m_timers;
   std::set<size_t> m_ticks;
+  std::vector<indicator_metadata_t *> m_allIndicators;
   indicator_callback_t m_callback = nullptr;
 };
 

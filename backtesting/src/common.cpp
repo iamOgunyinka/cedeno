@@ -188,7 +188,7 @@ std::vector<std::time_t> intervalsBetweenDates(std::time_t const start,
 }
 
 filename_map_td
-getListOfCSVFiles(stringlist_t const &tokenList, stringlist_t const &tradeTypes,
+getListOfCSVFiles(stringlist_t const &tokenList, std::string const &tradeType,
                   stringlist_t const &streams, std::time_t const startTime,
                   std::time_t const endTime, std::string const &rootDir) {
   std::filesystem::path const rootPath(rootDir);
@@ -200,19 +200,17 @@ getListOfCSVFiles(stringlist_t const &tokenList, stringlist_t const &tradeTypes,
     for (auto const &streamType : streams) {
       for (auto const &token : tokenList) {
         auto const tokenName = toUpperString(token);
-        for (auto const &tradeType : tradeTypes) {
-          auto const fullPath =
-              rootPath / tokenName / date / streamType / tradeType;
-          if (!std::filesystem::exists(fullPath))
-            continue;
-          for (auto const &file :
-               std::filesystem::recursive_directory_iterator(fullPath)) {
-            if (std::filesystem::is_regular_file(file)) {
-              auto &fileList = paths[streamType][tokenName][tradeType];
-              if (std::find(fileList.cbegin(), fileList.cend(), file) ==
-                  fileList.cend())
-                fileList.push_back(file);
-            }
+        auto const fullPath =
+            rootPath / tokenName / date / streamType / tradeType;
+        if (!std::filesystem::exists(fullPath))
+          continue;
+        for (auto const &file :
+             std::filesystem::recursive_directory_iterator(fullPath)) {
+          if (std::filesystem::is_regular_file(file)) {
+            auto &fileList = paths[streamType][tokenName][tradeType];
+            if (std::find(fileList.cbegin(), fileList.cend(), file) ==
+                fileList.cend())
+              fileList.push_back(file);
           }
         }
       }

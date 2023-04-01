@@ -6,9 +6,7 @@
 
 #include "Signals/Signal.h"
 #include "depth_data.hpp"
-#ifdef BT_USE_WITH_INDICATORS
 #include "indicator_data.hpp"
-#endif
 #include "user_data.hpp"
 
 namespace boost::asio {
@@ -122,10 +120,10 @@ public:
 
 private:
   void updateOrderBook(depth_data_t &&newestData);
-  void setNextTimer();
   void cancelOrder(backtesting::order_data_t order);
   void placeOrder(backtesting::order_data_t order);
   void shakeOrderBook();
+  void readNextData();
   [[nodiscard]] virtual trade_list_t
   marketMatcher(std::vector<details::order_book_entry_t> &list,
                 double &amountAvailableToSpend, order_data_t const &order);
@@ -174,14 +172,10 @@ protected:
   data_streamer_t<depth_data_t> m_dataStreamer;
   /// the symbol being traded
   internal_token_data_t *m_symbol = nullptr;
-  /// the timer that controls the time between data updates
-  std::unique_ptr<net::deadline_timer> m_periodicTimer = nullptr;
   /// the order book entries -- the asks and the bids
   details::order_book_side_t m_orderBook;
-  /// the current depth entry
-  depth_data_t m_nextData;
-  /// the timer object
-  time_t m_currentTimer = 0;
+  /// the timer that controls the time between data updates
+  std::unique_ptr<net::deadline_timer> m_periodicTimer = nullptr;
 
 #ifdef BT_USE_WITH_INDICATORS
   indicator_metadata_t m_indicatorMeta;
