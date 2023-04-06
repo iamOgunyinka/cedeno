@@ -35,14 +35,14 @@ static uint64_t get_n_parameter(const std::string &config){
     uint64_t n = 0;
     if(config_pair.first == "n"){
         if(!(bool)utils::check_if_string_is_valid_number(config_pair.second)){
-            std::__throw_runtime_error("Wrong wma config, n must be a number");
+            throw std::runtime_error("Wrong wma config, n must be a number");
         }
         n = strtoul(config_pair.second.c_str(), nullptr, 10);
         if(n < 1){
-            std::__throw_runtime_error("Wrong wma config, n must be greater than 1");
+            throw std::runtime_error("Wrong wma config, n must be greater than 1");
         }
     }else{
-        std::__throw_runtime_error("Wrong wma config parameter");
+        throw std::runtime_error("Wrong wma config parameter");
     }
     return n;
 }
@@ -55,16 +55,16 @@ static void get_wi_parameter( const std::string &config,
         utils::split_string_by_delimiter(config_pair.second, ',', config_split);
         for(auto &num_str : config_split){
             if(!(bool)utils::check_if_string_is_valid_number(num_str))
-                std::__throw_runtime_error("Wrong wma config, w config must be only numbers");
+                throw std::runtime_error("Wrong wma config, w config must be only numbers");
             result.push_back(std::stod(num_str));
         }
     }else{
-        std::__throw_runtime_error("Wrong wma config parameter");
+        throw std::runtime_error("Wrong wma config parameter");
     }
 }
 
 static void set_wi_consts(std::vector<double> wi){
-    double w;
+    double w = 0.0;
     for(auto &num : wi){
         w += num;
     }
@@ -82,13 +82,13 @@ void get_config( const std::vector<std::string> &indcs,
     config = conf_wma_t();
     if(indcs.size() > 1){
         if(indcs.size() != 3)
-            std::__throw_runtime_error("It is mandatory to pass 2 config parameters for wma indicator");
+            throw std::runtime_error("It is mandatory to pass 2 config parameters for wma indicator");
 
         config.n = get_n_parameter(indcs[1]);
         get_wi_parameter(indcs[2], config.wi);
 
-        if(config.n != config.wi.size()) 
-            std::__throw_runtime_error("wrong wma config, n must be equal than w size");
+        if(config.n != config.wi.size())
+            throw std::runtime_error("wrong wma config, n must be equal than w size");
 
         set_wi_consts(config.wi);
     }   

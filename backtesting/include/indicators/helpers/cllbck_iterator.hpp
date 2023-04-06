@@ -5,8 +5,7 @@
 #include <iostream>
 #include <string>
 #include <memory>
-#include <bits/stdc++.h>
-
+#include <exception>
 
 namespace indicators{
 
@@ -59,10 +58,10 @@ ind_mngr_c<T, B>::~ind_mngr_c(){
 template <typename T,typename B>
 void ind_mngr_c<T, B>::add_indicator(indc_cllbck_p ind_hndlr){
     if(m_sz_indcs == 0){
-        std::__throw_runtime_error("The indicator size has not beed set");
+        throw std::runtime_error("The indicator size has not beed set");
     }
     if(m_sz_indcs_set == m_sz_indcs){
-        std::__throw_runtime_error("Overflow in indicator manager");
+        throw std::runtime_error("Overflow in indicator manager");
     }
     m_cllbcks[m_sz_indcs_set] = ind_hndlr;
     m_sz_indcs_set++;

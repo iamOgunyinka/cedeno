@@ -50,7 +50,9 @@ include_directories(${PROJECT_DIR}/../third-party/pybind11/include)
 include_directories(${PROJECT_DIR}/../third-party/spdlog/include)
 
 if(WIN32)
-  # set stuff for windows
+  link_libraries(OpenSSL::SSL)
+  link_libraries(OpenSSL::Crypto)
+  set(OPENSSL_USE_STATIC_LIBS TRUE)
 else()
   # set stuff for other systems
   link_directories(/usr/lib)
@@ -132,7 +134,7 @@ if(NOT MSVC)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
   endif()
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17 /bigobj")
 endif()
 
 # Preprocessor definitions
@@ -142,7 +144,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
    -D_CONSOLE 
     )
     if(MSVC)
-        target_compile_options(${PROJECT_NAME} PRIVATE  /W3 /MD /Od /Zi /EHsc /std:c++17)
+      target_compile_options(${PROJECT_NAME} PRIVATE  /std:c++17)
+      set_property(TARGET ${PROJECT_NAME} PROPERTY
+              MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     endif()
 endif()
 
@@ -152,6 +156,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
    -D_CONSOLE 
     )
     if(MSVC)
-        target_compile_options(${PROJECT_NAME} PRIVATE  /W3 /GL /Gy /Zi /EHsc /std:c++17)
+      target_compile_options(${PROJECT_NAME} PRIVATE  /std:c++17)
+      set_property(TARGET ${PROJECT_NAME} PROPERTY
+              MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
     endif()
 endif()

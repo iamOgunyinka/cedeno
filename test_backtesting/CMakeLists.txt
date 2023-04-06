@@ -97,9 +97,9 @@ endif()
 
 # Preprocessor definitions
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE 
-   -D_DEBUG 
-   -D_CONSOLE 
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+   -D_DEBUG
+   -D_CONSOLE
     )
     if(MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE  /W3 /MD /Od /Zi /EHsc /std:c++17)
@@ -107,9 +107,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE 
-   -DNDEBUG 
-   -D_CONSOLE 
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+   -DNDEBUG
+   -D_CONSOLE
     )
     if(MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE  /W3 /GL /Gy /Zi /EHsc /std:c++17)

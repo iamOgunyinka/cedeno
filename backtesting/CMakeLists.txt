@@ -47,6 +47,9 @@ if(NOT OPENSSL_FOUND)
   message(FATAL_ERROR "You need to have OpenSSL installed (e.g. libssl-dev)")
 else()
   include_directories(${OPENSSL_INCLUDE_DIR})
+  link_libraries(OpenSSL::SSL)
+  link_libraries(OpenSSL::Crypto)
+  set(OPENSSL_USE_STATIC_LIBS TRUE)
 endif()
 
 include_directories(${PROJECT_DIR}/include)
@@ -220,7 +223,7 @@ source_group("Headers" FILES ${HEADERS_FILES})
 if (ENABLE_LIBS_FOR_TEST)
   add_library(jbacktest STATIC ${SRC_FILES} ${HEADERS_FILES})
 else()
-  pybind11_add_module(jbacktest ${SRC_FILES} ${HEADERS_FILES})
+  pybind11_add_module(jbacktest STATIC ${SRC_FILES} ${HEADERS_FILES})
 endif()
 
 if(NOT MSVC)
@@ -229,7 +232,7 @@ if(NOT MSVC)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
   endif()
 else()
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17 /O2")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17 /bigobj")
 endif()
 
 # Preprocessor definitions
@@ -239,7 +242,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
    -D_CONSOLE 
     )
     if(MSVC)
-        target_compile_options(${PROJECT_NAME} PRIVATE  /W3 /MD /Od /Zi /EHsc /std:c++17)
+        target_compile_options(${PROJECT_NAME} PRIVATE  /std:c++17)
+        set_property(TARGET ${PROJECT_NAME} PROPERTY
+                MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     endif()
 endif()
 
@@ -249,6 +254,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
    -D_CONSOLE 
     )
     if(MSVC)
-        target_compile_options(${PROJECT_NAME} PRIVATE  /W3 /GL /Oi /Gy /Zi /EHsc /std:c++17)
+      target_compile_options(${PROJECT_NAME} PRIVATE  /std:c++17)
+      set_property(TARGET ${PROJECT_NAME} PROPERTY
+                MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
     endif()
 endif()

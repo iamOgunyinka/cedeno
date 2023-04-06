@@ -60,22 +60,22 @@ void get_config( const std::vector<std::string> &indcs,
             // config_pair_t result = get_number(str);
             auto config_pair = utils::split_string(str, ":");
             if(config_pair.first == "n"){
-                if(!(bool)utils::check_if_string_is_valid_number(config_pair.second)){ 
-                    std::__throw_runtime_error("Wrong ema config, n must be a number");
+                if(!(bool)utils::check_if_string_is_valid_number(config_pair.second)){
+                    throw std::runtime_error("Wrong ema config, n must be a number");
                 }
                 config.n = strtoul(config_pair.second.c_str(), nullptr, 10);
                 if(config.n < 1){
-                    std::__throw_runtime_error("Wrong ema config, n must be greater than 1");
+                    throw std::runtime_error("Wrong ema config, n must be greater than 1");
                 }
             }else 
             if(config_pair.first == "source"){
                 if(config_pair.second == "trade"){
                     src = source_e::SRC_TRADE;
                 }else if(config_pair.second != "kline"){
-                    std::__throw_runtime_error("Wrong ema config, wrong source config");
+                    throw std::runtime_error("Wrong ema config, wrong source config");
                 }
             }else{
-                std::__throw_runtime_error("Wrong ema config parameter");
+                throw std::runtime_error("Wrong ema config parameter");
             }
         });
     }

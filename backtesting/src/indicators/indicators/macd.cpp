@@ -33,9 +33,9 @@ namespace macd{
 
 static void check_config_values_parameters(const conf_macd_t &config){
     if(config.high_period < config.low_period)
-        std::__throw_runtime_error("MACD high period must be higher than low period");
+        throw std::runtime_error("MACD high period must be higher than low period");
     if( config.high_period == 0 || config.low_period == 0)
-        std::__throw_runtime_error("MACD numbers params must be greater than 0");
+        throw std::runtime_error("MACD numbers params must be greater than 0");
         
 }
 
@@ -48,20 +48,20 @@ void get_config( const std::vector<std::string> &indcs,
     config = conf_macd_t();
     if(indcs.size() > 1){
         if(indcs.size() != 3)
-            std::__throw_runtime_error("MACD incorrect numbers of config parameters");
+            throw std::runtime_error("MACD incorrect numbers of config parameters");
 
         std::for_each(indcs.begin() + 1, indcs.end(), [&](const std::string &str){
             auto config_pair = utils::split_string(str, ":");
 
             if(!(bool)utils::check_if_string_is_valid_number(config_pair.second))
-                std::__throw_runtime_error("Wrong ema config, n must be a number");
+                throw std::runtime_error("Wrong ema config, n must be a number");
 
             if(config_pair.first == "high"){
                 config.high_period = strtoul(config_pair.second.c_str(), nullptr, 10);
             }else if(config_pair.first == "low"){
                 config.low_period = strtoul(config_pair.second.c_str(), nullptr, 10);
             }else{
-                std::__throw_runtime_error("Wrong ema config parameter");
+                throw std::runtime_error("Wrong ema config parameter");
             }
         });
         check_config_values_parameters(config);

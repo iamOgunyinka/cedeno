@@ -136,7 +136,7 @@ void c_indc_config::get_indicators_to_activing_( const std::vector<std::vector<s
     for(auto &itr : indcs){
       auto indc = indcs_config_list.find(itr.front());
       if(indc == indcs_config_list.end())
-        std::__throw_runtime_error("Indicator does not exist");
+          throw std::runtime_error("Indicator does not exist");
       if(indcs_state[(uint64_t)indc->second.id_number] == true)
         throw std::runtime_error("You are setting " + indc->second.id_str + " indicator twice");
       indc->second.config_callback(itr, &indcs_state, num_of_indcs_per_mnger, indc->second.config, indc->second.source);

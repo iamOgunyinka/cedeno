@@ -26,8 +26,8 @@ static void check_indc_confg_params_( const std::vector<std::string> &indcs,
     if(item_left_in_vector > max_params_sz){
         const std::string error_message =   "So many " + 
                                             indc_type + 
-                                            " config indicator parameters"; 
-        std::__throw_runtime_error(error_message.c_str());
+                                            " config indicator parameters";
+        throw std::runtime_error(error_message.c_str());
     }
 }
 
@@ -39,8 +39,7 @@ static void get_indicators_( const std::vector<std::string> &indicators,
         auto item = indc_list_key_string.find(indc);
         if( item != indc_list_key_string.end()){
             if(indc_states[item->second])
-                std::__throw_runtime_error(std::string( "Setting " 
-                                                        + item->first 
+                throw std::runtime_error(std::string( "Setting " + item->first
                                                         + " twice").c_str());
             indc_states[item->second] = true;
             config_idx++;
@@ -61,14 +60,14 @@ static void get_config_( const std::vector<std::string> &indcs,
                 }else if(config_pair.second == "dynamic"){
                     config.mode = bwfs_mode_e::DYNAMIC;
                 }else{
-                    std::__throw_runtime_error("Wrong BWFS-mode");
+                    throw std::runtime_error("Wrong BWFS-mode");
                 }
             }else if(config_pair.first == "time"){
                 config.time = strtoul(config_pair.second.c_str(), nullptr, 10);
             }else if(config_pair.first == "client_confirmation"){
                 config.client_confirmation = strtoul(config_pair.second.c_str(), nullptr, 10);
             }else{
-                std::__throw_runtime_error("Wrong BWFS config parameter");
+                throw std::runtime_error("Wrong BWFS config parameter");
             }
         }
     );

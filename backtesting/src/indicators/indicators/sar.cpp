@@ -83,13 +83,13 @@ void get_config( const std::vector<std::string> &indcs,
 
             auto config_pair = utils::split_string(str, ":");
             if(config_pair.first == "a"){
-                if(!(bool)utils::check_if_string_is_valid_number(config_pair.second)){ 
-                    std::__throw_runtime_error("Wrong sar config, n must be a number");
+                if(!(bool)utils::check_if_string_is_valid_number(config_pair.second)){
+                    throw std::runtime_error("Wrong sar config, n must be a number");
                 }
                 config.alpha = std::stod(config_pair.second.c_str());
             }else if(config_pair.first == "ema"){
-                if(!(bool)utils::check_if_string_is_valid_number(config_pair.second)){ 
-                    std::__throw_runtime_error("Wrong sar config, n must be a number");
+                if(!(bool)utils::check_if_string_is_valid_number(config_pair.second)){
+                    throw std::runtime_error("Wrong sar config, n must be a number");
                 }
                 config.EMA = std::strtoul(config_pair.second.c_str(), nullptr, 10);
             }else{
@@ -97,10 +97,10 @@ void get_config( const std::vector<std::string> &indcs,
                     if(config_pair.second == "trade"){
                         src = source_e::SRC_TRADE;
                     }else if(config_pair.second != "kline"){
-                        std::__throw_runtime_error("Wrong sar config, wrong source config");
+                        throw std::runtime_error("Wrong sar config, wrong source config");
                     }
                 }else{
-                    std::__throw_runtime_error("Wrong sar config parameter");
+                    throw std::runtime_error("Wrong sar config parameter");
                 }
             } 
         });

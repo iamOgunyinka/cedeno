@@ -32,14 +32,14 @@ void get_config( const std::vector<std::string> &indcs,
         auto config_pair = utils::split_string(indcs[1], ":");
         if(config_pair.first == "n"){
             if(!(bool)utils::check_if_string_is_valid_number(config_pair.second)){
-                std::__throw_runtime_error("Wrong ema config, n must be a number");
+                throw std::runtime_error("Wrong ema config, n must be a number");
             }
             config.n = strtoul(config_pair.second.c_str(), nullptr, 10);
             if(config.n < 1){
-                std::__throw_runtime_error("Wrong ema config, n must be greater than 1");
+                throw std::runtime_error("Wrong ema config, n must be greater than 1");
             }
         }else{
-            std::__throw_runtime_error("Wrong ema config parameter");
+            throw std::runtime_error("Wrong ema config parameter");
         }
     }
     (*indc_states)[(uint64_t)types_e::SMA] = true;

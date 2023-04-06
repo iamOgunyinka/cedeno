@@ -8,7 +8,7 @@ namespace indicators{
 
 #define USE_BACKTESTING_SOURCE_DATA 1
 
-#if not (USE_BACKTESTING_SOURCE_DATA)
+#if (USE_BACKTESTING_SOURCE_DATA == 0)
 enum class side_test_e{
   none,
   sell,
