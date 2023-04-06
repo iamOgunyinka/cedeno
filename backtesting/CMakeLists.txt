@@ -125,7 +125,7 @@ set(SRC_FILES
   src/tick.cpp
   src/trades_data.cpp
   src/user_data.cpp
-)
+  src/remote_file_downloader.cpp)
 
 if (ENABLE_INDICATOR)
   message("ENABLE_INDICATOR is enabled")
@@ -173,9 +173,11 @@ set(HEADERS_FILES
   include/futures_order_book.hpp
   include/global_data.hpp
   include/indicator_data.hpp
+  include/log_info.hpp
   include/matching_engine.hpp
   include/order_book_base.hpp
   include/py_wrapper.hpp
+  include/remote_file_downloader.hpp
   include/signals.hpp
   include/spot_order_book.hpp
   include/symbol.hpp

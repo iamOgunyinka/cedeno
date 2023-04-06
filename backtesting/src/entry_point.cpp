@@ -10,28 +10,11 @@
 #endif // BT_USE_WITH_DB
 
 #include "global_data.hpp"
+#include "log_info.hpp"
 #include "tick.hpp"
 #include <CLI11/CLI11.hpp>
 #include <mini/ini.h>
 #include <random>
-#include <spdlog/spdlog.h>
-
-#define PRINT_INFO(str, ...)                                                   \
-  {                                                                            \
-    if (verbose)                                                               \
-      spdlog::info(str, ##__VA_ARGS__);                                        \
-  }
-
-#define ERROR_PARSE() (m_config.reset(), m_argumentParsed)
-#define PRINT_ERROR(str, ...)                                                  \
-  {                                                                            \
-    if (verbose)                                                               \
-      spdlog::error(str, ##__VA_ARGS__);                                       \
-  }
-
-#define ERROR_EXIT(str, ...)                                                   \
-  PRINT_ERROR(str, ##__VA_ARGS__)                                              \
-  return ERROR_PARSE();
 
 using backtesting::utils::currentTimeToString;
 using backtesting::utils::dateStringToTimeT;
@@ -601,7 +584,7 @@ bool createBTInstanceFromConfigFile(std::string const &filename) {
           if (name == "TICK") {
             auto &ticks = config.ticks;
             for (auto const &tick : utils::splitString(val, ","))
-              ticks.push_back(std::stod(utils::trim_copy(tick)));
+              ticks.push_back(std::stoul(utils::trim_copy(tick)));
 
             // sort and remove possible duplicates
             std::sort(ticks.begin(), ticks.end(), std::less<size_t>{});
@@ -612,21 +595,36 @@ bool createBTInstanceFromConfigFile(std::string const &filename) {
         auto const indicatorName =
             utils::toUpperString(utils::trim_copy(indicatorSplit[1]));
         if (indicatorName == "QTY_IN") {
-          //
+          config.indicatorConfig.push_back({"qty_in"});
         } else if (indicatorName == "QTY_OUT") {
-          //
+          config.indicatorConfig.push_back({"qty_out"});
         } else if (indicatorName == "AVG_OUT") {
-          //
+          config.indicatorConfig.push_back({"avg_out"});
         } else if (indicatorName == "AVG_IN") {
-          //
+          config.indicatorConfig.push_back({"avg_in"});
         } else if (indicatorName == "TICK_IN") {
-          //
+          config.indicatorConfig.push_back({"tick_in"});
         } else if (indicatorName == "TICK_OUT") {
-          //
+          config.indicatorConfig.push_back({"tick_out"});
         } else if (indicatorName == "BUY_VS_SELL") {
-          //
-        } else if (indicatorName == "MODE") {
-          //
+          config.indicatorConfig.push_back({"buy_vs_sell"});
+        } else if (indicatorName == "BWFS") {
+          std::vector<std::string> data{"bwfs"};
+          if (value.has("mode")) {
+            auto const mode = fmt::format("mode:{}", utils::trim_copy(value.get("mode")));
+            data.push_back(mode);
+          }
+          if (value.has("client_confirmation")) {
+            auto const confirm =
+                fmt::format("client_confirmation:{}",
+                            utils::trim_copy(value.get("client_confirmation")));
+            data.push_back(confirm);
+          }
+          if (value.has("time")) {
+            auto const timeStr = fmt::format("time:{}", utils::trim_copy(value.get("time")));
+            data.push_back(timeStr);
+          }
+          config.indicatorConfig.push_back(std::move(data));
         } else if (indicatorName == "EMA") {
           auto const nValue = value.get("n");
           if (nValue.empty())
