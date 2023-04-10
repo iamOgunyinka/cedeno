@@ -35,7 +35,7 @@ using trade_stream_d = trade_stream_test_t;
 using kline_d = kline_test_t;
 #else
 using assest_side_e = backtesting::trade_side_e;
-using trade_stream_d = backtesting::trade_data_t;
+using trade_stream_d = backtesting::reader_trade_data_t;
 using kline_d = backtesting::kline_data_t;
 #endif
 }

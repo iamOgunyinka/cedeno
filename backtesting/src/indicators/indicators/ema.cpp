@@ -36,7 +36,7 @@ static void ema_callback(ema_t &handler,
 void ema_trade_callback( const trade_stream_d &trade_data, 
                          indicator_t &handler_){
     std::cout<<__func__<<std::endl;
-    ema_callback(*handler_.indcs_var.ema_vars, trade_data.amountPerPiece);
+    ema_callback(*handler_.indcs_var.ema_vars, trade_data.price);
 }
 
 void ema_kline_callback( const kline_d &kline_data, 

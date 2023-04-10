@@ -365,3 +365,5 @@ FodyWeavers.xsd
 *.sqlite3
 /test_data_extractor/backtestingFiles
 test_indicators/objects
+/.idea
+/cmake-build-debug

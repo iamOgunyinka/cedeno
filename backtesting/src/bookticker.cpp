@@ -14,13 +14,13 @@ std::array<std::vector<bktick_data_t>, 2>
 
 std::mutex bktick_config_t::globalBkTickerMutex{};
 
-binance_bktick_data_t binance_bktick_data_t::dataFromCSVStream(
-    data_streamer_t<binance_bktick_data_t> &dataStreamer) {
-  binance_bktick_data_t data;
+exchange_bktick_data_t exchange_bktick_data_t::dataFromCSVStream(
+    data_streamer_t<exchange_bktick_data_t> &dataStreamer) {
+  exchange_bktick_data_t data;
   try {
     auto row = dataStreamer.getNextRow();
     if (row.empty())
-      return binance_bktick_data_t{};
+      return exchange_bktick_data_t{};
     data = bookTickerFromCSVRow(row);
   } catch (std::exception const &) {
   }
@@ -28,13 +28,13 @@ binance_bktick_data_t binance_bktick_data_t::dataFromCSVStream(
   return data;
 }
 
-binance_bktick_data_t
-binance_bktick_data_t::bookTickerFromCSVRow(csv::CSVRow const &row) {
+exchange_bktick_data_t
+exchange_bktick_data_t::bookTickerFromCSVRow(csv::CSVRow const &row) {
   if (!isExpectedRowCount(row.size()))
     throw std::runtime_error("unexpected columns in a row, expects 7");
   auto iter = row.begin();
 
-  binance_bktick_data_t data{};
+  exchange_bktick_data_t data{};
   data.orderBookUpdateID = getNumber<double>(++iter);
   data.bestBidPrice = getNumber<double>(++iter);
   data.bestBidQty = getNumber<double>(++iter);
@@ -46,7 +46,7 @@ binance_bktick_data_t::bookTickerFromCSVRow(csv::CSVRow const &row) {
   return data;
 }
 
-bktick_data_t binanceBTickerToLocalBTicker(binance_bktick_data_t const &data) {
+bktick_data_t binanceBTickerToLocalBTicker(exchange_bktick_data_t const &data) {
   bktick_data_t result;
   result.ts = data.eventTimeInMs;
   result.bestBidPrice = data.bestBidPrice;
@@ -240,7 +240,7 @@ void bookTickerChildThreadImpl(bktick_config_t &&config) {
   if (filePaths.empty())
     return;
 
-  data_streamer_t<binance_bktick_data_t> dataStream(std::move(filePaths));
+  data_streamer_t<exchange_bktick_data_t> dataStream(std::move(filePaths));
 
   auto const &symbol = config.symbols[0];
   auto data = dataStream.getNextData();

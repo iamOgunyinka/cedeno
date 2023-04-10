@@ -22,6 +22,12 @@ template <typename T> struct data_streamer_t {
   }
 
   T getNextData() {
+    if (!m_unusedTData.empty()) {
+      auto data = m_unusedTData.front();
+      m_unusedTData.pop();
+      return data;
+    }
+
     if (!m_csvReader) {
       auto currentFile = getNextUnreadFile();
       if (!currentFile)
@@ -37,6 +43,8 @@ template <typename T> struct data_streamer_t {
   inline void putBack(csv::CSVRow &&row) {
     m_lastUnusedData.push(std::move(row));
   }
+
+  inline void putBack(T &&data) { m_unusedTData.emplace(std::move(data)); }
 
   csv::CSVRow getNextRow() {
     if (!m_lastUnusedData.empty()) {
@@ -84,6 +92,7 @@ private:
   csv::CSVReader *m_csvReader = nullptr;
   std::vector<internal_data_t> m_paths;
   std::queue<csv::CSVRow> m_lastUnusedData;
+  std::queue<T> m_unusedTData;
   bool m_firstTimeRead = true;
 };
 

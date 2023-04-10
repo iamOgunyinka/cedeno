@@ -8,7 +8,7 @@
 namespace backtesting {
 /// This is an internal data structure. It is the data structure of the
 /// candlestick data read from the file and processed
-struct binance_candlestick_data_t {
+struct exchange_candlestick_data_t {
   std::chrono::seconds
       intervalInSeconds;     /*!< intervals in seconds between events */
   uint64_t eventTime;        /*!< the time event occurs */
@@ -27,8 +27,8 @@ struct binance_candlestick_data_t {
   size_t numberOfTrades;     /*!< total number of trades */
   size_t klineIsClosed;      /*!< is candlestick/kline closed? */
 
-  static binance_candlestick_data_t
-  dataFromCSVStream(data_streamer_t<binance_candlestick_data_t> &dataStreamer);
+  static exchange_candlestick_data_t
+  dataFromCSVStream(data_streamer_t<exchange_candlestick_data_t> &dataStreamer);
 
 private:
   template <typename T> static T getNumber(csv::CSVRow::iterator const &iter) {
@@ -41,7 +41,7 @@ private:
   }
 
   static bool isExpectedRowCount(size_t const r) { return r == 16; }
-  static binance_candlestick_data_t klineFromCSVRow(csv::CSVRow const &row);
+  static exchange_candlestick_data_t klineFromCSVRow(csv::CSVRow const &row);
 };
 
 /// This is the kline data structure returned to the user.
@@ -79,9 +79,9 @@ struct kline_config_t {
 struct kline_task_t {
   data_interval_e interval = data_interval_e::one_hour;
   kline_callback_t callback = nullptr;
-  data_streamer_t<binance_candlestick_data_t> dataStream;
+  data_streamer_t<exchange_candlestick_data_t> dataStream;
 
-  kline_task_t(data_streamer_t<binance_candlestick_data_t> &&d)
+  kline_task_t(data_streamer_t<exchange_candlestick_data_t> &&d)
       : dataStream(std::move(d)) {}
 
   static ::utils::waitable_container_t<kline_task_t> klineScheduledTasks;

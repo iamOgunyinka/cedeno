@@ -82,8 +82,11 @@ const inf_t& indicators_c::get() const {
     return m_handler.info;
 }
 
-void indicators_c::process(const trade_stream_d &trade_data){
-  if (m_indcs_trade_mngr)
+void indicators_c::process(const std::vector<trade_stream_d> &trade_list){
+  if (!m_indcs_trade_mngr)
+    return;
+
+  for (auto const &trade_data: trade_list)
     m_indcs_trade_mngr->process(trade_data, m_handler);
 }
 

@@ -35,7 +35,7 @@ class indicators_c{
 
         static void set(const std::vector<std::vector<std::string>> &indcs);
 
-        void process(const trade_stream_d &trade_data);
+        void process(const std::vector<trade_stream_d> &trade_list);
 
         void process(const std::vector<kline_d> &kline_data);
 };

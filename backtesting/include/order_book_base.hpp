@@ -65,7 +65,6 @@ struct greater_comparator_t {
     return a.priceLevel > b;
   }
 };
-
 } // namespace details
 
 /// the pure virtual base class of all order books
@@ -89,9 +88,10 @@ public:
   /// \param ioContext - an IO context object used to initialize the timer
   /// \param dataStreamer - a data stream that gives the order book persisted
   /// data \param symbol - the symbol being traded in this order book
-  order_book_base_t(net::io_context &ioContext,
-                    data_streamer_t<depth_data_t> dataStreamer,
-                    internal_token_data_t *symbol);
+  order_book_base_t(
+      net::io_context &ioContext, data_streamer_t<depth_data_t> depthStreamer,
+      std::optional<data_streamer_t<reader_trade_data_t>> tradeStreamer,
+      internal_token_data_t *symbol);
 
   /// the base destructor
   virtual ~order_book_base_t();
@@ -129,10 +129,13 @@ private:
                 double &amountAvailableToSpend, order_data_t const &order);
 
 protected:
+#ifdef BT_USE_WITH_INDICATORS
+  void sendTradeData(time_t const eventTime);
+#endif
+
 #ifdef _DEBUG
   /// print the visible representation of the book
   virtual void printOrderBook() = 0;
-
 #endif
 
   /// a market matching implementation, the behavior differs in spot and futures
@@ -153,7 +156,7 @@ protected:
   /// \return a `trade_data_t` for that trade that occurred
   [[nodiscard]] trade_data_t getNewTrade(order_data_t const &order,
                                          order_status_e status, double qty,
-                                         double amount);
+                                         double amount, bool sendToIndicator);
   /// an internal function that is used to notify the other side of a trade,
   /// for example if an order is bought, someone on the other side sold that
   /// instrument. This function returns the trade on the other side
@@ -169,7 +172,11 @@ protected:
   net::io_context &m_ioContext;
   //// a stream object responsible for reading depth stream from file to the
   /// order book
-  data_streamer_t<depth_data_t> m_dataStreamer;
+  data_streamer_t<depth_data_t> m_depthStreamer;
+  //// a stream object responsible for reading trade stream from file to the
+  /// order book
+  std::optional<data_streamer_t<reader_trade_data_t>> m_tradeStreamer =
+      std::nullopt;
   /// the symbol being traded
   internal_token_data_t *m_symbol = nullptr;
   /// the order book entries -- the asks and the bids

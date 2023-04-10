@@ -22,31 +22,33 @@ internal_token_data_t *getTokenWithName(std::string const &tokenName,
 
 std::vector<global_order_book_t> global_order_book_t::globalOrderBooks{};
 
+template <typename Type>
+std::optional<data_streamer_t<Type>> getFileReader(token_map_td &map,
+                                                   char const *str) {
+  if (auto iter = map.find(str); iter != map.end()) {
+    auto &list = iter->second;
+    std::sort(
+        list.begin(), list.end(),
+        [](std::filesystem::path const &a, std::filesystem::path const &b) {
+          return std::filesystem::last_write_time(a) <
+                 std::filesystem::last_write_time(b);
+        });
+    return data_streamer_t<Type>(list);
+  }
+  return std::nullopt;
+}
+
 #ifdef BT_USE_WITH_INDICATORS
 void processDepthStream(std::shared_ptr<net::io_context> ioContext,
-                        trade_map_td &tradeMap,
+                        trade_map_td &depthMap, trade_map_td &tMap,
                         std::vector<std::vector<std::string>> &&config) {
 #else
 void processDepthStream(std::shared_ptr<net::io_context> ioContext,
-                        trade_map_td &tradeMap) {
+                        trade_map_td &depthMap, trade_map_td &tMap) {
 #endif
   auto &globalOrderBooks = global_order_book_t::globalOrderBooks;
 
   globalOrderBooks.clear();
-  auto sorter = [](token_map_td &map, char const *str) mutable
-      -> std::optional<data_streamer_t<depth_data_t>> {
-    if (auto iter = map.find(str); iter != map.end()) {
-      auto &list = iter->second;
-      std::sort(
-          list.begin(), list.end(),
-          [](std::filesystem::path const &a, std::filesystem::path const &b) {
-            return std::filesystem::last_write_time(a) <
-                   std::filesystem::last_write_time(b);
-          });
-      return data_streamer_t<depth_data_t>(list);
-    }
-    return std::nullopt;
-  };
 
   auto getTradeSymbol = [](std::string const &name, trade_type_e const tt) {
     auto symbol = getTokenWithName(name, tt);
@@ -55,21 +57,25 @@ void processDepthStream(std::shared_ptr<net::io_context> ioContext,
     return symbol;
   };
 
-  for (auto &[tokenName, value] : tradeMap) {
+  for (auto &[tokenName, value] : tMap) {
     global_order_book_t d;
     d.spot = nullptr;
     d.futures = nullptr;
     d.tokenName = utils::toUpperString(tokenName);
-    if (auto spotStreamer = sorter(value, SPOT); spotStreamer.has_value()) {
+    if (auto spotStreamer = getFileReader<depth_data_t>(value, SPOT);
+        spotStreamer.has_value()) {
+      auto tradeReader = getFileReader<reader_trade_data_t>(value, SPOT);
       auto symbol = getTradeSymbol(tokenName, trade_type_e::spot);
       d.spot = std::make_unique<spot_order_book_t>(
-          *ioContext, std::move(*spotStreamer), symbol);
+          *ioContext, std::move(*spotStreamer), std::move(tradeReader), symbol);
     }
-    if (auto futuresStreamer = sorter(value, FUTURES);
+    if (auto futuresStreamer = getFileReader<depth_data_t>(value, FUTURES);
         futuresStreamer.has_value()) {
+      auto tradeReader = getFileReader<reader_trade_data_t>(value, FUTURES);
       auto symbol = getTradeSymbol(tokenName, trade_type_e::futures);
       d.futures = std::make_unique<futures_order_book_t>(
-          *ioContext, std::move(*futuresStreamer), symbol);
+          *ioContext, std::move(*futuresStreamer), std::move(tradeReader),
+          symbol);
     }
 
     if (d.futures || d.spot)
@@ -91,20 +97,14 @@ void processDepthStream(std::shared_ptr<net::io_context> ioContext,
     }
   }
 
+  std::thread{[=]() mutable {
 #ifdef BT_USE_WITH_INDICATORS
-  if (globalOrderBooks.empty())
-    return;
-  // call ::set() only on one of the (possibly) several indicator instances
-  auto &book = globalOrderBooks.back().spot == nullptr
-                   ? *globalOrderBooks.back().futures
-                   : *globalOrderBooks.back().spot;
-  std::thread{[=, &book]() mutable {
-    book.setIndicatorConfiguration(std::move(config));
+    // call ::setIndicatorConfiguration only the indicators
+    backtesting::order_book_base_t::setIndicatorConfiguration(
+        std::move(config));
+#endif
     ioContext->run();
   }}.detach();
-#else
-  std::thread{[=] { ioContext->run(); }}.detach();
-#endif
 }
 
 bool depth_data_t::depthMetaFromCSV(csv::CSVRow const &row,
@@ -130,7 +130,7 @@ bool depth_data_t::depthMetaFromCSV(csv::CSVRow const &row,
 }
 
 depth_data_t depth_data_t::depthFromCSVRow(csv::CSVRow const &row) {
-  std::string eventType;
+  csv::string_view eventType;
   double priceLevel = 0.0;
   double quantity = 0.0;
   depth_data_t data;
@@ -157,11 +157,10 @@ depth_data_t depth_data_t::depthFromCSVRow(csv::CSVRow const &row) {
       quantity = getNumber<double>(iter);
     }
   }
-  if (eventType == "A")
+  if (eventType == csv::string_view("A"))
     data.asks.push_back({priceLevel, quantity});
   else
     data.bids.push_back({priceLevel, quantity});
-  data.tokenName = eventType;
   return data;
 }
 

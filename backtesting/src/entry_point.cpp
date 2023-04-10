@@ -203,11 +203,12 @@ bool backtesting_t::parseImpl(backtesting::configuration_t config) {
 
   verbose = config.verbose;
   if (config.streams.empty()) {
-    PRINT_INFO("Streams not specified, will use 'DEPTH' as default")
-    config.streams.push_back(DEPTH);
+    PRINT_INFO("Streams not specified, will use 'DEPTH' and 'TRADE' as default")
+    config.streams.emplace_back(DEPTH);
+    config.streams.emplace_back(TRADE);
   } else {
     std::vector<std::string> const validStreams{TICKER, BTICKER, CANDLESTICK,
-                                                DEPTH};
+                                                DEPTH, TRADE};
     for (auto &stream : config.streams) {
       if (!listContains(validStreams, stream)) {
         ERROR_EXIT("'{}' is not a valid stream type", stream)
@@ -611,7 +612,8 @@ bool createBTInstanceFromConfigFile(std::string const &filename) {
         } else if (indicatorName == "BWFS") {
           std::vector<std::string> data{"bwfs"};
           if (value.has("mode")) {
-            auto const mode = fmt::format("mode:{}", utils::trim_copy(value.get("mode")));
+            auto const mode =
+                fmt::format("mode:{}", utils::trim_copy(value.get("mode")));
             data.push_back(mode);
           }
           if (value.has("client_confirmation")) {
@@ -621,7 +623,8 @@ bool createBTInstanceFromConfigFile(std::string const &filename) {
             data.push_back(confirm);
           }
           if (value.has("time")) {
-            auto const timeStr = fmt::format("time:{}", utils::trim_copy(value.get("time")));
+            auto const timeStr =
+                fmt::format("time:{}", utils::trim_copy(value.get("time")));
             data.push_back(timeStr);
           }
           config.indicatorConfig.push_back(std::move(data));

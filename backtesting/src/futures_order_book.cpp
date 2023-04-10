@@ -3,9 +3,11 @@
 namespace backtesting {
 
 futures_order_book_t::futures_order_book_t(
-    net::io_context &ioContext, data_streamer_t<depth_data_t> dataStream,
+    net::io_context &ioContext, data_streamer_t<depth_data_t> depthStream,
+    std::optional<data_streamer_t<reader_trade_data_t>> tradeStream,
     internal_token_data_t *token)
-    : order_book_base_t(ioContext, std::move(dataStream), token) {}
+    : order_book_base_t(ioContext, std::move(depthStream),
+                        std::move(tradeStream), token) {}
 
 trade_list_t futures_order_book_t::marketMatcherImpl(
     std::vector<details::order_book_entry_t> &list, double &,
@@ -20,7 +22,7 @@ trade_list_t futures_order_book_t::marketMatcherImpl(
 
     if ((front.totalQuantity - execQty) == 0.0)
       status = order_status_e::filled;
-    auto trade = getNewTrade(order, status, execQty, price);
+    auto trade = getNewTrade(order, status, execQty, price, true);
     auto otherTrades = getExecutedTradesFromOrders(front, execQty, price);
 
     // broadcast current market price of symbol

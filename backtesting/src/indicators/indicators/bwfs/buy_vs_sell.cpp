@@ -89,34 +89,34 @@ void buy_vs_sell_callback( const trade_stream_d &trade_data,
     if(handler.last_time_threshold != handler.configuration->time){
         reset_info_data(handler);
         handler.time_threshold = calculate_time_threshold( *handler.configuration, 
-                                                           trade_data.eventTime);
-        increase_quantity( handler, trade_data.quantityExecuted, 
+                                                           trade_data.eventTimeMs);
+        increase_quantity( handler, trade_data.quantity,
                            "buyer_id", "seller_id");
-        handler.price_q.push(buy_vs_sell_q_t( trade_data.quantityExecuted, 
+        handler.price_q.push(buy_vs_sell_q_t( trade_data.quantity,
                                               "buyer_id", 
                                               "seller_id"));
         handler.last_time_threshold = handler.configuration->time;
     }else{
-        if(trade_data.eventTime > handler.time_threshold){
+        if(trade_data.eventTimeMs > handler.time_threshold){
             if(handler.configuration->mode == bwfs_mode_e::STATIC){
                 reset_info_data(handler);
-                handler.time_threshold = calculate_time_threshold( *handler.configuration, 
-                                                                   trade_data.eventTime);
+                handler.time_threshold = calculate_time_threshold( *handler.configuration,
+                                                                   trade_data.eventTimeMs);
             }else{
                 const buy_vs_sell_q_t &back = handler.price_q.back();
-                increase_quantity( handler, trade_data.quantityExecuted, 
+                increase_quantity( handler, trade_data.quantity,
                                    "buyer_id", "seller_id");
                 decrease_quantity(handler, back.quantity, back.buyer_id, back.seller_id);
                 handler.price_q.pop();
-                handler.price_q.push(buy_vs_sell_q_t( trade_data.quantityExecuted, 
+                handler.price_q.push(buy_vs_sell_q_t( trade_data.quantity,
                                                       "buyer_id", 
                                                       "seller_id"));
             }
         }else{
             if(handler.configuration->mode == bwfs_mode_e::DYNAMIC){
-                increase_quantity( handler, trade_data.quantityExecuted, 
+                increase_quantity( handler, trade_data.quantity,
                                    "buyer_id", "seller_id");
-                handler.price_q.push(buy_vs_sell_q_t( trade_data.quantityExecuted, 
+                handler.price_q.push(buy_vs_sell_q_t( trade_data.quantity,
                                                       "buyer_id", 
                                                       "seller_id")); 
             }

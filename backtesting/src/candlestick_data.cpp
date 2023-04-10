@@ -8,13 +8,13 @@ namespace backtesting {
 
 ::utils::waitable_container_t<kline_task_t> kline_task_t::klineScheduledTasks{};
 
-binance_candlestick_data_t binance_candlestick_data_t::dataFromCSVStream(
-    data_streamer_t<binance_candlestick_data_t> &dataStreamer) {
-  binance_candlestick_data_t data;
+exchange_candlestick_data_t exchange_candlestick_data_t::dataFromCSVStream(
+    data_streamer_t<exchange_candlestick_data_t> &dataStreamer) {
+  exchange_candlestick_data_t data{};
   try {
     auto row = dataStreamer.getNextRow();
     if (row.empty())
-      return binance_candlestick_data_t{};
+      return exchange_candlestick_data_t{};
     data = klineFromCSVRow(row);
   } catch (std::exception const &) {
   }
@@ -22,13 +22,12 @@ binance_candlestick_data_t binance_candlestick_data_t::dataFromCSVStream(
   return data;
 }
 
-binance_candlestick_data_t
-binance_candlestick_data_t::klineFromCSVRow(csv::CSVRow const &row) {
-
+exchange_candlestick_data_t
+exchange_candlestick_data_t::klineFromCSVRow(csv::CSVRow const &row) {
   if (!isExpectedRowCount(row.size()))
     throw std::runtime_error("unexpected columns in a row, expects 16");
 
-  binance_candlestick_data_t data{};
+  exchange_candlestick_data_t data{};
   data.intervalInSeconds = std::chrono::seconds(1); // column 3
   data.eventTime = 0;
 
@@ -70,7 +69,7 @@ binance_candlestick_data_t::klineFromCSVRow(csv::CSVRow const &row) {
   return data;
 }
 
-kline_data_t binanceKlineToLocalKline(binance_candlestick_data_t const &data) {
+kline_data_t binanceKlineToLocalKline(exchange_candlestick_data_t const &data) {
   kline_data_t result;
   result.ts = data.eventTime;
   result.openPrice = data.openPrice;
@@ -141,11 +140,11 @@ optional_kline_list_t getDiscreteKlineData(kline_config_t &&config) {
   if (filePaths.empty())
     return std::nullopt;
 
-  backtesting::data_streamer_t<binance_candlestick_data_t> dataStream(
+  backtesting::data_streamer_t<exchange_candlestick_data_t> dataStream(
       filePaths);
 
   kline_data_list_t result;
-  for (binance_candlestick_data_t temp = dataStream.getNextData();
+  for (exchange_candlestick_data_t temp = dataStream.getNextData();
        temp.eventTime != 0; temp = dataStream.getNextData()) {
     if (result.empty()) {
       result.push_back(binanceKlineToLocalKline(temp));
@@ -176,7 +175,7 @@ bool getContinuousKlineData(kline_config_t &&config) {
   if (filePaths.empty())
     return false;
 
-  data_streamer_t<binance_candlestick_data_t> dataStream(std::move(filePaths));
+  data_streamer_t<exchange_candlestick_data_t> dataStream(std::move(filePaths));
   kline_task_t rt(std::move(dataStream));
   kline_task_t::klineScheduledTasks.append(std::move(rt));
   return true;
@@ -207,7 +206,7 @@ void candlestickProcessingImpl() {
 }
 
 void klineChildThreadImpl(kline_task_t &&task) {
-  binance_candlestick_data_t temp = task.dataStream.getNextData();
+  exchange_candlestick_data_t temp = task.dataStream.getNextData();
   while (temp.eventTime != 0) {
     task.callback({binanceKlineToLocalKline(temp)});
     time_t const currentTime = temp.eventTime;
@@ -251,7 +250,7 @@ listOfFilesForTradeData(time_t const startTime, time_t const endTime,
             .value();
     for (auto const &fileEntry :
          std::filesystem::recursive_directory_iterator(path)) {
-      std::filesystem::path const file = fileEntry.path();
+      std::filesystem::path const &file = fileEntry.path();
       if (!std::filesystem::is_regular_file(file))
         continue;
       //  we need the filename without the .csv extension

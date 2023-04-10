@@ -24,7 +24,6 @@ struct depth_data_t {
     double quantity = 0.0;
   };
 
-  std::string tokenName;
   time_t eventTime = 0;
   trade_type_e tradeType = trade_type_e::none;
   uint64_t firstUpdateID = 0;

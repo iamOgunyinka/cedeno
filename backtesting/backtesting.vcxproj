@@ -119,7 +119,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>D:\Visual Studio Projects\cedeno\third-party\mINI\src;D:\Visual Studio Projects\cedeno\third-party\spdlog\include;D:\boost_1_78\include;D:\Visual Studio Projects\cedeno\backtesting\include;D:\Visual Studio Projects\cedeno\third-party\pybind11\include;D:\Visual Studio Projects\cedeno\third-party\csv-parser\single_include;D:\Visual Studio Projects\cedeno\third-party;D:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories);C:\Users\ADMINI~1\AppData\Local\Programs\Python\Python310\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Visual Studio Projects\cedeno\third-party\mINI\src;D:\Visual Studio Projects\cedeno\third-party\spdlog\include;D:\boost_1_78\include;D:\Visual Studio Projects\cedeno\backtesting\include;D:\Visual Studio Projects\cedeno\third-party\pybind11\include;D:\Visual Studio Projects\cedeno\third-party\csv-parser\single_include;D:\Visual Studio Projects\cedeno\third-party;D:\vcpkg\installed\x64-windows\include;%(AdditionalIncludeDirectories);C:\Users\ADMINI~1\AppData\Local\Programs\Python\Python311\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -203,7 +203,7 @@ trade_list_t order_book_base_t::getExecutedTradesFromOrders(
 
     if ((order.quantity - tempQty) == 0.0)
       status = order_status_e::filled;
-    auto trade = getNewTrade(order, status, tempQty, priceLevel);
+    auto trade = getNewTrade(order, status, tempQty, priceLevel, false);
     order.quantity -= tempQty;
     quantityTraded -= tempQty;
     if (order.quantity == 0.0)
@@ -225,17 +225,18 @@ order_book_base_t::marketMatcher(std::vector<details::order_book_entry_t> &list,
   return marketMatcherImpl(list, amountAvailableToSpend, order);
 }
 
-order_book_base_t::order_book_base_t(net::io_context &ioContext,
-                                     data_streamer_t<depth_data_t> dataStreamer,
-                                     internal_token_data_t *symbol)
-    : m_ioContext(ioContext), m_dataStreamer(std::move(dataStreamer)),
-      m_symbol(symbol)
+order_book_base_t::order_book_base_t(
+    net::io_context &ioContext, data_streamer_t<depth_data_t> depthStreamer,
+    std::optional<data_streamer_t<reader_trade_data_t>> tradeStreamer,
+    internal_token_data_t *symbol)
+    : m_ioContext(ioContext), m_depthStreamer(std::move(depthStreamer)),
+      m_tradeStreamer(std::move(tradeStreamer)), m_symbol(symbol)
 #ifdef BT_USE_WITH_INDICATORS
       ,
       m_indicatorMeta(m_symbol->name)
 #endif
 {
-  auto firstData = m_dataStreamer.getNextData();
+  auto firstData = m_depthStreamer.getNextData();
   firstData.tradeType = m_symbol->tradeType;
 
   insertAndSort(firstData.bids, m_orderBook.bids, trade_side_e::buy,
@@ -244,7 +245,7 @@ order_book_base_t::order_book_base_t(net::io_context &ioContext,
                 firstData.tradeType, symbol, isLesser);
 
 #ifdef BT_USE_WITH_INDICATORS
-  // m_indicator.process(firstData);
+  sendTradeData(firstData.eventTime);
 #endif
 }
 
@@ -266,9 +267,10 @@ void order_book_base_t::run() {
 trade_data_t order_book_base_t::getNewTrade(order_data_t const &order,
                                             order_status_e const status,
                                             double const qty,
-                                            double const amount) {
+                                            double const amount,
+                                            bool const sendToIndicator) {
   static int64_t tradeNumber = 0x0'000'320'012;
-
+  bool const isMarketMaker = order.market == market_type_e::limit;
   trade_data_t trade;
   trade.quantityExecuted = qty;
   trade.amountPerPiece = amount;
@@ -283,7 +285,9 @@ trade_data_t order_book_base_t::getNewTrade(order_data_t const &order,
   if (order.user) { // send notification to the order owner
     order.user->OnNewTrade(trade);
 #ifdef BT_USE_WITH_INDICATORS
-    m_indicatorMeta.indicator.process(trade);
+    if (sendToIndicator)
+      m_indicatorMeta.indicator.process(
+          {localToExchangeTrade(trade, isMarketMaker)});
 #endif
   }
 
@@ -325,7 +329,7 @@ void order_book_base_t::placeOrder(order_data_t order) {
 
           if ((order.quantity - execQty) == 0.0)
             status = order_status_e::filled;
-          auto trade = getNewTrade(order, status, execQty, price);
+          auto trade = getNewTrade(order, status, execQty, price, true);
           auto otherTrades = getExecutedTradesFromOrders(ask, execQty, price);
 
           // broadcast symbol's latest market value
@@ -374,7 +378,7 @@ void order_book_base_t::placeOrder(order_data_t order) {
 
           if ((order.quantity - execQty) == 0.0)
             status = order_status_e::filled;
-          auto trade = getNewTrade(order, status, execQty, price);
+          auto trade = getNewTrade(order, status, execQty, price, true);
           auto otherTrades = getExecutedTradesFromOrders(bid, execQty, price);
           order.quantity -= execQty;
           bid.totalQuantity -= execQty;
@@ -402,13 +406,34 @@ void order_book_base_t::placeOrder(order_data_t order) {
       }
       // something is wrong with the order matching engine implementation
       throw std::runtime_error("internal error");
-    } else { // cancel
-             //
+    } else { // cancel -> should never happen
+      throw std::runtime_error("internal error");
     }
   } // end of limit order
 
   broadcastTradeSignal(std::move(result));
 }
+
+#ifdef BT_USE_WITH_INDICATORS
+void order_book_base_t::sendTradeData(time_t const eventTime) {
+  if (!m_tradeStreamer)
+    return;
+
+  std::vector<reader_trade_data_t> tradeList;
+  while (true) {
+    auto d = m_tradeStreamer->getNextData();
+    if (d.eventTimeMs == 0 || d.eventTimeMs > eventTime) {
+      if (d.eventTimeMs == 0)
+        m_tradeStreamer.reset();
+      else
+        m_tradeStreamer->putBack(std::move(d));
+      break;
+    }
+    tradeList.emplace_back(std::move(d));
+  }
+  m_indicatorMeta.indicator.process(std::move(tradeList));
+}
+#endif
 
 void order_book_base_t::cancelOrder(order_data_t order) {
   auto findAndCancelOrder = [this](auto &sides, order_data_t &&order,
@@ -427,7 +452,7 @@ void order_book_base_t::cancelOrder(order_data_t order) {
       return;
     iter->totalQuantity -= findIter->quantity;
     (void)getNewTrade(order, order_status_e::cancelled, findIter->quantity,
-                      order.priceLevel);
+                      order.priceLevel, false);
     allOrders.erase(findIter);
   };
 
@@ -444,18 +469,22 @@ void order_book_base_t::readNextData() {
   if (!m_periodicTimer)
     m_periodicTimer = std::make_unique<net::deadline_timer>(m_ioContext);
 
-  auto nextData = m_dataStreamer.getNextData();
+  auto nextData = m_depthStreamer.getNextData();
   nextData.tradeType = m_symbol->tradeType;
 
   if (nextData.asks.empty() && nextData.bids.empty()) // no more data
     return;
 
+#ifdef BT_USE_WITH_INDICATORS
+#endif
+
   m_periodicTimer->expires_from_now(boost::posix_time::milliseconds(BT_MILLI));
   m_periodicTimer->async_wait(
       [this, data = std::move(nextData)](auto const ec) mutable {
+        auto const eventTime = data.eventTime;
         updateOrderBook(std::move(data));
 #ifdef BT_USE_WITH_INDICATORS
-    // m_indicator.process(m_nextData);
+        sendTradeData(eventTime);
 #endif
         readNextData();
       });

@@ -241,7 +241,7 @@ int data_extractor_t::run(size_t const argc, char **argv) {
                  "trade types (e.g. spot(default), futures)");
   app.add_option(
       "--streams", streams,
-      "streams (e.g. depth(default), bookTicker, ticker, kline, trade");
+      "streams (e.g. depth(default), bookTicker, ticker, kline, trade(default))");
   try {
     app.parse(argc, argv);
   } catch (CLI::ParseError &e) {
@@ -261,7 +261,7 @@ int data_extractor_t::run(size_t const argc, char **argv) {
 
   binance::fetchAndSaveAllTokens(ioContext, *sslContext);
   if (tokenList.empty()) {
-    tokenList.push_back("BTCUSDT");
+    tokenList.emplace_back("BTCUSDT");
     spdlog::info("No tokens supplied, will list only for '{}'", tokenList[0]);
   } else {
     spdlog::info("Will be gathering information for {} tokens",
@@ -269,8 +269,9 @@ int data_extractor_t::run(size_t const argc, char **argv) {
   }
 
   if (streams.empty()) {
-    spdlog::info("Streams not specified, will use 'DEPTH' as default");
-    streams.push_back(DEPTH);
+    spdlog::info("Streams not specified, will use 'DEPTH' and 'TRADE' as defaults");
+    streams.emplace_back(DEPTH);
+    streams.emplace_back(TRADE);
   } else {
     std::vector<std::string> const validStreams{TRADE, TICKER, BTICKER,
                                                 CANDLESTICK, DEPTH};
@@ -286,7 +287,7 @@ int data_extractor_t::run(size_t const argc, char **argv) {
 
   if (trades.empty()) {
     spdlog::info("trade type not specified, will use 'SPOT' as default");
-    trades.push_back(SPOT);
+    trades.emplace_back(SPOT);
   } else {
     std::vector<std::string> const validTrades{SPOT, FUTURES};
     for (auto &trade : trades) {

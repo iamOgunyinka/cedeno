@@ -10,7 +10,7 @@ namespace backtesting {
 
 /// This is an internal structure. It is read from the file and processed
 /// internally
-struct binance_bktick_data_t {
+struct exchange_bktick_data_t {
   double orderBookUpdateID;     /*!< the order book update ID */
   double bestBidPrice;          /*!< the best bid price */
   double bestBidQty;            /*!< the best bid quantity */
@@ -21,9 +21,9 @@ struct binance_bktick_data_t {
 
   /// internal function responsible for reading data from file using the
   /// dataStreamer \param dataStreamer a stream object responsible for reading
-  /// data from file \return a `binance_bktick_data_t` object
-  static binance_bktick_data_t
-  dataFromCSVStream(data_streamer_t<binance_bktick_data_t> &dataStreamer);
+  /// data from file \return a `exchange_bktick_data_t` object
+  static exchange_bktick_data_t
+  dataFromCSVStream(data_streamer_t<exchange_bktick_data_t> &dataStreamer);
 
 private:
   template <typename T> static T getNumber(csv::CSVRow::iterator const &iter) {
@@ -31,7 +31,7 @@ private:
   }
 
   static bool isExpectedRowCount(size_t const r) { return r == 7; }
-  static binance_bktick_data_t bookTickerFromCSVRow(csv::CSVRow const &row);
+  static exchange_bktick_data_t bookTickerFromCSVRow(csv::CSVRow const &row);
 };
 
 /// This is the book ticker data structure returned to the user.

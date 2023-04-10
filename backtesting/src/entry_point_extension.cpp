@@ -17,11 +17,11 @@ namespace backtesting {
 #ifdef BT_USE_WITH_INDICATORS
 void scheduleCandlestickTask(unsigned long long, unsigned long long);
 void processDepthStream(std::shared_ptr<net::io_context>,
-                        trade_map_td &tradeMap,
+                        trade_map_td &depthMap, trade_map_td &tradeMap,
                         std::vector<std::vector<std::string>> &&config);
 #else
 void processDepthStream(std::shared_ptr<net::io_context>,
-                        trade_map_td &tradeMap);
+                        trade_map_td &depthMap, trade_map_td &tradeMap);
 #endif
 
 void aggregateTradesImpl();
@@ -52,17 +52,20 @@ int backtesting_t::run() {
   auto ioContext = backtesting::getContextObject();
 
   if (auto iter = csvFilenames.find(DEPTH); iter != csvFilenames.end()) {
-    depthStreamThread = std::make_unique<std::thread>(
-        [&globalRtData, ioContext, csData = iter->second]() mutable {
+    auto &depthData = iter->second;
+    auto &tradeData = csvFilenames[TRADE];
+    depthStreamThread = std::make_unique<std::thread>([&globalRtData,
+                                                       &depthData, &tradeData,
+                                                       ioContext]() mutable {
 #ifdef BT_USE_WITH_INDICATORS
-          backtesting::processDepthStream(
-              ioContext, csData, std::move(globalRtData.indicatorConfig));
-          backtesting::scheduleCandlestickTask(globalRtData.startTime,
-                                               globalRtData.endTime);
+      backtesting::processDepthStream(ioContext, depthData, tradeData,
+                                      std::move(globalRtData.indicatorConfig));
+      backtesting::scheduleCandlestickTask(globalRtData.startTime,
+                                           globalRtData.endTime);
 #else
-          backtesting::processDepthStream(ioContext, csData);
+      backtesting::processDepthStream(ioContext, depthData, tradeData);
 #endif
-        });
+    });
   }
 
 #ifdef BT_USE_WITH_INDICATORS
